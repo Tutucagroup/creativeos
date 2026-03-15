@@ -256,7 +256,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
           <div class="mem-card-title">Identidad visual & brandbook</div>
           <div id="memBrand"></div>
           <div class="upload-zone" id="brandUploadZone" style="margin-top:8px">
-            📄 Subir brandbook / imágenes de identidad
+            📄 Subir brandbook / archivos de identidad
             <div style="font-size:10px;margin-top:2px;opacity:.6">PDF, PNG, JPG — Claude extrae la info automáticamente</div>
           </div>
           <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple style="display:none">
@@ -281,8 +281,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
         <div class="mem-card-title">Tono de voz</div>
         <textarea class="tone-area" id="toneIn" placeholder="Ej: Marca directa y joven. Humor sin ser payasos. Vendemos soluciones, no features. CTAs urgentes. Audiencia: emprendedores 25-40."></textarea>
       </div>
-
-      <div class="mem-grid" style="margin-bottom:12px">
+      <div class="mem-grid" style="margin-bottom:0">
         <div class="mem-card">
           <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
             <span>Logo / Isologo / Isotipo</span>
@@ -308,37 +307,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
           <input type="file" id="productPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
         </div>
       </div>
-      <div class="mem-card full">
-        <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
-          <span>Referencias visuales</span>
-          <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Claude analiza cada referencia y la usa al generar</span>
-        </div>
-        <div class="ref-gallery" id="refGallery"></div>
-        <div style="display:flex;gap:8px;margin-bottom:14px">
-          <div class="upload-zone" id="refImgZone" style="flex:1">
-            🖼️ Subir imágenes / carruseles
-            <div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP — varios a la vez</div>
-          </div>
-          <div class="upload-zone" id="refVidZone" style="flex:1">
-            🎬 Subir video de referencia
-            <div style="font-size:10px;margin-top:2px;opacity:.6">MP4, MOV — extrae estilo y ritmo</div>
-          </div>
-        </div>
-        <input type="file" id="refFileInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
-        <input type="file" id="refVideoInput" accept=".mp4,.mov,.webm" multiple style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Enfoque de venta</div>
-            <textarea class="tone-area" id="salesFocusIn" style="min-height:80px;border-color:var(--accent)22" placeholder="Ej: Atacar el dolor de perder tiempo. Mostrar antes/después. Urgencia: tiempo limitado. Descuento 40%. Comparar con competencia sin nombrarla."></textarea>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Referencias por nombre</div>
-            <input class="mini-input" id="refIn" style="margin-top:0" placeholder="Ej: Nike 2023, Apple minimalist">
-            <div id="memRefs" style="margin-top:6px"></div>
-          </div>
-        </div>
-      </div>
     </div>
+
+    <!-- GENERAR -->
     <div id="tab-generar" class="content hidden">
       <div class="gen-panel">
         <div class="sec-title" style="margin-bottom:14px"><div class="sec-dot"></div>Tipo de creativo</div>
@@ -419,16 +390,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
             </div>
             <div id="scriptPanel_generate" style="font-size:12px;color:var(--muted)">Claude generará el guión usando la memoria de marca y la descripción de abajo</div>
             <div id="scriptPanel_manual" class="hidden">
-              <textarea class="script-editor" id="manualScript" style="min-height:100px;margin-top:4px" placeholder="Escribí tu guión acá. Podés usar [PAUSA] para pausas..."></textarea>
+              <textarea class="script-editor" id="manualScript" style="min-height:100px;margin-top:4px" placeholder="Escribí tu guión acá..."></textarea>
             </div>
             <div id="scriptPanel_upload" class="hidden">
               <div class="upload-zone" id="scriptUploadZone" style="margin-top:4px">
                 📄 Subir guión en texto
-                <div style="font-size:10px;margin-top:2px;opacity:.6">TXT, PDF, DOCX</div>
+                <div style="font-size:10px;margin-top:2px;opacity:.6">TXT, PDF</div>
               </div>
               <input type="file" id="scriptFileInput" accept=".txt,.pdf" style="display:none">
               <div id="uploadedScriptPreview" style="display:none;margin-top:8px">
-                <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Guión cargado</div>
                 <textarea class="script-editor" id="uploadedScriptText" style="min-height:80px"></textarea>
               </div>
             </div>
@@ -443,16 +413,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
         </div>
       </div>
 
-      <!-- ENFOQUE DE VENTA + REFERENCIAS POR CREATIVO -->
+      <!-- ENFOQUE + REFERENCIAS (movido desde Memoria) -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">
           <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Enfoque de venta</div>
-          <textarea class="tone-area" id="genSalesFocus" style="min-height:72px;font-size:12px;margin-top:0" placeholder="Ej: Atacar el dolor de X, urgencia por tiempo limitado, comparar con competencia, descuento 40%..."></textarea>
+          <textarea class="tone-area" id="genSalesFocus" style="min-height:80px;font-size:13px;margin-top:0;border-color:var(--accent)22" placeholder="Ej: Atacar el dolor de perder tiempo. Mostrar antes/después. Urgencia: tiempo limitado. Descuento 40%. Comparar con competencia sin nombrarla."></textarea>
+          <input class="mini-input" id="refIn" style="margin-top:8px" placeholder="Referencias por nombre: Ej: Nike 2023, Apple minimalist">
+          <div id="memRefs" style="margin-top:6px"></div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">
-          <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Referencias para este creativo</div>
-          <div id="genRefSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:44px;align-content:flex-start"></div>
-          <div style="font-size:10px;color:var(--muted2);margin-top:6px">Click para activar/desactivar referencias de tu memoria de marca</div>
+          <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Referencias visuales para este creativo</div>
+          <div class="ref-gallery" id="refGallery" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr));margin-bottom:8px"></div>
+          <div style="display:flex;gap:6px">
+            <div class="upload-zone" id="refImgZone" style="flex:1;padding:9px">
+              🖼️ Subir imagen / carrusel
+              <div style="font-size:10px;margin-top:1px;opacity:.6">PNG, JPG, WEBP</div>
+            </div>
+            <div class="upload-zone" id="refVidZone" style="flex:1;padding:9px">
+              🎬 Subir video ref
+              <div style="font-size:10px;margin-top:1px;opacity:.6">MP4, MOV</div>
+            </div>
+          </div>
+          <input type="file" id="refFileInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
+          <input type="file" id="refVideoInput" accept=".mp4,.mov,.webm" multiple style="display:none">
+          <div style="margin-top:10px">
+            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Activar referencias de memoria</div>
+            <div id="genRefSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;align-content:flex-start"></div>
+          </div>
         </div>
       </div>
 
@@ -637,9 +624,8 @@ function bindAll() {
   document.getElementById('colorIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('colors', 'colorIn'); };
   document.getElementById('prodIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('products', 'prodIn'); };
   document.getElementById('avIn').onkeydown = function(e) { if (e.key === 'Enter') addAvatar(); };
-  document.getElementById('refIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('refs', 'refIn'); };
+  document.getElementById('refIn') && (document.getElementById('refIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('refs', 'refIn'); });
   document.getElementById('toneIn').oninput = function() { if (active) { active.memory.tone = this.value; save(); } };
-  document.getElementById('salesFocusIn').oninput = function() { if (active) { active.memory.salesFocus = this.value; save(); } };
   document.getElementById('brandUploadZone').onclick = function() { document.getElementById('fileInput').click(); };
   document.getElementById('fileInput').onchange = function() { handleBrandUpload(this.files); };
   setupDrop('brandUploadZone', handleBrandUpload);
@@ -766,7 +752,7 @@ function showTab(name) {
   });
   if (name === 'overview') renderOverview();
   if (name === 'creativos') renderAllCreatives();
-  if (name === 'generar') { updateAvatarSelector(); renderGenRefSelector(); if(active&&active.memory&&active.memory.salesFocus){var sf=document.getElementById('genSalesFocus');if(sf&&!sf.value)sf.value=active.memory.salesFocus||'';} }
+  if (name === 'generar') { updateAvatarSelector(); renderGenRefSelector(); renderRefGallery(); renderTags('memRefs', active&&active.memory?active.memory.refs||[]:[], 'refs'); }
 }
 
 function createProject() {
@@ -807,13 +793,11 @@ function loadMemoryUI() {
   renderTags('memProducts', m.products || [], 'products');
   renderTags('memRefs', m.refs || [], 'refs');
   document.getElementById('toneIn').value = m.tone || '';
-  document.getElementById('salesFocusIn').value = m.salesFocus || '';
   renderAvatars();
   renderRefGallery();
   renderVoiceClones();
   renderAssetGallery('logo', 'logoGallery');
   renderAssetGallery('product', 'productPhotoGallery');
-  renderGenRefSelector();
 }
 
 function renderTags(cid, arr, key) {
