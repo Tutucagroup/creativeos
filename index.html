@@ -192,6 +192,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
 .voice-clone-name{flex:1;font-weight:500;color:var(--text)}
 .voice-clone-status{font-size:10px;color:var(--muted)}
 .hidden{display:none!important}
+.gen-ref-chip{position:relative;width:48px;height:48px;border-radius:6px;border:2px solid var(--border2);cursor:pointer;transition:all .15s;overflow:hidden;flex-shrink:0}
+.gen-ref-chip:hover{border-color:var(--border3)}
+.gen-ref-chip.sel{border-color:var(--accent)}
+.gen-ref-chip:not(.sel){opacity:.45}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
@@ -438,23 +442,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
           </div>
         </div>
       </div>
-      <div id="refContextPanel" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px">Contexto activo para esta generación</div>
-          <button onclick="document.getElementById('refContextPanel').classList.toggle('hidden')" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1">×</button>
+
+      <!-- ENFOQUE DE VENTA + REFERENCIAS POR CREATIVO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">
+          <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Enfoque de venta</div>
+          <textarea class="tone-area" id="genSalesFocus" style="min-height:72px;font-size:12px;margin-top:0" placeholder="Ej: Atacar el dolor de X, urgencia por tiempo limitado, comparar con competencia, descuento 40%..."></textarea>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Enfoque de venta</div>
-            <textarea class="tone-area" id="genSalesFocus" style="min-height:60px;font-size:12px" placeholder="Enfoque específico para este creativo..."></textarea>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Referencias activas</div>
-            <div id="genRefMiniGallery" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-            <div style="font-size:11px;color:var(--muted2);margin-top:4px">Las referencias de memoria de marca se usan automáticamente</div>
-          </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">
+          <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Referencias para este creativo</div>
+          <div id="genRefSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:44px;align-content:flex-start"></div>
+          <div style="font-size:10px;color:var(--muted2);margin-top:6px">Click para activar/desactivar referencias de tu memoria de marca</div>
         </div>
       </div>
+
       <div id="outputArea"></div>
     </div>
     <div id="tab-creativos" class="content hidden">
@@ -525,6 +526,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
   <div id="mcContent"></div>
   <div style="display:flex;gap:8px;margin-top:16px">
     <button class="btn" style="flex:1" id="btnCopyCreative">📋 Copiar</button>
+    <button class="btn" style="color:var(--purple);border-color:var(--purple)44" id="btnVariation">↻ Variación</button>
     <button class="btn acc" style="flex:1" id="btnCloseCreative2">Listo</button>
   </div>
 </div>
@@ -630,6 +632,7 @@ function bindAll() {
   document.getElementById('btnSaveAPI').onclick = saveKeys;
   document.getElementById('btnCloseCreative').onclick = function() { closeModal('modalCreative'); };
   document.getElementById('btnCloseCreative2').onclick = function() { closeModal('modalCreative'); };
+  document.getElementById('btnVariation').onclick = function() { closeModal('modalCreative'); generarVariacion(viewCreativeId); };
   document.getElementById('btnCopyCreative').onclick = copyCreative;
   document.getElementById('colorIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('colors', 'colorIn'); };
   document.getElementById('prodIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('products', 'prodIn'); };
@@ -763,7 +766,7 @@ function showTab(name) {
   });
   if (name === 'overview') renderOverview();
   if (name === 'creativos') renderAllCreatives();
-  if (name === 'generar') { updateAvatarSelector(); renderGenRefPanel(); }
+  if (name === 'generar') { updateAvatarSelector(); renderGenRefSelector(); if(active&&active.memory&&active.memory.salesFocus){var sf=document.getElementById('genSalesFocus');if(sf&&!sf.value)sf.value=active.memory.salesFocus||'';} }
 }
 
 function createProject() {
@@ -810,7 +813,7 @@ function loadMemoryUI() {
   renderVoiceClones();
   renderAssetGallery('logo', 'logoGallery');
   renderAssetGallery('product', 'productPhotoGallery');
-  renderGenRefPanel();
+  renderGenRefSelector();
 }
 
 function renderTags(cid, arr, key) {
@@ -1180,7 +1183,9 @@ async function genImagen(prompt, keys) {
       imgUrl = id.data && id.data[0] ? id.data[0].url : null;
     } catch(e) {}
   }
-  var cr = { id:Date.now().toString(), type:'imagen', title:prompt.substring(0,55), format:selFmtVal, concepto:concepto, headline:headline, subhead:subhead, cta:cta, ideogramPrompt:ideoPr, imgUrl:imgUrl, brief:raw, createdAt:Date.now() };
+  var _sf = (typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
+  var _ar = (typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
+  var cr = { id:Date.now().toString(), type:'imagen', title:prompt.substring(0,55), format:selFmtVal, concepto:concepto, headline:headline, subhead:subhead, cta:cta, ideogramPrompt:ideoPr, imgUrl:imgUrl, brief:raw, salesFocus:_sf, activeRefs:_ar, originalPrompt:prompt, createdAt:Date.now() };
   active.creatives.unshift(cr); save();
   oa.innerHTML = '<div class="output-card"><div class="output-header"><span class="output-icon">🖼️</span><div><div class="output-title">Imagen · ' + selFmtVal + '</div><div class="output-meta">' + active.name + '</div></div><div class="output-actions"><button class="btn" onclick="editInCanva()">✏️ Canva</button>' + (imgUrl ? '<a href="' + imgUrl + '" download class="btn">⬇ Descargar</a>' : '') + '</div></div><div style="padding:16px">' +
     (imgUrl ? '<img src="' + imgUrl + '" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:360px;object-fit:contain">' : '<div id="noimg_' + cr.id + '" style="padding:20px;background:var(--bg3);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:13px;color:var(--muted);margin-bottom:12px">Key de Ideogram no activa al generar</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn" onclick="openAPIConfig()">⚙️ Verificar keys</button><button id="retry_' + cr.id + '" class="btn acc" onclick="retryIdeogram(\'' + cr.id + '\')">🔄 Generar imagen</button></div></div>') +
@@ -1208,7 +1213,9 @@ async function genCarrusel(prompt, keys) {
       } catch(e) { console.warn('Slide image error:', e.message); }
     }));
   }
-  var cr = { id:Date.now().toString(), type:'carrusel', title:prompt.substring(0,55), format:selFmtVal, slides:slides, narrativa:narrativa, createdAt:Date.now() };
+  var _sf2=(typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
+  var _ar2=(typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
+  var cr = { id:Date.now().toString(), type:'carrusel', title:prompt.substring(0,55), format:selFmtVal, slides:slides, narrativa:narrativa, salesFocus:_sf2, activeRefs:_ar2, originalPrompt:prompt, createdAt:Date.now() };
   active.creatives.unshift(cr); save();
   var slidesHtml = slides.map(function(sl, i) {
     var bg = 'background:' + sl.color + ';' + (sl.imgUrl ? 'background-image:url(' + sl.imgUrl + ');background-size:cover;background-position:center;' : '');
@@ -1392,7 +1399,9 @@ async function genVideo(prompt, keys) {
     gc = gcMatch ? gcMatch[1].trim() : '';
     for (var k = 1; k <= nSc; k++) scenes.push({ num:k, tiempo:gf(raw,'ESCENA'+k+'_TIEMPO'), guion:gf(raw,'ESCENA'+k+'_GUION'), visual:gf(raw,'ESCENA'+k+'_VISUAL'), onscreen:gf(raw,'ESCENA'+k+'_ONSCREEN') });
   }
-  var cr = { id:Date.now().toString(), type:'video', title:titulo||prompt.substring(0,55), format:dur+'s', avatar:selAv, dur:dur, titulo:titulo, objetivo:objetivo, musica:musica, guionCompleto:gc, scenes:scenes, voiceConfig:voiceConfig, scriptMode:scriptMode, createdAt:Date.now() };
+  var _sf3=(typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
+  var _ar3=(typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
+  var cr = { id:Date.now().toString(), type:'video', title:titulo||prompt.substring(0,55), format:dur+'s', avatar:selAv, dur:dur, titulo:titulo, objetivo:objetivo, musica:musica, guionCompleto:gc, scenes:scenes, voiceConfig:voiceConfig, scriptMode:scriptMode, salesFocus:_sf3, activeRefs:_ar3, originalPrompt:prompt, createdAt:Date.now() };
   active.creatives.unshift(cr); save();
   var cid = cr.id;
   var scHtml = scenes.map(function(s) { return '<li class="scene"><div class="scene-num">' + s.num + '</div><div><div class="scene-time">' + s.tiempo + '</div><div class="scene-text">' + s.guion + '</div><div class="scene-dir">Visual: ' + s.visual + (s.onscreen ? ' · Pantalla: ' + s.onscreen : '') + '</div></div></li>'; }).join('');
@@ -1454,7 +1463,9 @@ async function genCopy(prompt, keys) {
   var sys = 'Experto en copywriting y Meta Ads para "' + active.name + '".\n' + brandContext() + '\nRespondé en español rioplatense.';
   var raw = await claudeCall(sys, '3 variaciones de copy Meta Ads.\nSOLICITUD: ' + prompt + '\n\nFormato EXACTO:\nVAR1_HEADLINE: [máx 40 chars]\nVAR1_TEXTO: [texto principal]\nVAR1_CTA: [botón]\nVAR1_AUDIENCIA: [audiencia]\n\nVAR2_HEADLINE:\nVAR2_TEXTO:\nVAR2_CTA:\nVAR2_AUDIENCIA:\n\nVAR3_HEADLINE:\nVAR3_TEXTO:\nVAR3_CTA:\nVAR3_AUDIENCIA:', keys, 900);
   var vars = [1,2,3].map(function(i) { return { headline:gf(raw,'VAR'+i+'_HEADLINE'), texto:gf(raw,'VAR'+i+'_TEXTO'), cta:gf(raw,'VAR'+i+'_CTA'), audiencia:gf(raw,'VAR'+i+'_AUDIENCIA') }; });
-  var cr = { id:Date.now().toString(), type:'copy', title:prompt.substring(0,55), variants:vars, raw:raw, createdAt:Date.now() };
+  var _sf4=(typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
+  var _ar4=(typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
+  var cr = { id:Date.now().toString(), type:'copy', title:prompt.substring(0,55), variants:vars, raw:raw, salesFocus:_sf4, activeRefs:_ar4, originalPrompt:prompt, createdAt:Date.now() };
   active.creatives.unshift(cr); save();
   var rawEsc = raw.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   oa.innerHTML = '<div class="output-card"><div class="output-header"><span class="output-icon">✍️</span><div><div class="output-title">Copy Meta Ads · 3 variaciones</div><div class="output-meta">' + active.name + '</div></div><div class="output-actions"><button class="btn" onclick="navigator.clipboard.writeText(\'' + rawEsc + '\')">📋 Copiar todo</button></div></div><div style="padding:14px">' + vars.map(function(v,i) { return '<div class="copy-variant"><div class="copy-var-num">Variación ' + (i+1) + ' · ' + v.audiencia + '</div><div class="copy-headline">' + v.headline + '</div><div class="copy-body">' + v.texto + '</div><div class="copy-cta">→ ' + v.cta + '</div></div>'; }).join('') + '</div></div>';
@@ -1479,7 +1490,7 @@ function crCard(c) {
     '<div class="cr-del-btn" data-cid="' + c.id + '" title="Eliminar" style="position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:#000a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;opacity:0;transition:opacity .15s">×</div>' +
     '</div>' +
     '<div class="cr-body"><div class="cr-title">' + (c.title||'Sin título') + '</div><div class="cr-meta"><div class="cr-status"></div>' + date + (c.format ? ' · ' + c.format : '') + '</div>' +
-    '<div class="cr-acts"><button class="cr-act view-btn" data-cid="' + c.id + '">Ver</button><button class="cr-act copy-btn" data-cid="' + c.id + '">Copiar</button><button class="cr-act del-btn" data-cid="' + c.id + '" style="color:var(--danger);border-color:var(--danger)22">Eliminar</button></div></div></div>';
+    '<div class="cr-acts"><button class="cr-act view-btn" data-cid="' + c.id + '">Ver</button><button class="cr-act copy-btn" data-cid="' + c.id + '">Copiar</button><button class="cr-act var-btn" data-cid="' + c.id + '" style="color:var(--purple);border-color:var(--purple)33" title="Generar variación">↻ Variación</button><button class="cr-act del-btn" data-cid="' + c.id + '" style="color:var(--danger);border-color:var(--danger)22">✕</button></div></div></div>';
 }
 
 function bindCards(el) {
@@ -1487,6 +1498,7 @@ function bindCards(el) {
   el.querySelectorAll('.view-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); openCreative(this.dataset.cid); }; });
   el.querySelectorAll('.copy-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); copyCrContent(this.dataset.cid); }; });
   el.querySelectorAll('.del-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); deleteCreative(this.dataset.cid); }; });
+  el.querySelectorAll('.var-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); generarVariacion(this.dataset.cid); }; });
   el.querySelectorAll('.cr-del-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); deleteCreative(this.dataset.cid); }; });
   el.querySelectorAll('.cr-card').forEach(function(c) {
     c.addEventListener('mouseenter', function() { var d = this.querySelector('.cr-del-btn'); if(d) d.style.opacity='1'; });
@@ -1540,7 +1552,9 @@ function openCreative(id) {
   document.getElementById('mcMeta').textContent = (TLABEL[c.type]||c.type) + ' · ' + (c.format||'') + ' · ' + new Date(c.createdAt).toLocaleDateString('es-AR');
   var mc = document.getElementById('mcContent');
   if (c.type === 'imagen') {
-    mc.innerHTML = (c.imgUrl ? '<img src="' + c.imgUrl + '" style="width:100%;border-radius:8px;margin-bottom:12px" alt="">' : '') + '<div class="prompt-box" style="font-size:13px;font-family:var(--fb);white-space:pre-wrap">' + (c.brief||'') + '</div>';
+    var refsHtml = renderSavedRefs(c.activeRefs||[]);
+    var sfHtml = c.salesFocus ? '<div style="margin-top:10px"><div class="brief-sec-title" style="margin-bottom:3px">Enfoque de venta</div><div style="font-size:12px;color:var(--muted);line-height:1.5">' + c.salesFocus + '</div></div>' : '';
+    mc.innerHTML = (c.imgUrl ? '<img src="' + c.imgUrl + '" style="width:100%;border-radius:8px;margin-bottom:12px" alt="">' : '') + '<div class="prompt-box" style="font-size:13px;font-family:var(--fb);white-space:pre-wrap">' + (c.brief||'') + '</div>' + sfHtml + refsHtml;
   } else if (c.type === 'carrusel') {
     mc.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">' + (c.slides||[]).map(function(s,i){ return '<div style="background:' + s.color + ';border-radius:8px;padding:10px;min-height:80px;position:relative;overflow:hidden">' + (s.imgUrl ? '<img src="' + s.imgUrl + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4">' : '') + '<div style="position:relative;font-family:var(--fh);font-size:11px;font-weight:700;margin-bottom:3px">' + s.headline + '</div><div style="position:relative;font-size:9px;opacity:.8">' + s.body + '</div></div>'; }).join('') + '</div><div style="font-size:12px;color:var(--muted)">' + (c.narrativa||'') + '</div>';
   } else if (c.type === 'video') {
@@ -1625,7 +1639,7 @@ function deleteAsset(id, assetType) {
   active.memory.assets = (active.memory.assets || []).filter(function(a) { return a.id !== id; });
   save();
   renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
-  renderGenRefPanel();
+  renderGenRefSelector();
 }
 
 // ── GEN REF PANEL (mini gallery in Generar tab) ───────────────────
@@ -1651,6 +1665,105 @@ function renderGenRefPanel() {
   }).join('') + (allRefs.length > 8 ? '<div style="font-size:11px;color:var(--muted);align-self:center">+' + (allRefs.length - 8) + ' más</div>' : '');
 }
 
+
+// ── GEN REF SELECTOR ──────────────────────────────────────────────
+var _selectedRefIds = {};  // { id: true/false }
+
+function renderGenRefSelector() {
+  if (!active) return;
+  var el = document.getElementById('genRefSelector');
+  if (!el) return;
+  var m = active.memory;
+  var all = [];
+  (m.assets || []).forEach(function(a) {
+    if (a.dataUrl) all.push({ id: a.id, name: a.name, url: a.dataUrl, label: a.assetType === 'logo' ? '🎨' : '📦', analysis: a.analysis });
+  });
+  (m.visualRefs || []).forEach(function(r) {
+    if (r.dataUrl) all.push({ id: r.id, name: r.name, url: r.dataUrl, label: r.refType === 'video' ? '🎬' : '🖼️', analysis: r.analysis });
+  });
+  if (!all.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted2)">Sin referencias en memoria — subí imágenes en Memoria de marca</div>';
+    return;
+  }
+  // init selection: all active by default
+  all.forEach(function(r) { if (_selectedRefIds[r.id] === undefined) _selectedRefIds[r.id] = true; });
+  el.innerHTML = all.map(function(r) {
+    var sel = _selectedRefIds[r.id] !== false;
+    return '<div class="gen-ref-chip' + (sel ? ' sel' : '') + '" data-refid="' + r.id + '" title="' + r.name + '">' +
+      '<img src="' + r.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block">' +
+      '<div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:9px;text-align:center;padding:1px;border-radius:0 0 4px 4px">' + r.label + '</div>' +
+      (sel ? '<div style="position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:8px;color:#000;font-weight:700">✓</div>' : '') +
+      '</div>';
+  }).join('');
+  el.querySelectorAll('.gen-ref-chip').forEach(function(chip) {
+    chip.onclick = function() {
+      var id = this.dataset.refid;
+      _selectedRefIds[id] = !(_selectedRefIds[id] !== false);
+      renderGenRefSelector();
+    };
+  });
+}
+
+function getActiveRefs() {
+  if (!active) return [];
+  var m = active.memory;
+  var all = [];
+  (m.assets || []).forEach(function(a) { if (a.dataUrl && a.analysis) all.push(a); });
+  (m.visualRefs || []).forEach(function(r) { if (r.dataUrl && r.analysis) all.push(r); });
+  return all.filter(function(r) { return _selectedRefIds[r.id] !== false; });
+}
+
+function getGenSalesFocus() {
+  var el = document.getElementById('genSalesFocus');
+  return el ? el.value.trim() : '';
+}
+
+
+// ── GENERAR VARIACIÓN ─────────────────────────────────────────────
+async function generarVariacion(cid) {
+  var c = (active&&active.creatives||[]).find(function(x){return x.id===cid;});
+  if (!c) return;
+  // Restore the context from the original creative
+  var sfEl = document.getElementById('genSalesFocus');
+  if (sfEl && c.salesFocus) sfEl.value = c.salesFocus;
+  // Restore ref selection from saved refs
+  if (c.activeRefs && c.activeRefs.length) {
+    Object.keys(_selectedRefIds).forEach(function(k) { _selectedRefIds[k] = false; });
+    c.activeRefs.forEach(function(r) { _selectedRefIds[r.id] = true; });
+    renderGenRefSelector();
+  }
+  // Set prompt in main input and switch to generar tab
+  var mp = document.getElementById('mainPrompt');
+  if (mp) mp.value = (c.originalPrompt || c.title || '') + ' (variación)';
+  // Set matching type/format
+  document.querySelectorAll('.type-btn').forEach(function(b) { b.classList.toggle('sel', b.dataset.type === c.type); });
+  selTypeVal = c.type;
+  document.getElementById('fmtImagen') && document.getElementById('fmtImagen').classList.toggle('hidden', c.type !== 'imagen');
+  document.getElementById('fmtCarrusel') && document.getElementById('fmtCarrusel').classList.toggle('hidden', c.type !== 'carrusel');
+  document.getElementById('fmtVideo') && document.getElementById('fmtVideo').classList.toggle('hidden', c.type !== 'video');
+  // Set format
+  if (c.format && c.format.includes('x')) {
+    selFmtVal = c.format;
+    document.querySelectorAll('.fmt-btn').forEach(function(b) { b.classList.toggle('sel', b.dataset.fmt === c.format); });
+  }
+  showTab('generar');
+  showToast('Contexto cargado — editá el prompt y generá la variación');
+}
+
+// ── SHOW SAVED REFS on creative card detail ───────────────────────
+function renderSavedRefs(refs) {
+  if (!refs || !refs.length) return '';
+  return '<div style="margin-top:12px"><div class="brief-sec-title" style="margin-bottom:6px">Referencias usadas</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:5px">' +
+    refs.map(function(r) {
+      return '<div style="position:relative;width:44px;height:44px;border-radius:6px;overflow:hidden;border:1px solid var(--border2)" title="' + r.name + '">' +
+        '<img src="' + r.url + '" style="width:100%;height:100%;object-fit:cover">' +
+        '<div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:9px;text-align:center">' + r.label + '</div></div>';
+    }).join('') + '</div>' +
+    (refs[0] && refs[0].analysis ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Analizadas por Claude · click en un creativo para ver el detalle completo</div>' : '') +
+    '</div>';
+}
+
 function showToast(msg, isError) {
   var t = document.createElement('div');
   t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;background:' + (isError ? 'var(--danger)' : '#1a2a0a') + ';color:' + (isError ? '#fff' : 'var(--accent)') + ';border:1px solid ' + (isError ? 'var(--danger)' : 'var(--accent)') + ';max-width:360px;line-height:1.4;animation:fadeUp .2s ease';
@@ -1662,10 +1775,13 @@ function showToast(msg, isError) {
 init();
 </script>
 </body>
-</html>  var logos = (m.assets || []).filter(function(a) { return a.assetType === 'logo' && a.analysis; });
-  if (logos.length) parts.push('LOGO/ISOTIPO: ' + logos.map(function(a) { return a.analysis; }).join(' | '));
-  var prods = (m.assets || []).filter(function(a) { return a.assetType === 'product' && a.analysis; });
-  if (prods.length) parts.push('FOTOS DE PRODUCTOS (replicar estilo): ' + prods.map(function(a) { return a.analysis; }).join(' | '));
-  var gf = document.getElementById('genSalesFocus');
-  if (gf && gf.value.trim()) parts.push('ENFOQUE ESPECIFICO: ' + gf.value.trim());
+</html>  var activeRefs = (typeof getActiveRefs === 'function') ? getActiveRefs() : [];
+  var logos = activeRefs.filter(function(r) { return r.assetType === 'logo'; });
+  if (logos.length) parts.push('LOGO/ISOTIPO DE LA MARCA: ' + logos.map(function(a) { return a.analysis; }).join(' | '));
+  var prods = activeRefs.filter(function(r) { return r.assetType === 'product'; });
+  if (prods.length) parts.push('FOTOS DE PRODUCTOS (replicar este estilo visual exacto): ' + prods.map(function(a) { return a.analysis; }).join(' | '));
+  var imgRefs = activeRefs.filter(function(r) { return !r.assetType; });
+  if (imgRefs.length) parts.push('REFERENCIAS VISUALES SELECCIONADAS: ' + imgRefs.map(function(r) { return r.name + ': ' + r.analysis; }).join(' | '));
+  var salesFocus = (typeof getGenSalesFocus === 'function') ? getGenSalesFocus() : '';
+  if (salesFocus) parts.push('ENFOQUE DE VENTA PARA ESTE CREATIVO (prioritario): ' + salesFocus);
   
