@@ -1255,7 +1255,7 @@ function renderCarruselOutput(cr, container) {
     '<div class="out-hdr"><span class="out-ico">🎠</span><div><div class="out-title">Carrusel 4 slides · '+cr.format+'</div><div class="out-meta">'+active.name+'</div></div>'+
     '<div class="out-acts"><button class="btn" onclick="openSlide(\''+cr.id+'\',0)">🔍 Editar slides</button><button class="btn" id="dlAllBtn_'+cr.id+'">⬇ Descargar todos</button></div></div>'+
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:12px">'+sHtml+'</div>'+
-    '<div style="padding:9px 12px;border-top:1px solid var(--b);font-size:11px;color:var(--mut)">'+narrativa+'</div>'+
+    '<div style="padding:9px 12px;border-top:1px solid var(--b);font-size:11px;color:var(--mut)">'+(cr.narrativa||'')+'</div>'+
     '</div>';
   var dlAllBtn=_$('dlAllBtn_'+cr.id);
   if(dlAllBtn) dlAllBtn.onclick=function(){dlAllSlides(cr.id);};
