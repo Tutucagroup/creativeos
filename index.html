@@ -4,323 +4,327 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CreativeOS</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#09090e;--bg2:#0f0f16;--bg3:#16161f;--card:#111118;
-  --border:#ffffff0e;--border2:#ffffff18;--border3:#ffffff28;
-  --accent:#c8ff00;--accent-dim:#c8ff0018;
-  --purple:#9b6eff;--purple-dim:#9b6eff1a;
-  --text:#eeeef5;--muted:#7070a0;--muted2:#4a4a6a;
-  --danger:#ff5555;--success:#4ade80;--warning:#fbbf24;
-  --r:12px;--r-lg:16px;
+  --b:#ffffff0e;--b2:#ffffff18;--b3:#ffffff28;
+  --acc:#c8ff00;--acc-dim:#c8ff0018;
+  --pur:#9b6eff;--pur-dim:#9b6eff1a;
+  --txt:#eeeef5;--mut:#7070a0;--mut2:#4a4a6a;
+  --dan:#ff5555;--suc:#4ade80;--war:#fbbf24;
+  --r:12px;--rl:16px;
   --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
 }
-body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px;min-height:100vh;overflow-x:hidden}
+body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;min-height:100vh;overflow-x:hidden}
 ::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:var(--border3);border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:4px}
+/* LAYOUT */
 .shell{display:flex;height:100vh;overflow:hidden}
-.sidebar{width:228px;min-width:228px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb{width:228px;min-width:228px;background:var(--bg2);border-right:1px solid var(--b);display:flex;flex-direction:column}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+/* SIDEBAR */
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--b)}
 .logo-mark{font-family:var(--fh);font-weight:800;font-size:16px;letter-spacing:-.5px}
-.logo-mark em{color:var(--accent);font-style:normal}
-.logo-sub{font-size:10px;color:var(--muted);margin-top:1px}
-.sb-sec{padding:14px 14px 4px;font-size:10px;font-weight:600;letter-spacing:1.4px;color:var(--muted2);text-transform:uppercase}
+.logo-mark em{color:var(--acc);font-style:normal}
+.logo-sub{font-size:10px;color:var(--mut);margin-top:1px}
+.sb-sec{padding:14px 14px 4px;font-size:10px;font-weight:600;letter-spacing:1.4px;color:var(--mut2);text-transform:uppercase}
 .sb-projs{flex:1;overflow-y:auto;padding:4px 8px}
-.proj-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .12s;margin-bottom:1px;border:1px solid transparent;min-width:0}
-.proj-item:hover{background:var(--bg3)}
-.proj-item.active{background:var(--bg3);border-color:var(--border2)}
-.proj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.proj-info{min-width:0;flex:1}
-.proj-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.proj-meta{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-bottom{padding:10px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
-.btn-new-proj{width:100%;padding:10px;background:var(--accent);color:#000;border:none;border-radius:9px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer}
-.btn-new-proj:hover{opacity:.88}
-.api-status{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;color:var(--muted);background:var(--bg3);border-radius:7px;cursor:pointer;border:1px solid var(--border)}
+.pi{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .12s;margin-bottom:1px;border:1px solid transparent;min-width:0}
+.pi:hover{background:var(--bg3)}
+.pi.active{background:var(--bg3);border-color:var(--b2)}
+.pi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pi-info{min-width:0;flex:1}
+.pi-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-meta{font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-bot{padding:10px 8px;border-top:1px solid var(--b);display:flex;flex-direction:column;gap:6px}
+.btn-np{width:100%;padding:10px;background:var(--acc);color:#000;border:none;border-radius:9px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer}
+.btn-np:hover{opacity:.88}
+.api-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;color:var(--mut);background:var(--bg3);border-radius:7px;cursor:pointer;border:1px solid var(--b)}
 .api-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.topbar{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+/* TOPBAR */
+.tb{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid var(--b);background:var(--bg);flex-shrink:0}
 .tb-name{font-family:var(--fh);font-weight:700;font-size:17px;letter-spacing:-.3px}
-.tb-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--purple-dim);color:var(--purple);border:1px solid #9b6eff22}
-.tb-right{margin-left:auto;display:flex;gap:8px}
-.btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);transition:all .15s;font-family:var(--fb);white-space:nowrap}
-.btn:hover{border-color:var(--border3);background:var(--bg3)}
-.btn.acc{background:var(--accent);color:#000;border-color:var(--accent)}
+.tb-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--pur-dim);color:var(--pur);border:1px solid #9b6eff22}
+.tb-r{margin-left:auto;display:flex;gap:8px}
+.btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--b2);background:transparent;color:var(--txt);transition:all .15s;font-family:var(--fb);white-space:nowrap}
+.btn:hover{border-color:var(--b3);background:var(--bg3)}
+.btn.acc{background:var(--acc);color:#000;border-color:var(--acc)}
 .btn.acc:hover{opacity:.88}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.tabs{display:flex;padding:0 22px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
-.tab{padding:11px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+/* TABS */
+.tabs{display:flex;padding:0 22px;border-bottom:1px solid var(--b);background:var(--bg);flex-shrink:0}
+.tab{padding:11px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--mut);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--txt)}
+.tab.active{color:var(--acc);border-bottom-color:var(--acc)}
 .content{flex:1;overflow-y:auto;padding:22px}
+/* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:22px}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
-.stat-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px}
+.stat{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px}
+.stat-lbl{font-size:10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px}
 .stat-val{font-family:var(--fh);font-size:24px;font-weight:700}
-.stat-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.stat-sub{font-size:11px;color:var(--mut);margin-top:2px}
+/* SECTION TITLE */
 .sec-title{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.sec-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.sec-dot{width:5px;height:5px;border-radius:50%;background:var(--acc);flex-shrink:0}
+/* MEMORY */
 .mem-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.mem-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px}
-.mem-card.full{grid-column:1/-1}
-.mem-card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);font-size:11px;color:var(--text);margin:2px}
-.tag-rm{cursor:pointer;color:var(--muted);font-size:13px;line-height:1}
-.tag-rm:hover{color:var(--danger)}
-.mini-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 11px;color:var(--text);font-family:var(--fb);font-size:12px;outline:none;transition:border-color .15s;margin-top:8px}
-.mini-input:focus{border-color:var(--accent)}
-.tone-area{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--fb);font-size:13px;outline:none;resize:vertical;min-height:80px;transition:border-color .15s;margin-top:6px;line-height:1.6}
-.tone-area:focus{border-color:var(--accent)}
-.upload-zone{border:1.5px dashed var(--border2);border-radius:9px;padding:13px;text-align:center;cursor:pointer;transition:all .15s;color:var(--muted);font-size:12px}
-.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.mc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:16px}
+.mc.full{grid-column:1/-1}
+.mc-title{font-size:10px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.mc-note{font-size:10px;color:var(--mut2);font-weight:400;text-transform:none;letter-spacing:0}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;background:var(--bg3);border:1px solid var(--b2);font-size:11px;color:var(--txt);margin:2px}
+.tag-rm{cursor:pointer;color:var(--mut);font-size:13px;line-height:1}
+.tag-rm:hover{color:var(--dan)}
+.mini-in{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:7px 11px;color:var(--txt);font-family:var(--fb);font-size:12px;outline:none;transition:border-color .15s;margin-top:8px}
+.mini-in:focus{border-color:var(--acc)}
+.ta{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--txt);font-family:var(--fb);font-size:13px;outline:none;resize:vertical;min-height:80px;transition:border-color .15s;margin-top:6px;line-height:1.6}
+.ta:focus{border-color:var(--acc)}
+.uz{border:1.5px dashed var(--b2);border-radius:9px;padding:13px;text-align:center;cursor:pointer;transition:all .15s;color:var(--mut);font-size:12px}
+.uz:hover,.uz.drag{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
 .av-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.av-chip{width:44px;height:44px;border-radius:50%;background:var(--bg3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:border-color .15s}
-.av-chip:hover{border-color:var(--accent)}
-.av-add{border-style:dashed}
-.ref-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px}
-.ref-card{background:var(--bg3);border:1px solid var(--border);border-radius:9px;overflow:hidden;position:relative;aspect-ratio:1;cursor:pointer;transition:border-color .15s}
-.ref-card:hover{border-color:var(--border3)}
+.av-chip{width:44px;height:44px;border-radius:50%;background:var(--bg3);border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mut);cursor:pointer;transition:border-color .15s}
+.av-chip:hover,.av-chip.av-add{border-style:dashed}
+.av-chip:hover{border-color:var(--acc)}
+/* REF GALLERY */
+.ref-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:8px}
+.ref-card{background:var(--bg3);border:1px solid var(--b);border-radius:9px;overflow:hidden;position:relative;aspect-ratio:1;cursor:pointer;transition:border-color .15s}
+.ref-card:hover{border-color:var(--b3)}
 .ref-card img,.ref-card video{width:100%;height:100%;object-fit:cover;display:block}
-.ref-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 50%,transparent);opacity:0;transition:opacity .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:8px}
-.ref-card:hover .ref-overlay{opacity:1}
+.ref-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 50%,transparent);opacity:0;transition:opacity .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:7px}
+.ref-card:hover .ref-ov{opacity:1}
 .ref-name{font-size:10px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ref-snippet{font-size:9px;color:rgba(255,255,255,.65);margin-top:2px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.ref-del{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:#000a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;cursor:pointer;opacity:0;transition:opacity .15s;z-index:2}
+.ref-snip{font-size:9px;color:rgba(255,255,255,.65);margin-top:2px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ref-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:#000a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;opacity:0;transition:opacity .15s;z-index:2}
 .ref-card:hover .ref-del{opacity:1}
-.ref-badge{position:absolute;top:5px;left:5px;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;background:#000a;color:var(--accent)}
-.ref-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:10px;padding:8px;text-align:center}
-.ref-analyzing{position:absolute;inset:0;background:#0009;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--muted);font-size:10px}
-.gen-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:20px}
+.ref-badge{position:absolute;top:4px;left:4px;padding:2px 5px;border-radius:3px;font-size:9px;font-weight:700;background:#000a;color:var(--acc)}
+.ref-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--mut);font-size:10px;padding:8px;text-align:center}
+.ref-analyzing{position:absolute;inset:0;background:#0009;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--mut);font-size:10px}
+/* REF SELECTOR (generar) */
+.ref-sel-chip{position:relative;width:46px;height:46px;border-radius:7px;border:2px solid var(--b2);cursor:pointer;transition:all .15s;overflow:hidden;flex-shrink:0}
+.ref-sel-chip:hover{border-color:var(--b3)}
+.ref-sel-chip.sel{border-color:var(--acc)}
+.ref-sel-chip:not(.sel){opacity:.4}
+.ref-sel-chip img{width:100%;height:100%;object-fit:cover;display:block}
+.ref-sel-chip .sel-check{position:absolute;top:2px;right:2px;width:13px;height:13px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:8px;color:#000;font-weight:700}
+/* GENERATE */
+.gen-panel{background:var(--card);border:1px solid var(--b);border-radius:var(--rl);padding:20px;margin-bottom:14px}
 .type-row{display:flex;gap:8px;margin-bottom:16px}
-.type-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.type-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid var(--b2);background:var(--bg3);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px}
 .type-btn .ico{font-size:20px}
-.type-btn:hover{border-color:var(--border3);color:var(--text)}
-.type-btn.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.type-btn:hover{border-color:var(--b3);color:var(--txt)}
+.type-btn.sel{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
 .fmt-sec{margin-bottom:14px}
-.fmt-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px}
+.fmt-lbl{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px}
 .fmt-row{display:flex;flex-wrap:wrap;gap:6px}
-.fmt-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
-.fmt-btn:hover{border-color:var(--border3);color:var(--text)}
-.fmt-btn.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.fmt-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--b2);background:var(--bg3);color:var(--mut);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.fmt-btn:hover{border-color:var(--b3);color:var(--txt)}
+.fmt-btn.sel{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
 .dur-row{display:flex;gap:6px;margin-bottom:14px}
-.dur-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.dur-btn:hover{border-color:var(--border3);color:var(--text)}
-.dur-btn.sel{border-color:var(--purple);color:var(--purple);background:var(--purple-dim)}
-.prompt-row{display:flex;gap:8px;align-items:flex-end}
-.prompt-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;color:var(--text);font-family:var(--fb);font-size:13px;resize:none;min-height:46px;max-height:120px;outline:none;line-height:1.5;transition:border-color .15s}
-.prompt-input:focus{border-color:var(--accent)}
-.btn-gen{padding:12px 20px;background:var(--accent);color:#000;border:none;border-radius:9px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.dur-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--b2);background:var(--bg3);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.dur-btn:hover{border-color:var(--b3);color:var(--txt)}
+.dur-btn.sel{border-color:var(--pur);color:var(--pur);background:var(--pur-dim)}
+.pr-row{display:flex;gap:8px;align-items:flex-end}
+.pr-in{flex:1;background:var(--bg3);border:1px solid var(--b2);border-radius:9px;padding:10px 14px;color:var(--txt);font-family:var(--fb);font-size:13px;resize:none;min-height:46px;max-height:120px;outline:none;line-height:1.5;transition:border-color .15s}
+.pr-in:focus{border-color:var(--acc)}
+.btn-gen{padding:12px 20px;background:var(--acc);color:#000;border:none;border-radius:9px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .btn-gen:hover{opacity:.87}
 .btn-gen:disabled{opacity:.4;cursor:not-allowed}
-.output-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px}
-.output-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
-.output-icon{font-size:20px}
-.output-title{font-weight:600;font-size:14px}
-.output-meta{font-size:11px;color:var(--muted);margin-top:1px}
-.output-actions{margin-left:auto;display:flex;gap:6px}
-.spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+/* OUTPUT */
+.out-card{background:var(--bg2);border:1px solid var(--b2);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.out-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--b)}
+.out-ico{font-size:20px}
+.out-title{font-weight:600;font-size:14px}
+.out-meta{font-size:11px;color:var(--mut);margin-top:1px}
+.out-acts{margin-left:auto;display:flex;gap:6px}
+.spinner{width:28px;height:28px;border:2px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.brief-stitle{font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.brief-txt{font-size:13px;line-height:1.6}
+.prompt-box{background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px;font-size:12px;font-family:monospace;word-break:break-word;line-height:1.5}
+.script-ed{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:12px;color:var(--txt);font-family:var(--fb);font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:150px;transition:border-color .15s}
+.script-ed:focus{border-color:var(--pur)}
 .scene-list{list-style:none;display:flex;flex-direction:column;gap:7px}
-.scene{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:auto 1fr;gap:10px}
-.scene-num{width:24px;height:24px;border-radius:50%;background:var(--purple-dim);border:1px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--purple);flex-shrink:0}
-.scene-time{font-size:10px;color:var(--muted);margin-bottom:3px}
-.scene-text{font-size:13px;line-height:1.6}
-.scene-dir{font-size:11px;color:var(--purple);margin-top:3px;font-style:italic}
-.script-editor{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;color:var(--text);font-family:var(--fb);font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:150px;transition:border-color .15s}
-.script-editor:focus{border-color:var(--purple)}
-.brief-sec-title{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
-.brief-text{font-size:13px;line-height:1.6}
-.prompt-box{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;font-size:12px;font-family:monospace;word-break:break-word;line-height:1.5}
-.copy-variant{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:8px}
-.copy-var-num{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
-.copy-headline{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:3px}
-.copy-body{font-size:12px;color:var(--muted);line-height:1.5}
-.copy-cta{display:inline-block;margin-top:5px;font-size:11px;font-weight:700;color:var(--accent)}
-.heygen-panel{background:var(--purple-dim);border:1px solid #9b6eff33;border-radius:var(--r);padding:13px;margin-top:12px}
-.heygen-title{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:5px}
-.heygen-note{font-size:12px;color:var(--muted);line-height:1.5}
-.creatives-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.cr-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color .2s}
-.cr-card:hover{border-color:var(--border3)}
+.scene{background:var(--bg3);border:1px solid var(--b);border-radius:9px;padding:11px;display:grid;grid-template-columns:auto 1fr;gap:10px}
+.scene-num{width:24px;height:24px;border-radius:50%;background:var(--pur-dim);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--pur);flex-shrink:0}
+.scene-time{font-size:10px;color:var(--mut);margin-bottom:3px}
+.scene-txt{font-size:13px;line-height:1.6}
+.scene-dir{font-size:11px;color:var(--pur);margin-top:3px;font-style:italic}
+.heygen-panel{background:var(--pur-dim);border:1px solid #9b6eff33;border-radius:var(--r);padding:13px;margin-top:12px}
+/* CREATIVES */
+.cr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cr-card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color .2s}
+.cr-card:hover{border-color:var(--b3)}
 .cr-thumb{height:130px;display:flex;align-items:center;justify-content:center;position:relative;background:var(--bg3);overflow:hidden}
 .cr-thumb img{width:100%;height:100%;object-fit:cover}
 .no-img{font-size:30px;opacity:.5}
-.cr-type-badge{position:absolute;top:7px;right:7px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#0009;backdrop-filter:blur(4px);border:1px solid var(--border2)}
+.cr-tbadge{position:absolute;top:7px;right:7px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#0009;border:1px solid var(--b2)}
 .cr-body{padding:10px 12px}
 .cr-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
-.cr-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
-.cr-status{width:5px;height:5px;border-radius:50%;background:var(--success)}
-.cr-acts{display:flex;gap:5px;margin-top:8px}
-.cr-act{flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
-.cr-act:hover{border-color:var(--accent);color:var(--accent)}
+.cr-meta{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:5px}
+.cr-dot{width:5px;height:5px;border-radius:50%;background:var(--suc)}
+.cr-acts{display:flex;gap:4px;margin-top:8px}
+.cr-act{flex:1;padding:5px 4px;border-radius:6px;border:1px solid var(--b);background:transparent;color:var(--mut);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
+.cr-act:hover{border-color:var(--acc);color:var(--acc)}
+/* FILTER */
 .filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-.filter-lbl{font-size:12px;color:var(--muted);margin-right:2px}
-.filter-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
-.filter-btn:hover{border-color:var(--border3);color:var(--text)}
-.filter-btn.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.filter-lbl{font-size:12px;color:var(--mut);margin-right:2px}
+.filter-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--b);background:transparent;color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
+.filter-btn:hover{border-color:var(--b3);color:var(--txt)}
+.filter-btn.sel{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
+/* MODALS */
 .modal-bg{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:500px;padding:26px;max-height:92vh;overflow-y:auto}
+.modal{background:var(--bg2);border:1px solid var(--b2);border-radius:18px;width:100%;max-width:500px;padding:26px;max-height:92vh;overflow-y:auto}
 .modal-title{font-family:var(--fh);font-size:18px;font-weight:700;margin-bottom:4px}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.modal-sub{font-size:13px;color:var(--mut);margin-bottom:20px}
 .field{margin-bottom:14px}
-.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px}
-.field input,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 13px;color:var(--text);font-family:var(--fb);font-size:13px;outline:none;transition:border-color .15s}
-.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--mut);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px}
+.field input,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:9px 13px;color:var(--txt);font-family:var(--fb);font-size:13px;outline:none;transition:border-color .15s}
+.field input:focus,.field textarea:focus{border-color:var(--acc)}
 .field textarea{resize:vertical;min-height:60px}
-.color-pick{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.cp-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
 .cp{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .12s}
 .cp.sel{border-color:rgba(255,255,255,.5)}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
-.btn-cancel{padding:9px 18px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--fb)}
-.btn-cancel:hover{border-color:var(--border3);color:var(--text)}
-.btn-create{padding:9px 20px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer}
+.mfooter{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--b)}
+.btn-cancel{padding:9px 18px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--fb)}
+.btn-cancel:hover{border-color:var(--b3);color:var(--txt)}
+.btn-create{padding:9px 20px;background:var(--acc);color:#000;border:none;border-radius:8px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer}
 .api-field{margin-bottom:12px}
-.api-field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px}
-.api-field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:monospace;font-size:12px;outline:none;transition:border-color .15s}
-.api-field input:focus{border-color:var(--accent)}
-.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.api-field label{display:block;font-size:11px;font-weight:600;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px}
+.api-field input{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:8px 12px;color:var(--txt);font-family:monospace;font-size:12px;outline:none;transition:border-color .15s}
+.api-field input:focus{border-color:var(--acc)}
+/* UTILS */
+.empty{text-align:center;padding:40px 20px;color:var(--mut)}
 .empty-icon{font-size:32px;margin-bottom:10px}
-.empty-title{font-family:var(--fh);font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
-.voice-mode-btn,.script-mode-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
-.voice-mode-btn:hover,.script-mode-btn:hover{border-color:var(--border3);color:var(--text)}
-.voice-mode-btn.sel{border-color:var(--purple);color:var(--purple);background:var(--purple-dim)}
-.script-mode-btn.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-.voice-clone-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:5px;font-size:12px}
-.voice-clone-item.sel{border-color:var(--purple);background:var(--purple-dim)}
-.voice-clone-name{flex:1;font-weight:500;color:var(--text)}
-.voice-clone-status{font-size:10px;color:var(--muted)}
+.empty-title{font-family:var(--fh);font-size:14px;font-weight:600;color:var(--txt);margin-bottom:5px}
+.lang-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--b2);background:var(--bg3);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
+.lang-btn:hover{border-color:var(--b3);color:var(--txt)}
+.lang-btn.sel{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
 .hidden{display:none!important}
-.gen-ref-chip{position:relative;width:48px;height:48px;border-radius:6px;border:2px solid var(--border2);cursor:pointer;transition:all .15s;overflow:hidden;flex-shrink:0}
-.gen-ref-chip:hover{border-color:var(--border3)}
-.gen-ref-chip.sel{border-color:var(--accent)}
-.gen-ref-chip:not(.sel){opacity:.45}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 <div class="shell">
-<aside class="sidebar">
-  <div class="sb-logo">
-    <div class="logo-mark">CREATIVE<em>OS</em></div>
-    <div class="logo-sub">Studio de Contenido IA</div>
-  </div>
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo"><div class="logo-mark">CREATIVE<em>OS</em></div><div class="logo-sub">Studio de Contenido IA</div></div>
   <div class="sb-sec">Proyectos</div>
   <div class="sb-projs" id="projList"></div>
-  <div class="sb-bottom">
-    <button class="btn-new-proj" id="btnNewProj">+ Nuevo proyecto</button>
-    <div class="api-status" id="apiStatusBar">
-      <div class="api-dot" id="apiDot" style="background:var(--warning)"></div>
-      <span id="apiStatusText">Configurar APIs</span>
-    </div>
+  <div class="sb-bot">
+    <button class="btn-np" id="btnNewProj">+ Nuevo proyecto</button>
+    <div class="api-bar" id="apiBar"><div class="api-dot" id="apiDot" style="background:var(--war)"></div><span id="apiTxt">Configurar APIs</span></div>
   </div>
 </aside>
+<!-- MAIN -->
 <main class="main">
   <div id="emptyState" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:40px;text-align:center">
     <div style="font-size:44px">🎯</div>
     <div style="font-family:var(--fh);font-size:20px;font-weight:700">Tu primer proyecto te espera</div>
-    <div style="color:var(--muted);max-width:300px;font-size:13px;line-height:1.6">Creá un proyecto por cliente o marca y empezá a generar imágenes, carruseles y videos con IA</div>
+    <div style="color:var(--mut);max-width:300px;font-size:13px;line-height:1.6">Creá un proyecto por cliente o marca y empezá a generar imágenes, carruseles y videos con IA</div>
     <button class="btn acc" id="btnNewProjEmpty" style="padding:11px 22px;font-size:14px">Crear proyecto →</button>
   </div>
   <div id="projView" class="hidden" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
-    <div class="topbar">
-      <div class="proj-dot" id="tbDot" style="width:10px;height:10px;border-radius:50%"></div>
+    <div class="tb">
+      <div class="pi-dot" id="tbDot" style="width:10px;height:10px;border-radius:50%"></div>
       <div class="tb-name" id="tbName">—</div>
       <div class="tb-badge" id="tbBadge">—</div>
-      <div class="tb-right">
-        <button class="btn" id="btnGoMemoria">📁 Memoria</button>
-        <button class="btn acc" id="btnGoGenerar">✦ Generar</button>
+      <div class="tb-r">
+        <button class="btn" id="btnGoMem">📁 Memoria</button>
+        <button class="btn acc" id="btnGoGen">✦ Generar</button>
       </div>
     </div>
     <div class="tabs">
-      <div class="tab active" data-tab="overview" id="tabOverview">Overview</div>
-      <div class="tab" data-tab="memoria" id="tabMemoria">Memoria de marca</div>
-      <div class="tab" data-tab="generar" id="tabGenerar">Generar</div>
-      <div class="tab" data-tab="creativos" id="tabCreativos">Creativos</div>
+      <div class="tab active" data-tab="overview" id="tabOv">Overview</div>
+      <div class="tab" data-tab="memoria" id="tabMem">Memoria de marca</div>
+      <div class="tab" data-tab="generar" id="tabGen">Generar</div>
+      <div class="tab" data-tab="creativos" id="tabCr">Creativos</div>
     </div>
+    <!-- OVERVIEW -->
     <div id="tab-overview" class="content">
       <div class="stats-row">
-        <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="stTotal">0</div><div class="stat-sub">creativos</div></div>
-        <div class="stat"><div class="stat-label">Imágenes</div><div class="stat-val" id="stImgs">0</div><div class="stat-sub">generadas</div></div>
-        <div class="stat"><div class="stat-label">Carruseles</div><div class="stat-val" id="stCars">0</div><div class="stat-sub">generados</div></div>
-        <div class="stat"><div class="stat-label">Videos</div><div class="stat-val" id="stVids">0</div><div class="stat-sub">scripts</div></div>
+        <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val" id="stTot">0</div><div class="stat-sub">creativos</div></div>
+        <div class="stat"><div class="stat-lbl">Imágenes</div><div class="stat-val" id="stImg">0</div></div>
+        <div class="stat"><div class="stat-lbl">Carruseles</div><div class="stat-val" id="stCar">0</div></div>
+        <div class="stat"><div class="stat-lbl">Videos</div><div class="stat-val" id="stVid">0</div></div>
       </div>
       <div class="sec-title"><div class="sec-dot"></div>Últimos creativos</div>
-      <div id="overviewGrid" class="creatives-grid"></div>
+      <div id="ovGrid" class="cr-grid"></div>
     </div>
+    <!-- MEMORIA -->
     <div id="tab-memoria" class="content hidden">
       <div class="sec-title"><div class="sec-dot"></div>Memoria de marca</div>
       <div class="mem-grid">
-        <div class="mem-card">
-          <div class="mem-card-title">Identidad visual & brandbook</div>
+        <div class="mc">
+          <div class="mc-title">Identidad visual & brandbook</div>
           <div id="memBrand"></div>
-          <div class="upload-zone" id="brandUploadZone" style="margin-top:8px">
-            📄 Subir brandbook / archivos de identidad
-            <div style="font-size:10px;margin-top:2px;opacity:.6">PDF, PNG, JPG — Claude extrae la info automáticamente</div>
-          </div>
+          <div class="uz" id="brandZone" style="margin-top:8px">📄 Subir brandbook / archivos<div style="font-size:10px;margin-top:2px;opacity:.6">PDF, PNG, JPG — Claude extrae la info</div></div>
           <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple style="display:none">
         </div>
-        <div class="mem-card">
-          <div class="mem-card-title">Paleta & tipografía</div>
+        <div class="mc">
+          <div class="mc-title">Paleta & tipografía</div>
           <div id="memColors"></div>
-          <input class="mini-input" id="colorIn" placeholder="Ej: #FF5733 Rojo coral, DM Sans">
+          <input class="mini-in" id="colorIn" placeholder="Ej: #FF5733 Rojo coral, DM Sans">
         </div>
-        <div class="mem-card">
-          <div class="mem-card-title">Productos & servicios</div>
-          <div id="memProducts"></div>
-          <input class="mini-input" id="prodIn" placeholder="Ej: Plan Premium $29/mes">
+        <div class="mc">
+          <div class="mc-title">Productos & servicios</div>
+          <div id="memProds"></div>
+          <input class="mini-in" id="prodIn" placeholder="Ej: Plan Premium $29/mes">
         </div>
-        <div class="mem-card">
-          <div class="mem-card-title">Avatares & personas</div>
+        <div class="mc">
+          <div class="mc-title">Avatares & personas</div>
           <div class="av-wrap" id="avGrid"></div>
-          <input class="mini-input" id="avIn" placeholder="Ej: Lucas (founder), María (CEO)">
+          <input class="mini-in" id="avIn" placeholder="Ej: Lucas (founder), María (CEO)">
         </div>
       </div>
-      <div class="mem-card" style="margin-bottom:12px">
-        <div class="mem-card-title">Tono de voz</div>
-        <textarea class="tone-area" id="toneIn" placeholder="Ej: Marca directa y joven. Humor sin ser payasos. Vendemos soluciones, no features. CTAs urgentes. Audiencia: emprendedores 25-40."></textarea>
+      <div class="mc" style="margin-bottom:12px">
+        <div class="mc-title">Tono de voz</div>
+        <textarea class="ta" id="toneIn" placeholder="Ej: Marca directa y joven. Humor sin ser payasos. CTAs urgentes. Audiencia: emprendedores 25-40."></textarea>
       </div>
-      <div class="mem-grid" style="margin-bottom:0">
-        <div class="mem-card">
-          <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
-            <span>Logo / Isologo / Isotipo</span>
-            <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Claude analiza colores y estilo</span>
-          </div>
-          <div class="ref-gallery" id="logoGallery" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
-          <div class="upload-zone" id="logoUploadZone" style="margin-top:6px;padding:10px">
-            🎨 Subir logo / isotipo
-            <div style="font-size:10px;margin-top:2px;opacity:.6">PNG, SVG, JPG</div>
-          </div>
-          <input type="file" id="logoFileInput" accept=".png,.jpg,.jpeg,.svg,.webp" multiple style="display:none">
+      <div class="mc" style="margin-bottom:12px">
+        <div class="mc-title">Idioma de los creativos</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px" id="langRow">
+          <button class="lang-btn sel" data-lang="es-AR">🇦🇷 Español (AR)</button>
+          <button class="lang-btn" data-lang="es">🌎 Español (neutro)</button>
+          <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+          <button class="lang-btn" data-lang="pt-BR">🇧🇷 Português</button>
+          <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
+          <button class="lang-btn" data-lang="it">🇮🇹 Italiano</button>
+          <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
         </div>
-        <div class="mem-card">
-          <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
-            <span>Fotos de productos</span>
-            <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Ideogram las usa como referencia visual</span>
-          </div>
-          <div class="ref-gallery" id="productPhotoGallery" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
-          <div class="upload-zone" id="productPhotoZone" style="margin-top:6px;padding:10px">
-            📦 Subir fotos de productos
-            <div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP — varios a la vez</div>
-          </div>
-          <input type="file" id="productPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <span style="font-size:12px;color:var(--mut)">O especificá otro:</span>
+          <input class="mini-in" id="customLangIn" placeholder="Ej: Catalán, Japonés..." style="flex:1;margin-top:0">
+        </div>
+      </div>
+      <div class="mem-grid">
+        <div class="mc">
+          <div class="mc-title">Logo / Isologo / Isotipo <span class="mc-note">Claude analiza colores y estilo</span></div>
+          <div class="ref-gal" id="logoGal" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr))"></div>
+          <div class="uz" id="logoZone" style="padding:10px;margin-top:6px">🎨 Subir logo / isotipo<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, SVG, JPG</div></div>
+          <input type="file" id="logoInput" accept=".png,.jpg,.jpeg,.svg,.webp" multiple style="display:none">
+        </div>
+        <div class="mc">
+          <div class="mc-title">Fotos de productos <span class="mc-note">Ideogram las usa como referencia</span></div>
+          <div class="ref-gal" id="prodGal" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr))"></div>
+          <div class="uz" id="prodPhotoZone" style="padding:10px;margin-top:6px">📦 Subir fotos de productos<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP</div></div>
+          <input type="file" id="prodPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
         </div>
       </div>
     </div>
-
     <!-- GENERAR -->
     <div id="tab-generar" class="content hidden">
       <div class="gen-panel">
         <div class="sec-title" style="margin-bottom:14px"><div class="sec-dot"></div>Tipo de creativo</div>
         <div class="type-row">
-          <button class="type-btn sel" data-type="imagen"><span class="ico">🖼️</span><span>Imagen</span></button>
-          <button class="type-btn" data-type="carrusel"><span class="ico">🎠</span><span>Carrusel</span></button>
-          <button class="type-btn" data-type="video"><span class="ico">🎬</span><span>Video</span></button>
-          <button class="type-btn" data-type="copy"><span class="ico">✍️</span><span>Copy Ad</span></button>
+          <button class="type-btn sel" data-type="imagen"><span class="ico">🖼️</span>Imagen</button>
+          <button class="type-btn" data-type="carrusel"><span class="ico">🎠</span>Carrusel</button>
+          <button class="type-btn" data-type="video"><span class="ico">🎬</span>Video</button>
+          <button class="type-btn" data-type="copy"><span class="ico">✍️</span>Copy Ad</button>
         </div>
         <div id="fmtImagen" class="fmt-sec">
-          <div class="fmt-label">Formato</div>
+          <div class="fmt-lbl">Formato</div>
           <div class="fmt-row">
             <button class="fmt-btn sel" data-fmt="1080x1080">Feed 1:1</button>
             <button class="fmt-btn" data-fmt="1080x1920">Story 9:16</button>
@@ -329,122 +333,53 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
           </div>
         </div>
         <div id="fmtCarrusel" class="fmt-sec hidden">
-          <div class="fmt-label">Carrusel · 4 slides con correlación narrativa</div>
+          <div class="fmt-lbl">Carrusel · 4 slides con correlación narrativa</div>
           <div class="fmt-row">
             <button class="fmt-btn sel" data-fmt="1080x1080">Cuadrado 1:1</button>
             <button class="fmt-btn" data-fmt="1080x1350">Portrait 4:5</button>
           </div>
         </div>
         <div id="fmtVideo" class="fmt-sec hidden">
-          <div class="fmt-label">Duración</div>
+          <div class="fmt-lbl">Duración</div>
           <div class="dur-row">
             <button class="dur-btn sel" data-dur="15">15s</button>
             <button class="dur-btn" data-dur="30">30s</button>
             <button class="dur-btn" data-dur="60">60s</button>
           </div>
-          <div id="avatarSelector"></div>
-          <div style="margin-top:14px">
-            <div class="fmt-label">Voz para el video</div>
-            <div style="display:flex;gap:8px;margin-bottom:10px" id="voiceModeRow">
-              <button class="voice-mode-btn sel" data-vmode="cloned">🎙️ Mi voz clonada</button>
-              <button class="voice-mode-btn" data-vmode="heygen">🤖 Voces HeyGen</button>
-              <button class="voice-mode-btn" data-vmode="tts">🔊 Texto a voz</button>
-            </div>
-            <div id="voicePanel_cloned">
-              <div id="clonedVoiceStatus" style="font-size:12px;color:var(--muted);margin-bottom:8px">Sin voz clonada — subí un audio para crear tu clon de voz</div>
-              <div style="display:flex;gap:8px">
-                <div class="upload-zone" id="voiceUploadZone" style="flex:1;padding:10px">
-                  🎙️ Subir audio de tu voz
-                  <div style="font-size:10px;margin-top:2px;opacity:.6">MP3, WAV, M4A · mín 30 seg hablando claro</div>
-                </div>
-                <input type="file" id="voiceFileInput" accept=".mp3,.wav,.m4a,.aac,.ogg" style="display:none">
-              </div>
-              <div id="voiceCloneList" style="margin-top:8px"></div>
-            </div>
-            <div id="voicePanel_heygen" class="hidden">
-              <div class="fmt-label" style="margin-bottom:6px">Seleccioná una voz</div>
-              <div class="fmt-row" id="heygenVoiceRow">
-                <button class="fmt-btn sel" data-hgvoice="1bd001e7e50f421d891986aad5158bc8">Sara (EN)</button>
-                <button class="fmt-btn" data-hgvoice="2d5b0e6cf36f460aa7fc47e3eee4ba54">Josh (EN)</button>
-                <button class="fmt-btn" data-hgvoice="es-AR-ElenaNeural">Elena (ES-AR)</button>
-                <button class="fmt-btn" data-hgvoice="es-AR-TomasNeural">Tomás (ES-AR)</button>
-              </div>
-            </div>
-            <div id="voicePanel_tts" class="hidden">
-              <div class="fmt-label" style="margin-bottom:6px">Motor texto a voz</div>
-              <div class="fmt-row" id="ttsEngRow">
-                <button class="fmt-btn sel" data-ttseng="browser">🌐 Navegador (gratis)</button>
-                <button class="fmt-btn" data-ttseng="elevenlabs">⚡ ElevenLabs (API)</button>
-              </div>
-              <div id="elKeyRow" class="hidden" style="margin-top:8px">
-                <input class="mini-input" id="elApiKey" placeholder="ElevenLabs API key..." style="margin-top:0">
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:14px">
-            <div class="fmt-label">Modo de guión</div>
-            <div style="display:flex;gap:8px;margin-bottom:10px" id="scriptModeRow">
-              <button class="script-mode-btn sel" data-smode="generate">✦ Generar con IA</button>
-              <button class="script-mode-btn" data-smode="manual">✏️ Escribir propio</button>
-              <button class="script-mode-btn" data-smode="upload">📄 Subir archivo</button>
-            </div>
-            <div id="scriptPanel_generate" style="font-size:12px;color:var(--muted)">Claude generará el guión usando la memoria de marca y la descripción de abajo</div>
-            <div id="scriptPanel_manual" class="hidden">
-              <textarea class="script-editor" id="manualScript" style="min-height:100px;margin-top:4px" placeholder="Escribí tu guión acá..."></textarea>
-            </div>
-            <div id="scriptPanel_upload" class="hidden">
-              <div class="upload-zone" id="scriptUploadZone" style="margin-top:4px">
-                📄 Subir guión en texto
-                <div style="font-size:10px;margin-top:2px;opacity:.6">TXT, PDF</div>
-              </div>
-              <input type="file" id="scriptFileInput" accept=".txt,.pdf" style="display:none">
-              <div id="uploadedScriptPreview" style="display:none;margin-top:8px">
-                <textarea class="script-editor" id="uploadedScriptText" style="min-height:80px"></textarea>
-              </div>
-            </div>
-          </div>
+          <div id="avatarSel"></div>
         </div>
         <div style="margin-top:14px">
-          <div class="fmt-label" style="margin-bottom:7px">Descripción del creativo</div>
-          <div class="prompt-row">
-            <textarea class="prompt-input" id="mainPrompt" placeholder="Describí qué querés crear..."></textarea>
+          <div class="fmt-lbl" style="margin-bottom:7px">Descripción del creativo</div>
+          <div class="pr-row">
+            <textarea class="pr-in" id="mainPrompt" placeholder="Describí qué querés crear..."></textarea>
             <button class="btn-gen" id="genBtn">✦ Generar</button>
           </div>
         </div>
       </div>
-
-      <!-- ENFOQUE + REFERENCIAS (movido desde Memoria) -->
+      <!-- ENFOQUE + REFERENCIAS -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">
-          <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Enfoque de venta</div>
-          <textarea class="tone-area" id="genSalesFocus" style="min-height:80px;font-size:13px;margin-top:0;border-color:var(--accent)22" placeholder="Ej: Atacar el dolor de perder tiempo. Mostrar antes/después. Urgencia: tiempo limitado. Descuento 40%. Comparar con competencia sin nombrarla."></textarea>
-          <input class="mini-input" id="refIn" style="margin-top:8px" placeholder="Referencias por nombre: Ej: Nike 2023, Apple minimalist">
+        <div class="mc">
+          <div class="mc-title" style="color:var(--acc)">Enfoque de venta</div>
+          <textarea class="ta" id="genSalesFocus" style="min-height:80px;font-size:13px;margin-top:4px;border-color:var(--acc)22" placeholder="Ej: Atacar el dolor de X, urgencia por tiempo limitado, descuento 40%..."></textarea>
+          <input class="mini-in" id="refIn" placeholder="Referencias por nombre: Nike 2023, Apple minimalist...">
           <div id="memRefs" style="margin-top:6px"></div>
         </div>
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">
-          <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px">Referencias visuales para este creativo</div>
-          <div class="ref-gallery" id="refGallery" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr));margin-bottom:8px"></div>
-          <div style="display:flex;gap:6px">
-            <div class="upload-zone" id="refImgZone" style="flex:1;padding:9px">
-              🖼️ Subir imagen / carrusel
-              <div style="font-size:10px;margin-top:1px;opacity:.6">PNG, JPG, WEBP</div>
-            </div>
-            <div class="upload-zone" id="refVidZone" style="flex:1;padding:9px">
-              🎬 Subir video ref
-              <div style="font-size:10px;margin-top:1px;opacity:.6">MP4, MOV</div>
-            </div>
+        <div class="mc">
+          <div class="mc-title">Referencias visuales</div>
+          <div class="ref-gal" id="refGal" style="grid-template-columns:repeat(auto-fill,minmax(76px,1fr));margin-bottom:8px"></div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <div class="uz" id="refImgZone" style="flex:1;padding:9px">🖼️ Subir imagen<div style="font-size:10px;opacity:.6">PNG, JPG, WEBP</div></div>
+            <div class="uz" id="refVidZone" style="flex:1;padding:9px">🎬 Subir video<div style="font-size:10px;opacity:.6">MP4, MOV</div></div>
           </div>
-          <input type="file" id="refFileInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
-          <input type="file" id="refVideoInput" accept=".mp4,.mov,.webm" multiple style="display:none">
-          <div style="margin-top:10px">
-            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Activar referencias de memoria</div>
-            <div id="genRefSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;align-content:flex-start"></div>
-          </div>
+          <input type="file" id="refImgInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
+          <input type="file" id="refVidInput" accept=".mp4,.mov,.webm" multiple style="display:none">
+          <div class="fmt-lbl" style="margin-bottom:5px">Activar refs de memoria</div>
+          <div id="refSelRow" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px"></div>
         </div>
       </div>
-
       <div id="outputArea"></div>
     </div>
+    <!-- CREATIVOS -->
     <div id="tab-creativos" class="content hidden">
       <div class="filter-bar">
         <span class="filter-lbl">Filtrar:</span>
@@ -454,13 +389,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
         <button class="filter-btn" data-filter="video">Videos</button>
         <button class="filter-btn" data-filter="copy">Copies</button>
       </div>
-      <div id="allGrid" class="creatives-grid"></div>
+      <div id="crGrid" class="cr-grid"></div>
     </div>
   </div>
 </main>
 </div>
-
-<div id="modalNewProj" class="modal-bg hidden">
+<!-- MODAL: NUEVO PROYECTO -->
+<div id="mNewProj" class="modal-bg hidden">
 <div class="modal">
   <div class="modal-title">Nuevo proyecto</div>
   <div class="modal-sub">Cada proyecto tiene su propia memoria de marca e historial.</div>
@@ -468,382 +403,110 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
   <div class="field"><label>Cliente / empresa</label><input id="npClient" placeholder="Ej: Acme Corp"></div>
   <div class="field"><label>Rubro</label><input id="npRubro" placeholder="Ej: SaaS, Moda, Gastronomía"></div>
   <div class="field"><label>Descripción</label><textarea id="npDesc" placeholder="¿Qué hace esta marca? ¿A quién le vende?"></textarea></div>
-  <div class="field">
-    <label>Color del proyecto</label>
-    <div class="color-pick" id="colorPick">
-      <div class="cp sel" data-color="#c8ff00" style="background:#c8ff00"></div>
-      <div class="cp" data-color="#9b6eff" style="background:#9b6eff"></div>
-      <div class="cp" data-color="#f472b6" style="background:#f472b6"></div>
-      <div class="cp" data-color="#fb923c" style="background:#fb923c"></div>
-      <div class="cp" data-color="#60a5fa" style="background:#60a5fa"></div>
-      <div class="cp" data-color="#4ade80" style="background:#4ade80"></div>
-      <div class="cp" data-color="#f87171" style="background:#f87171"></div>
+  <div class="field"><label>Color del proyecto</label>
+    <div class="cp-row" id="cpRow">
+      <div class="cp sel" data-c="#c8ff00" style="background:#c8ff00"></div>
+      <div class="cp" data-c="#9b6eff" style="background:#9b6eff"></div>
+      <div class="cp" data-c="#f472b6" style="background:#f472b6"></div>
+      <div class="cp" data-c="#fb923c" style="background:#fb923c"></div>
+      <div class="cp" data-c="#60a5fa" style="background:#60a5fa"></div>
+      <div class="cp" data-c="#4ade80" style="background:#4ade80"></div>
+      <div class="cp" data-c="#f87171" style="background:#f87171"></div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button class="btn-cancel" id="btnCancelNewProj">Cancelar</button>
-    <button class="btn-create" id="btnCreateProj">Crear proyecto →</button>
+  <div class="mfooter">
+    <button class="btn-cancel" id="btnCancelNP">Cancelar</button>
+    <button class="btn-create" id="btnCreateP">Crear proyecto →</button>
   </div>
 </div>
 </div>
-
-<div id="modalAPI" class="modal-bg hidden">
+<!-- MODAL: API CONFIG -->
+<div id="mAPI" class="modal-bg hidden">
 <div class="modal">
   <div class="modal-title">Configuración de APIs</div>
-  <div class="modal-sub">Las keys se guardan solo en este navegador. Nunca se envían a servidores externos.</div>
-  <div class="api-field"><label>Anthropic (Claude)</label><input type="password" id="keyAnthropic" placeholder="sk-ant-api03-..."></div>
-  <div class="api-field"><label>Ideogram v3</label><input type="password" id="keyIdeogram" placeholder="Y6m0..."></div>
-  <div class="api-field"><label>HeyGen</label><input type="password" id="keyHeyGen" placeholder="sk_V2_..."></div>
-  <div class="api-field"><label>Canva Client ID</label><input type="text" id="keyCanvaId" placeholder="OC-..."></div>
-  <div class="api-field"><label>Canva Client Secret</label><input type="password" id="keyCanvaSecret" placeholder="cnvcau..."></div>
-  <div class="modal-footer">
+  <div class="modal-sub">Las keys se guardan en este navegador. Nunca se envían a servidores externos.</div>
+  <div class="api-field"><label>Anthropic (Claude)</label><input type="password" id="kAnt" placeholder="sk-ant-api03-..."></div>
+  <div class="api-field"><label>Ideogram v3</label><input type="password" id="kIde" placeholder="Y6m0..."></div>
+  <div class="api-field"><label>HeyGen</label><input type="password" id="kHey" placeholder="sk_V2_..."></div>
+  <div class="api-field"><label>Canva Client ID</label><input type="text" id="kCanId" placeholder="OC-..."></div>
+  <div class="api-field"><label>Canva Client Secret</label><input type="password" id="kCanSec" placeholder="cnvcau..."></div>
+  <div class="mfooter">
     <button class="btn-cancel" id="btnCancelAPI">Cancelar</button>
     <button class="btn-create" id="btnSaveAPI">Guardar keys</button>
   </div>
 </div>
 </div>
-
-<div id="modalCreative" class="modal-bg hidden">
-<div class="modal" style="max-width:620px">
+<!-- MODAL: VER CREATIVO -->
+<div id="mCr" class="modal-bg hidden">
+<div class="modal" style="max-width:640px">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
     <div id="mcIcon" style="font-size:22px"></div>
-    <div><div class="modal-title" id="mcTitle" style="font-size:15px;margin:0"></div><div style="font-size:11px;color:var(--muted)" id="mcMeta"></div></div>
-    <button id="btnCloseCreative" style="margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">×</button>
+    <div><div class="modal-title" id="mcTitle" style="font-size:15px;margin:0"></div><div style="font-size:11px;color:var(--mut)" id="mcMeta"></div></div>
+    <button id="btnCloseCr" style="margin-left:auto;background:transparent;border:none;color:var(--mut);font-size:22px;cursor:pointer;line-height:1">×</button>
   </div>
   <div id="mcContent"></div>
   <div style="display:flex;gap:8px;margin-top:16px">
-    <button class="btn" style="flex:1" id="btnCopyCreative">📋 Copiar</button>
-    <button class="btn" style="color:var(--purple);border-color:var(--purple)44" id="btnVariation">↻ Variación</button>
-    <button class="btn acc" style="flex:1" id="btnCloseCreative2">Listo</button>
+    <button class="btn" style="flex:1" id="btnCopyCr">📋 Copiar</button>
+    <button class="btn" style="color:#7c3fce;border-color:#7c3fce33" id="btnCanvaModal">🎨 Canva</button>
+    <button class="btn" style="color:var(--pur);border-color:var(--pur)44" id="btnVariation">↻ Variación</button>
+    <button class="btn acc" style="flex:1" id="btnCloseCr2">Listo</button>
   </div>
 </div>
 </div>
 
 <script>
-var projects = [];
-var active = null;
-var newProjColor = '#c8ff00';
-var selTypeVal = 'imagen';
-var selFmtVal = '1080x1080';
-var selDurVal = '15';
-var crFilter = 'all';
-var viewCreativeId = null;
-var SKEY = 'creativeos_v3';
+// ── STATE ──────────────────────────────────────────────
+var projects = [], active = null, newProjColor = '#c8ff00';
+var selType = 'imagen', selFmt = '1080x1080', selDur = '15';
+var crFilter = 'all', viewCrId = null;
+var _selRefs = {};
+var SKEY = 'creativeos_v4';
 
+// ── STORAGE ────────────────────────────────────────────
 function save() {
   var d = JSON.stringify(projects);
   window._pc = d;
   try { localStorage.setItem(SKEY, d); } catch(e) {}
-  try { sessionStorage.setItem(SKEY + '_ss', d); } catch(e) {}
+  try { sessionStorage.setItem(SKEY, d); } catch(e) {}
 }
 function load() {
   try {
-    var d = window._pc;
-    if (!d) { try { d = localStorage.getItem(SKEY); } catch(e) {} }
-    if (!d) { try { d = sessionStorage.getItem(SKEY + '_ss'); } catch(e) {} }
+    var d = window._pc || localStorage.getItem(SKEY) || sessionStorage.getItem(SKEY);
     if (d) { projects = JSON.parse(d); return; }
   } catch(e) {}
   projects = [];
 }
 function saveKeys() {
-  var _kd = {
-    anthropic: document.getElementById('keyAnthropic').value.trim(),
-    ideogram:  document.getElementById('keyIdeogram').value.trim(),
-    heygen:    document.getElementById('keyHeyGen').value.trim(),
-    canvaId:   document.getElementById('keyCanvaId').value.trim(),
-    canvaSecret: document.getElementById('keyCanvaSecret').value.trim()
-  };
-  window._ck = _kd;
-  var _kds = JSON.stringify(_kd);
-  try { localStorage.setItem('creativeos_keys', _kds); } catch(e) {}
-  try { sessionStorage.setItem('creativeos_keys', _kds); } catch(e) {}
-  closeModal('modalAPI');
-  updateAPIStatus();
+  var kd = { ant: $('kAnt').value.trim(), ide: $('kIde').value.trim(), hey: $('kHey').value.trim(), canId: $('kCanId').value.trim(), canSec: $('kCanSec').value.trim() };
+  window._ck = kd;
+  try { localStorage.setItem('ceos_keys', JSON.stringify(kd)); } catch(e) {}
+  try { sessionStorage.setItem('ceos_keys', JSON.stringify(kd)); } catch(e) {}
+  closeM('mAPI'); updateAPIStatus();
 }
 function getKeys() {
-  if (window._ck && window._ck.anthropic) return window._ck;
-  try { var d = localStorage.getItem('creativeos_keys'); if (d) { window._ck = JSON.parse(d); return window._ck; } } catch(e) {}
-  try { var d2 = sessionStorage.getItem('creativeos_keys'); if (d2) { window._ck = JSON.parse(d2); return window._ck; } } catch(e) {}
+  if (window._ck && window._ck.ant) return window._ck;
+  try { var d = localStorage.getItem('ceos_keys') || sessionStorage.getItem('ceos_keys'); if (d) { window._ck = JSON.parse(d); return window._ck; } } catch(e) {}
   return {};
 }
 function updateAPIStatus() {
-  var k = getKeys();
-  var ok = !!(k.anthropic && k.ideogram);
-  document.getElementById('apiDot').style.background = ok ? 'var(--success)' : 'var(--warning)';
-  document.getElementById('apiStatusText').textContent = ok ? 'APIs conectadas' : 'Configurar APIs';
+  var k = getKeys(), ok = !!(k.ant && k.ide);
+  $('apiDot').style.background = ok ? 'var(--suc)' : 'var(--war)';
+  $('apiTxt').textContent = ok ? 'APIs conectadas' : 'Configurar APIs';
 }
 
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-function showEl(id) { var el = document.getElementById(id); el.classList.remove('hidden'); el.style.display = ''; }
-function hideEl(id) { document.getElementById(id).style.display = 'none'; }
-
-function init() {
-  // Detect if running as local file (file:// protocol causes CORS errors)
-  if (window.location.protocol === 'file:') {
-    setTimeout(function() {
-      var banner = document.createElement('div');
-      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#1a2a0a;border-bottom:1px solid var(--accent);padding:10px 20px;display:flex;align-items:center;gap:12px;font-size:12px';
-      banner.innerHTML = '<span style="color:var(--accent);font-weight:700">⚠️ Modo archivo local</span><span style="color:var(--muted)">Para que funcionen las APIs, necesitás correr un servidor local.</span><span style="color:var(--text);background:var(--bg3);padding:3px 10px;border-radius:5px;font-family:monospace;font-size:11px">python3 -m http.server 8080</span><span style="color:var(--muted)">y abrí</span><a href="http://localhost:8080/CreativeOS.html" style="color:var(--accent);font-family:monospace;font-size:11px">localhost:8080/CreativeOS.html</a><button onclick="this.parentNode.remove()" style="margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer">×</button>';
-      document.body.appendChild(banner);
-    }, 500);
-  }
-  load();
-  updateAPIStatus();
-  bindAll();
-  renderSidebar();
-  if (!projects.length) { showEl('emptyState'); hideEl('projView'); }
-  else { selectProject(projects[0].id); }
-}
-
-function bindAll() {
-  document.getElementById('btnNewProj').onclick = function() { openModal('modalNewProj'); };
-  document.getElementById('btnNewProjEmpty').onclick = function() { openModal('modalNewProj'); };
-  document.getElementById('apiStatusBar').onclick = openAPIConfig;
-  document.getElementById('btnGoMemoria').onclick = function() { showTab('memoria'); };
-  document.getElementById('btnGoGenerar').onclick = function() { showTab('generar'); };
-  document.getElementById('tabOverview').onclick = function() { showTab('overview'); };
-  document.getElementById('tabMemoria').onclick = function() { showTab('memoria'); };
-  document.getElementById('tabGenerar').onclick = function() { showTab('generar'); };
-  document.getElementById('tabCreativos').onclick = function() { showTab('creativos'); };
-  document.getElementById('btnCancelNewProj').onclick = function() { closeModal('modalNewProj'); };
-  document.getElementById('btnCreateProj').onclick = createProject;
-  document.getElementById('colorPick').onclick = function(e) {
-    var cp = e.target.closest('.cp');
-    if (!cp) return;
-    document.querySelectorAll('.cp').forEach(function(x) { x.classList.remove('sel'); });
-    cp.classList.add('sel');
-    newProjColor = cp.dataset.color;
-  };
-  document.getElementById('btnCancelAPI').onclick = function() { closeModal('modalAPI'); };
-  document.getElementById('btnSaveAPI').onclick = saveKeys;
-  document.getElementById('btnCloseCreative').onclick = function() { closeModal('modalCreative'); };
-  document.getElementById('btnCloseCreative2').onclick = function() { closeModal('modalCreative'); };
-  document.getElementById('btnVariation').onclick = function() { closeModal('modalCreative'); generarVariacion(viewCreativeId); };
-  document.getElementById('btnCopyCreative').onclick = copyCreative;
-  document.getElementById('colorIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('colors', 'colorIn'); };
-  document.getElementById('prodIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('products', 'prodIn'); };
-  document.getElementById('avIn').onkeydown = function(e) { if (e.key === 'Enter') addAvatar(); };
-  document.getElementById('refIn') && (document.getElementById('refIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('refs', 'refIn'); });
-  document.getElementById('toneIn').oninput = function() { if (active) { active.memory.tone = this.value; save(); } };
-  document.getElementById('brandUploadZone').onclick = function() { document.getElementById('fileInput').click(); };
-  document.getElementById('fileInput').onchange = function() { handleBrandUpload(this.files); };
-  setupDrop('brandUploadZone', handleBrandUpload);
-  document.getElementById('refImgZone').onclick = function() { document.getElementById('refFileInput').click(); };
-  document.getElementById('refVidZone').onclick = function() { document.getElementById('refVideoInput').click(); };
-  document.getElementById('refFileInput').onchange = function() { handleRefUpload(this.files, 'image'); };
-  document.getElementById('refVideoInput').onchange = function() { handleRefUpload(this.files, 'video'); };
-  setupDrop('refImgZone', function(f) { handleRefUpload(f, 'image'); });
-  setupDrop('refVidZone', function(f) { handleRefUpload(f, 'video'); });
-  document.getElementById('logoUploadZone').onclick = function() { document.getElementById('logoFileInput').click(); };
-  document.getElementById('logoFileInput').onchange = function() { handleAssetUpload(this.files, 'logo'); };
-  setupDrop('logoUploadZone', function(f) { handleAssetUpload(f, 'logo'); });
-  document.getElementById('productPhotoZone').onclick = function() { document.getElementById('productPhotoInput').click(); };
-  document.getElementById('productPhotoInput').onchange = function() { handleAssetUpload(this.files, 'product'); };
-  setupDrop('productPhotoZone', function(f) { handleAssetUpload(f, 'product'); });
-  document.querySelectorAll('.type-btn').forEach(function(b) { b.onclick = function() { selType(this); }; });
-  document.querySelectorAll('.fmt-btn').forEach(function(b) { b.onclick = function() { selFmt(this); }; });
-  document.querySelectorAll('.dur-btn').forEach(function(b) { b.onclick = function() { selDur(this); }; });
-
-  // Voice mode
-  document.querySelectorAll('.voice-mode-btn').forEach(function(b) {
-    b.onclick = function() {
-      document.querySelectorAll('.voice-mode-btn').forEach(function(x) { x.classList.remove('sel'); });
-      this.classList.add('sel');
-      var vm = this.dataset.vmode;
-      ['cloned','heygen','tts'].forEach(function(p) {
-        var el = document.getElementById('voicePanel_' + p);
-        if (el) el.classList.toggle('hidden', p !== vm);
-      });
-    };
-  });
-
-  // HeyGen voice pick
-  document.getElementById('heygenVoiceRow') && document.getElementById('heygenVoiceRow').addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-hgvoice]');
-    if (!btn) return;
-    this.querySelectorAll('[data-hgvoice]').forEach(function(b) { b.classList.remove('sel'); });
-    btn.classList.add('sel');
-  });
-
-  // TTS engine pick
-  document.getElementById('ttsEngRow') && document.getElementById('ttsEngRow').addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-ttseng]');
-    if (!btn) return;
-    this.querySelectorAll('[data-ttseng]').forEach(function(b) { b.classList.remove('sel'); });
-    btn.classList.add('sel');
-    document.getElementById('elKeyRow').classList.toggle('hidden', btn.dataset.ttseng !== 'elevenlabs');
-  });
-
-  // Voice file upload
-  document.getElementById('voiceUploadZone').onclick = function() { document.getElementById('voiceFileInput').click(); };
-  setupDrop('voiceUploadZone', function(f) { handleVoiceUpload(f); });
-  document.getElementById('voiceFileInput').onchange = function() { handleVoiceUpload(this.files); };
-
-  // Script mode
-  document.querySelectorAll('.script-mode-btn').forEach(function(b) {
-    b.onclick = function() {
-      document.querySelectorAll('.script-mode-btn').forEach(function(x) { x.classList.remove('sel'); });
-      this.classList.add('sel');
-      var sm = this.dataset.smode;
-      ['generate','manual','upload'].forEach(function(p) {
-        var el = document.getElementById('scriptPanel_' + p);
-        if (el) el.classList.toggle('hidden', p !== sm);
-      });
-    };
-  });
-
-  // Script file upload
-  document.getElementById('scriptUploadZone').onclick = function() { document.getElementById('scriptFileInput').click(); };
-  setupDrop('scriptUploadZone', function(f) { handleScriptUpload(f); });
-  document.getElementById('scriptFileInput').onchange = function() { handleScriptUpload(this.files); };
-  document.getElementById('genBtn').onclick = generate;
-  document.querySelectorAll('.filter-btn').forEach(function(b) {
-    b.onclick = function() {
-      document.querySelectorAll('.filter-btn').forEach(function(x) { x.classList.remove('sel'); });
-      this.classList.add('sel');
-      crFilter = this.dataset.filter;
-      renderAllCreatives();
-    };
-  });
-}
-
+// ── HELPERS ────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function openM(id) { $(id).classList.remove('hidden'); }
+function closeM(id) { $(id).classList.add('hidden'); }
+function showEl(id) { var e = $(id); e.classList.remove('hidden'); e.style.display = ''; }
+function hideEl(id) { $(id).style.display = 'none'; }
 function setupDrop(zoneId, handler) {
-  var z = document.getElementById(zoneId);
+  var z = $(zoneId);
   if (!z) return;
-  z.ondragover = function(e) { e.preventDefault(); z.classList.add('drag-over'); };
-  z.ondragleave = function() { z.classList.remove('drag-over'); };
-  z.ondrop = function(e) { e.preventDefault(); z.classList.remove('drag-over'); handler(e.dataTransfer.files); };
+  z.ondragover = function(e) { e.preventDefault(); z.classList.add('drag'); };
+  z.ondragleave = function() { z.classList.remove('drag'); };
+  z.ondrop = function(e) { e.preventDefault(); z.classList.remove('drag'); handler(e.dataTransfer.files); };
 }
-
-function renderSidebar() {
-  var el = document.getElementById('projList');
-  if (!projects.length) { el.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--muted2)">Sin proyectos aún</div>'; return; }
-  el.innerHTML = projects.map(function(p) {
-    return '<div class="proj-item' + (active && active.id === p.id ? ' active' : '') + '" data-pid="' + p.id + '">' +
-      '<div class="proj-dot" style="background:' + p.color + '"></div>' +
-      '<div class="proj-info"><div class="proj-name">' + p.name + '</div>' +
-      '<div class="proj-meta">' + (p.client || p.rubro || 'Proyecto') + '</div></div></div>';
-  }).join('');
-  el.querySelectorAll('.proj-item').forEach(function(item) {
-    item.onclick = function() { selectProject(this.dataset.pid); };
-  });
-}
-
-function selectProject(id) {
-  active = projects.find(function(p) { return p.id === id; });
-  if (!active) return;
-  if (!active.memory) active.memory = { brand:[], colors:[], products:[], refs:[], tone:'', salesFocus:'', avatars:[], visualRefs:[] };
-  hideEl('emptyState');
-  showEl('projView');
-  document.getElementById('tbName').textContent = active.name;
-  document.getElementById('tbBadge').textContent = active.client || active.rubro || 'Proyecto';
-  document.getElementById('tbDot').style.background = active.color;
-  renderSidebar();
-  showTab('overview');
-  loadMemoryUI();
-}
-
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === name); });
-  ['overview','memoria','generar','creativos'].forEach(function(t) {
-    var el = document.getElementById('tab-' + t);
-    if (el) el.classList.toggle('hidden', t !== name);
-  });
-  if (name === 'overview') renderOverview();
-  if (name === 'creativos') renderAllCreatives();
-  if (name === 'generar') { updateAvatarSelector(); renderGenRefSelector(); renderRefGallery(); renderTags('memRefs', active&&active.memory?active.memory.refs||[]:[], 'refs'); }
-}
-
-function createProject() {
-  var name = document.getElementById('npName').value.trim();
-  if (!name) { alert('Ingresá un nombre'); return; }
-  var p = {
-    id: Date.now().toString(), name: name,
-    client: document.getElementById('npClient').value.trim(),
-    rubro: document.getElementById('npRubro').value.trim(),
-    desc: document.getElementById('npDesc').value.trim(),
-    color: newProjColor,
-    memory: { brand:[], colors:[], products:[], refs:[], tone:'', salesFocus:'', avatars:[], visualRefs:[] },
-    creatives: [], createdAt: Date.now()
-  };
-  projects.unshift(p);
-  save();
-  closeModal('modalNewProj');
-  ['npName','npClient','npRubro','npDesc'].forEach(function(id) { document.getElementById(id).value = ''; });
-  renderSidebar();
-  selectProject(p.id);
-}
-
-function openAPIConfig() {
-  var k = getKeys();
-  if (k.anthropic) document.getElementById('keyAnthropic').value = k.anthropic;
-  if (k.ideogram)  document.getElementById('keyIdeogram').value = k.ideogram;
-  if (k.heygen)    document.getElementById('keyHeyGen').value = k.heygen;
-  if (k.canvaId)   document.getElementById('keyCanvaId').value = k.canvaId;
-  if (k.canvaSecret) document.getElementById('keyCanvaSecret').value = k.canvaSecret;
-  openModal('modalAPI');
-}
-
-function loadMemoryUI() {
-  if (!active) return;
-  var m = active.memory;
-  renderTags('memBrand', m.brand || [], 'brand');
-  renderTags('memColors', m.colors || [], 'colors');
-  renderTags('memProducts', m.products || [], 'products');
-  renderTags('memRefs', m.refs || [], 'refs');
-  document.getElementById('toneIn').value = m.tone || '';
-  renderAvatars();
-  renderRefGallery();
-  renderVoiceClones();
-  renderAssetGallery('logo', 'logoGallery');
-  renderAssetGallery('product', 'productPhotoGallery');
-}
-
-function renderTags(cid, arr, key) {
-  var el = document.getElementById(cid);
-  if (!arr.length) { el.innerHTML = '<span style="font-size:11px;color:var(--muted2)">Vacío</span>'; return; }
-  el.innerHTML = arr.map(function(t, i) {
-    return '<span class="tag">' + t + ' <span class="tag-rm" data-key="' + key + '" data-idx="' + i + '">×</span></span>';
-  }).join('');
-  el.querySelectorAll('.tag-rm').forEach(function(x) {
-    x.onclick = function() { removeTag(this.dataset.key, parseInt(this.dataset.idx)); };
-  });
-}
-
-function renderAvatars() {
-  if (!active) return;
-  var avs = active.memory.avatars || [];
-  document.getElementById('avGrid').innerHTML =
-    avs.map(function(a) { return '<div class="av-chip" title="' + a + '" style="border-color:' + active.color + '55">' + a.substring(0,2).toUpperCase() + '</div>'; }).join('') +
-    '<div class="av-chip av-add" id="avAddBtn">+</div>';
-  document.getElementById('avAddBtn').onclick = function() { document.getElementById('avIn').focus(); };
-}
-
-function addTag(key, inputId) {
-  var v = document.getElementById(inputId).value.trim();
-  if (!v || !active) return;
-  if (!active.memory[key]) active.memory[key] = [];
-  active.memory[key].push(v);
-  document.getElementById(inputId).value = '';
-  save(); loadMemoryUI();
-}
-
-function removeTag(key, idx) {
-  if (!active) return;
-  active.memory[key].splice(idx, 1);
-  save(); loadMemoryUI();
-}
-
-function addAvatar() {
-  var v = document.getElementById('avIn').value.trim();
-  if (!v || !active) return;
-  if (!active.memory.avatars) active.memory.avatars = [];
-  active.memory.avatars.push(v);
-  document.getElementById('avIn').value = '';
-  save(); renderAvatars(); updateAvatarSelector();
-}
-
 function readFile(file) {
   return new Promise(function(res, rej) {
     var r = new FileReader();
@@ -852,27 +515,220 @@ function readFile(file) {
     r.readAsDataURL(file);
   });
 }
+function showToast(msg, isErr) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;background:' + (isErr ? 'var(--dan)' : '#1a2a0a') + ';color:' + (isErr ? '#fff' : 'var(--acc)') + ';border:1px solid ' + (isErr ? 'var(--dan)' : 'var(--acc)') + ';max-width:360px;line-height:1.4;animation:fadeUp .2s ease';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 4000);
+}
+function gf(raw, label) {
+  var m = raw.match(new RegExp(label + ':\\s*([^\\n]+)'));
+  if (m) return m[1].trim().replace(/\*\*/g, '').replace(/\*/g, '').replace(/^[-:\s]+/, '').trim();
+  return '';
+}
 
+// ── INIT ───────────────────────────────────────────────
+function init() {
+  load(); updateAPIStatus(); bindAll(); renderSidebar();
+  if (!projects.length) { showEl('emptyState'); hideEl('projView'); }
+  else selectProject(projects[0].id);
+}
+
+// ── BIND ───────────────────────────────────────────────
+function bindAll() {
+  $('btnNewProj').onclick = function() { openM('mNewProj'); };
+  $('btnNewProjEmpty').onclick = function() { openM('mNewProj'); };
+  $('apiBar').onclick = openAPIConfig;
+  $('btnGoMem').onclick = function() { showTab('memoria'); };
+  $('btnGoGen').onclick = function() { showTab('generar'); };
+  $('tabOv').onclick = function() { showTab('overview'); };
+  $('tabMem').onclick = function() { showTab('memoria'); };
+  $('tabGen').onclick = function() { showTab('generar'); };
+  $('tabCr').onclick = function() { showTab('creativos'); };
+  $('btnCancelNP').onclick = function() { closeM('mNewProj'); };
+  $('btnCreateP').onclick = createProject;
+  $('cpRow').onclick = function(e) { var cp = e.target.closest('.cp'); if (!cp) return; document.querySelectorAll('.cp').forEach(function(x) { x.classList.remove('sel'); }); cp.classList.add('sel'); newProjColor = cp.dataset.c; };
+  $('btnCancelAPI').onclick = function() { closeM('mAPI'); };
+  $('btnSaveAPI').onclick = saveKeys;
+  $('btnCloseCr').onclick = function() { closeM('mCr'); };
+  $('btnCloseCr2').onclick = function() { closeM('mCr'); };
+  $('btnCanvaModal').onclick = function() { if (viewCrId) exportToCanva(viewCrId); };
+  $('btnCopyCr').onclick = copyCr;
+  $('btnVariation').onclick = function() { closeM('mCr'); makeVariation(viewCrId); };
+  // Memory inputs
+  $('colorIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('colors', 'colorIn'); };
+  $('prodIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('products', 'prodIn'); };
+  $('avIn').onkeydown = function(e) { if (e.key === 'Enter') addAvatar(); };
+  $('toneIn').oninput = function() { if (active) { active.memory.tone = this.value; save(); } };
+  // Language selector
+  document.getElementById('langRow').addEventListener('click', function(e) {
+    var btn = e.target.closest('.lang-btn');
+    if (!btn || !active) return;
+    document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.remove('sel'); });
+    btn.classList.add('sel');
+    active.memory.lang = btn.dataset.lang;
+    document.getElementById('customLangIn').value = '';
+    save();
+  });
+  document.getElementById('customLangIn').oninput = function() {
+    if (!active || !this.value.trim()) return;
+    document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.remove('sel'); });
+    active.memory.lang = this.value.trim();
+    save();
+  };
+  // Brand upload
+  $('brandZone').onclick = function() { $('fileInput').click(); };
+  $('fileInput').onchange = function() { handleBrandUpload(this.files); };
+  setupDrop('brandZone', handleBrandUpload);
+  // Logo upload
+  $('logoZone').onclick = function() { $('logoInput').click(); };
+  $('logoInput').onchange = function() { handleAssetUpload(this.files, 'logo'); };
+  setupDrop('logoZone', function(f) { handleAssetUpload(f, 'logo'); });
+  // Product photos
+  $('prodPhotoZone').onclick = function() { $('prodPhotoInput').click(); };
+  $('prodPhotoInput').onchange = function() { handleAssetUpload(this.files, 'product'); };
+  setupDrop('prodPhotoZone', function(f) { handleAssetUpload(f, 'product'); });
+  // Refs in generar
+  $('refImgZone').onclick = function() { $('refImgInput').click(); };
+  $('refVidZone').onclick = function() { $('refVidInput').click(); };
+  $('refImgInput').onchange = function() { handleRefUpload(this.files, 'image'); };
+  $('refVidInput').onchange = function() { handleRefUpload(this.files, 'video'); };
+  setupDrop('refImgZone', function(f) { handleRefUpload(f, 'image'); });
+  setupDrop('refVidZone', function(f) { handleRefUpload(f, 'video'); });
+  $('refIn').onkeydown = function(e) { if (e.key === 'Enter') addTag('refs', 'refIn'); };
+  // Type/fmt/dur buttons
+  document.querySelectorAll('.type-btn').forEach(function(b) { b.onclick = function() { setType(this); }; });
+  document.querySelectorAll('.fmt-btn').forEach(function(b) { b.onclick = function() { setFmt(this); }; });
+  document.querySelectorAll('.dur-btn').forEach(function(b) { b.onclick = function() { setDur(this); }; });
+  $('genBtn').onclick = generate;
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(function(b) {
+    b.onclick = function() { document.querySelectorAll('.filter-btn').forEach(function(x) { x.classList.remove('sel'); }); this.classList.add('sel'); crFilter = this.dataset.filter; renderAllCr(); };
+  });
+}
+
+// ── SIDEBAR ────────────────────────────────────────────
+function renderSidebar() {
+  var el = $('projList');
+  if (!projects.length) { el.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--mut2)">Sin proyectos aún</div>'; return; }
+  el.innerHTML = projects.map(function(p) {
+    return '<div class="pi' + (active && active.id === p.id ? ' active' : '') + '" data-pid="' + p.id + '"><div class="pi-dot" style="background:' + p.color + '"></div><div class="pi-info"><div class="pi-name">' + p.name + '</div><div class="pi-meta">' + (p.client || p.rubro || 'Proyecto') + '</div></div></div>';
+  }).join('');
+  el.querySelectorAll('.pi').forEach(function(item) { item.onclick = function() { selectProject(this.dataset.pid); }; });
+}
+function selectProject(id) {
+  active = projects.find(function(p) { return p.id === id; });
+  if (!active) return;
+  if (!active.memory) active.memory = { brand:[], colors:[], products:[], refs:[], tone:'', avatars:[], assets:[], visualRefs:[] };
+  hideEl('emptyState'); showEl('projView');
+  $('tbName').textContent = active.name;
+  $('tbBadge').textContent = active.client || active.rubro || 'Proyecto';
+  $('tbDot').style.background = active.color;
+  renderSidebar(); showTab('overview'); loadMemUI();
+}
+
+// ── TABS ───────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === name); });
+  ['overview','memoria','generar','creativos'].forEach(function(t) { var e = $('tab-' + t); if (e) e.classList.toggle('hidden', t !== name); });
+  if (name === 'overview') renderOverview();
+  if (name === 'creativos') renderAllCr();
+  if (name === 'generar') { updateAvatarSel(); renderRefSelRow(); renderRefGal(); renderTags('memRefs', active && active.memory ? active.memory.refs || [] : [], 'refs'); }
+}
+
+// ── PROJECT CREATE ──────────────────────────────────────
+function openAPIConfig() {
+  var k = getKeys();
+  if (k.ant) $('kAnt').value = k.ant;
+  if (k.ide) $('kIde').value = k.ide;
+  if (k.hey) $('kHey').value = k.hey;
+  if (k.canId) $('kCanId').value = k.canId;
+  if (k.canSec) $('kCanSec').value = k.canSec;
+  openM('mAPI');
+}
+function createProject() {
+  var name = $('npName').value.trim();
+  if (!name) { alert('Ingresá un nombre'); return; }
+  var p = { id: Date.now().toString(), name: name, client: $('npClient').value.trim(), rubro: $('npRubro').value.trim(), desc: $('npDesc').value.trim(), color: newProjColor, memory: { brand:[], colors:[], products:[], refs:[], tone:'', avatars:[], assets:[], visualRefs:[] }, creatives: [], createdAt: Date.now() };
+  projects.unshift(p); save(); closeM('mNewProj');
+  ['npName','npClient','npRubro','npDesc'].forEach(function(id) { $(id).value = ''; });
+  renderSidebar(); selectProject(p.id);
+}
+
+// ── MEMORY UI ──────────────────────────────────────────
+function loadMemUI() {
+  if (!active) return;
+  var m = active.memory;
+  renderTags('memBrand', m.brand || [], 'brand');
+  renderTags('memColors', m.colors || [], 'colors');
+  renderTags('memProds', m.products || [], 'products');
+  $('toneIn').value = m.tone || '';
+  // Restore language selection
+  var savedLang = m.lang || 'es-AR';
+  document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.toggle('sel', b.dataset.lang === savedLang); });
+  var isPreset = document.querySelector('.lang-btn.sel');
+  var customEl = document.getElementById('customLangIn');
+  if (customEl) customEl.value = isPreset ? '' : savedLang;
+  renderAvatars();
+  renderAssetGal('logo', 'logoGal');
+  renderAssetGal('product', 'prodGal');
+}
+function renderTags(cid, arr, key) {
+  var el = $(cid);
+  if (!el) return;
+  if (!arr.length) { el.innerHTML = '<span style="font-size:11px;color:var(--mut2)">Vacío</span>'; return; }
+  el.innerHTML = arr.map(function(t, i) {
+    return '<span class="tag">' + t + ' <span class="tag-rm" data-key="' + key + '" data-idx="' + i + '">×</span></span>';
+  }).join('');
+  el.querySelectorAll('.tag-rm').forEach(function(x) { x.onclick = function() { removeTag(this.dataset.key, parseInt(this.dataset.idx)); }; });
+}
+function addTag(key, inputId) {
+  var v = $(inputId).value.trim();
+  if (!v || !active) return;
+  if (!active.memory[key]) active.memory[key] = [];
+  active.memory[key].push(v);
+  $(inputId).value = '';
+  save(); loadMemUI();
+  if (key === 'refs') renderTags('memRefs', active.memory.refs || [], 'refs');
+}
+function removeTag(key, idx) {
+  if (!active) return;
+  active.memory[key].splice(idx, 1);
+  save(); loadMemUI();
+  if (key === 'refs') renderTags('memRefs', active.memory.refs || [], 'refs');
+}
+function renderAvatars() {
+  if (!active) return;
+  var avs = active.memory.avatars || [];
+  $('avGrid').innerHTML = avs.map(function(a) { return '<div class="av-chip" style="border-color:' + active.color + '55">' + a.substring(0,2).toUpperCase() + '</div>'; }).join('') + '<div class="av-chip av-add" id="avAddBtn">+</div>';
+  $('avAddBtn').onclick = function() { $('avIn').focus(); };
+}
+function addAvatar() {
+  var v = $('avIn').value.trim();
+  if (!v || !active) return;
+  if (!active.memory.avatars) active.memory.avatars = [];
+  active.memory.avatars.push(v);
+  $('avIn').value = '';
+  save(); renderAvatars(); updateAvatarSel();
+}
+
+// ── BRAND UPLOAD ───────────────────────────────────────
 async function handleBrandUpload(files) {
   if (!files.length || !active) return;
   var keys = getKeys();
-  if (!keys.anthropic) { alert('Configurá tu API key de Anthropic primero'); openAPIConfig(); return; }
-  var el = document.getElementById('memBrand');
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:4px 0"><div class="spinner" style="width:16px;height:16px;border-width:1.5px"></div>Analizando con Claude...</div>';
+  if (!keys.ant) { alert('Configurá tu API key de Anthropic'); openAPIConfig(); return; }
+  $('memBrand').innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);padding:4px 0"><div class="spinner" style="width:16px;height:16px;border-width:1.5px"></div>Analizando con Claude...</div>';
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
     try {
       var dataUrl = await readFile(file);
       var b64 = dataUrl.split(',')[1];
-      var isPDF = file.type === 'application/pdf';
       var parts = [];
-      if (isPDF) parts.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:b64 }});
-      else parts.push({ type:'image', source:{ type:'base64', media_type:file.type || 'image/jpeg', data:b64 }});
+      if (file.type === 'application/pdf') parts.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:b64 } });
+      else parts.push({ type:'image', source:{ type:'base64', media_type:file.type||'image/jpeg', data:b64 } });
       parts.push({ type:'text', text:'Analizá este brandbook. Respondé SOLO en JSON válido sin markdown:\n{"nombre_marca":"","descripcion":"","colores":[],"tipografias":[],"tono_voz":"","valores":[],"productos":[],"audiencia":""}' });
-      var resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:700, messages:[{ role:'user', content:parts }] })
-      });
+      var resp = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.ant, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' }, body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:700, messages:[{ role:'user', content:parts }] }) });
       var d = await resp.json();
       if (d.error) throw new Error(d.error.message);
       var txt = d.content.map(function(b) { return b.text || ''; }).join('');
@@ -880,892 +736,493 @@ async function handleBrandUpload(files) {
       try { var jm = txt.match(/\{[\s\S]*\}/); if (jm) ex = JSON.parse(jm[0]); } catch(e2) {}
       if (!active.memory.brand) active.memory.brand = [];
       active.memory.brand.push(file.name);
-      if (ex.colores && ex.colores.length) { if (!active.memory.colors) active.memory.colors=[]; ex.colores.forEach(function(c) { if (active.memory.colors.indexOf(c) < 0) active.memory.colors.push(c); }); }
-      if (ex.tipografias && ex.tipografias.length) { if (!active.memory.colors) active.memory.colors=[]; ex.tipografias.forEach(function(t) { var v='Tipografía: '+t; if (active.memory.colors.indexOf(v) < 0) active.memory.colors.push(v); }); }
-      if (ex.tono_voz && !active.memory.tone) { active.memory.tone = ex.tono_voz; if (ex.audiencia) active.memory.tone += '\nAudiencia: ' + ex.audiencia; if (ex.valores && ex.valores.length) active.memory.tone += '\nValores: ' + ex.valores.join(', '); }
-      if (ex.productos && ex.productos.length) { if (!active.memory.products) active.memory.products=[]; ex.productos.forEach(function(p) { if (active.memory.products.indexOf(p) < 0) active.memory.products.push(p); }); }
+      if (ex.colores && ex.colores.length) { if (!active.memory.colors) active.memory.colors=[]; ex.colores.forEach(function(c) { if (active.memory.colors.indexOf(c)<0) active.memory.colors.push(c); }); }
+      if (ex.tipografias && ex.tipografias.length) { if (!active.memory.colors) active.memory.colors=[]; ex.tipografias.forEach(function(t) { var v='Tipografía: '+t; if (active.memory.colors.indexOf(v)<0) active.memory.colors.push(v); }); }
+      if (ex.tono_voz && !active.memory.tone) { active.memory.tone = ex.tono_voz; if (ex.audiencia) active.memory.tone += '\nAudiencia: '+ex.audiencia; if (ex.valores&&ex.valores.length) active.memory.tone += '\nValores: '+ex.valores.join(', '); }
+      if (ex.productos && ex.productos.length) { if (!active.memory.products) active.memory.products=[]; ex.productos.forEach(function(p) { if (active.memory.products.indexOf(p)<0) active.memory.products.push(p); }); }
       if (ex.descripcion && !active.desc) active.desc = ex.descripcion;
-      save(); loadMemoryUI();
-      showToast('Analizado: ' + file.name);
-    } catch(err) { loadMemoryUI(); showToast('Error: ' + err.message, true); }
+      save(); loadMemUI(); showToast('Analizado: ' + file.name);
+    } catch(err) { loadMemUI(); showToast('Error: ' + err.message, true); }
   }
-  document.getElementById('fileInput').value = '';
+  $('fileInput').value = '';
 }
 
-async function handleRefUpload(files, refType) {
+// ── ASSET UPLOAD (logo + product photos) ───────────────
+async function handleAssetUpload(files, assetType) {
   if (!files.length || !active) return;
   var keys = getKeys();
-  if (!keys.anthropic) { alert('Configurá tu API key de Anthropic primero'); openAPIConfig(); return; }
-  if (!active.memory.visualRefs) active.memory.visualRefs = [];
+  if (!keys.ant) { alert('Configurá tu API key de Anthropic'); openAPIConfig(); return; }
+  if (!active.memory.assets) active.memory.assets = [];
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
-    var refId = Date.now().toString() + '_' + i + '_' + Math.random().toString(36).slice(2,5);
-    var ph = { id:refId, name:file.name, refType:refType, dataUrl:null, analysis:null, analyzing:true };
-    active.memory.visualRefs.push(ph);
-    save(); renderRefGallery();
+    var aid = Date.now().toString() + '_' + i;
+    var ph = { id:aid, name:file.name, assetType:assetType, dataUrl:null, analysis:null };
+    active.memory.assets.push(ph);
+    save(); renderAssetGal(assetType, assetType==='logo'?'logoGal':'prodGal');
     try {
       var dataUrl = await readFile(file);
       ph.dataUrl = dataUrl;
       var b64 = dataUrl.split(',')[1];
-      if (refType === 'image') {
-        var r2 = await fetch('https://api.anthropic.com/v1/messages', {
-          method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-          body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:350, messages:[{ role:'user', content:[
-            { type:'image', source:{ type:'base64', media_type:file.type || 'image/jpeg', data:b64 }},
-            { type:'text', text:'Analizá esta imagen publicitaria de referencia. Describí: composición, paleta, tipografía, tono emocional y concepto creativo. En español rioplatense, sin preamble, máximo 4 oraciones.' }
-          ]}]})
-        });
-        var dr = await r2.json();
-        if (dr.error) throw new Error(dr.error.message);
-        ph.analysis = dr.content.map(function(b) { return b.text || ''; }).join('');
-      } else {
-        ph.analysis = await analyzeVideo(file, dataUrl, keys);
-      }
-      ph.analyzing = false;
-      save(); renderRefGallery();
-      showToast('Referencia analizada: ' + file.name);
-    } catch(err) {
-      ph.analyzing = false; ph.analysis = 'Error: ' + err.message;
-      save(); renderRefGallery();
-    }
+      var prompt = assetType==='logo' ? 'Analizá este logo/isotipo. Describí: colores exactos (hex si podés), tipografía, estilo gráfico, elementos. En español rioplatense, máximo 2 oraciones.' : 'Analizá esta foto de producto para uso publicitario. Describí: estilo fotográfico, paleta, composición, fondo, iluminación. En español rioplatense, máximo 2 oraciones.';
+      var resp = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.ant, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' }, body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:250, messages:[{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:file.type||'image/png', data:b64 } }, { type:'text', text:prompt }] }] }) });
+      var d = await resp.json();
+      if (d.error) throw new Error(d.error.message);
+      ph.analysis = d.content.map(function(b) { return b.text||''; }).join('');
+      save(); renderAssetGal(assetType, assetType==='logo'?'logoGal':'prodGal'); renderRefSelRow();
+      showToast((assetType==='logo'?'Logo':'Foto') + ' analizado: ' + file.name);
+    } catch(e) { ph.analysis = 'Error: '+e.message; save(); renderAssetGal(assetType, assetType==='logo'?'logoGal':'prodGal'); showToast('Error: '+e.message, true); }
   }
-  document.getElementById('refFileInput').value = '';
-  document.getElementById('refVideoInput').value = '';
+  $(assetType==='logo'?'logoInput':'prodPhotoInput').value = '';
 }
-
-async function analyzeVideo(file, dataUrl, keys) {
-  return new Promise(function(resolve) {
-    var vid = document.createElement('video');
-    vid.preload = 'metadata'; vid.muted = true; vid.src = dataUrl;
-    vid.onloadeddata = async function() {
-      try {
-        vid.currentTime = Math.min(1, vid.duration * 0.1);
-        await new Promise(function(r) { vid.onseeked = r; setTimeout(r, 1500); });
-        var cv = document.createElement('canvas');
-        cv.width = 640; cv.height = 360;
-        cv.getContext('2d').drawImage(vid, 0, 0, 640, 360);
-        var fb64 = cv.toDataURL('image/jpeg', 0.8).split(',')[1];
-        var r2 = await fetch('https://api.anthropic.com/v1/messages', {
-          method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-          body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:350, messages:[{ role:'user', content:[
-            { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:fb64 }},
-            { type:'text', text:'Analizá este frame de video publicitario (' + file.name + '). Describí: estilo visual, composición, energía y concepto creativo. En español rioplatense, sin preamble, máximo 4 oraciones.' }
-          ]}]})
-        });
-        var d2 = await r2.json();
-        resolve(d2.content.map(function(b) { return b.text || ''; }).join(''));
-      } catch(e) { resolve('Video: ' + file.name); }
-    };
-    vid.onerror = function() { resolve('Video: ' + file.name); };
-    setTimeout(function() { resolve('Video: ' + file.name); }, 9000);
-  });
-}
-
-function renderRefGallery() {
-  if (!active) return;
-  var refs = active.memory.visualRefs || [];
-  var el = document.getElementById('refGallery');
-  if (!el || !refs.length) { if (el) el.innerHTML = ''; return; }
-  el.innerHTML = refs.map(function(ref) {
-    var thumb = ref.refType === 'video'
-      ? (ref.dataUrl ? '<video src="' + ref.dataUrl + '" style="width:100%;height:100%;object-fit:cover" muted></video>' : '<div class="ref-placeholder"><div style="font-size:24px">🎬</div><div>' + ref.name + '</div></div>')
-      : (ref.dataUrl ? '<img src="' + ref.dataUrl + '" alt="' + ref.name + '">' : '<div class="ref-placeholder"><div style="font-size:24px">🖼️</div></div>');
-    var spinner = ref.analyzing ? '<div class="ref-analyzing"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div><div style="font-size:10px;margin-top:4px">Analizando...</div></div>' : '';
-    return '<div class="ref-card" data-refid="' + ref.id + '">' + thumb +
-      '<div class="ref-badge">' + (ref.refType === 'video' ? 'Video' : 'Imagen') + '</div>' +
-      '<div class="ref-overlay"><div class="ref-name">' + ref.name + '</div><div class="ref-snippet">' + (ref.analyzing ? 'Analizando...' : (ref.analysis || '')) + '</div></div>' +
-      spinner + '<div class="ref-del" data-refid="' + ref.id + '">×</div></div>';
+function renderAssetGal(assetType, galId) {
+  var el = $(galId);
+  if (!el || !active) return;
+  var assets = (active.memory.assets||[]).filter(function(a){return a.assetType===assetType;});
+  if (!assets.length) { el.innerHTML=''; return; }
+  el.innerHTML = assets.map(function(a) {
+    return '<div class="ref-card"><img src="' + (a.dataUrl||'') + '" alt="' + a.name + '"><div class="ref-badge">' + (assetType==='logo'?'Logo':'Prod') + '</div><div class="ref-ov"><div class="ref-name">' + a.name + '</div><div class="ref-snip">' + (a.analysis||'') + '</div></div><div class="ref-del" onclick="deleteAsset(\'' + a.id + '\')">×</div></div>';
   }).join('');
-  el.querySelectorAll('.ref-card').forEach(function(card) {
-    card.onclick = function(e) { if (!e.target.classList.contains('ref-del')) showRefDetail(this.dataset.refid); };
-  });
-  el.querySelectorAll('.ref-del').forEach(function(btn) {
-    btn.onclick = function(e) { e.stopPropagation(); deleteRef(this.dataset.refid); };
-  });
+}
+function deleteAsset(id) {
+  if (!active) return;
+  active.memory.assets = (active.memory.assets||[]).filter(function(a){return a.id!==id;});
+  save(); loadMemUI(); renderRefSelRow();
 }
 
+// ── REF UPLOAD (visual refs in generar) ────────────────
+async function handleRefUpload(files, refType) {
+  if (!files.length || !active) return;
+  var keys = getKeys();
+  if (!keys.ant) { alert('Configurá tu API key de Anthropic'); openAPIConfig(); return; }
+  if (!active.memory.visualRefs) active.memory.visualRefs = [];
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    var rid = Date.now().toString() + '_' + i;
+    var ph = { id:rid, name:file.name, refType:refType, dataUrl:null, analysis:null, analyzing:true };
+    active.memory.visualRefs.push(ph);
+    save(); renderRefGal();
+    try {
+      var dataUrl = await readFile(file);
+      ph.dataUrl = dataUrl;
+      if (refType==='image') {
+        var b64 = dataUrl.split(',')[1];
+        var resp = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{ 'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' }, body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:300, messages:[{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:file.type||'image/jpeg', data:b64 } }, { type:'text', text:'Analizá esta imagen publicitaria de referencia. Describí: composición, paleta, tipografía, tono emocional y concepto. En español rioplatense, máximo 3 oraciones.' }] }] }) });
+        var d = await resp.json();
+        if (d.error) throw new Error(d.error.message);
+        ph.analysis = d.content.map(function(b){return b.text||'';}).join('');
+      } else { ph.analysis = 'Video de referencia: ' + file.name; }
+      ph.analyzing = false; save(); renderRefGal(); renderRefSelRow();
+      showToast('Referencia analizada: ' + file.name);
+    } catch(e) { ph.analyzing = false; ph.analysis = 'Error: '+e.message; save(); renderRefGal(); }
+  }
+  $('refImgInput').value = ''; $('refVidInput').value = '';
+}
+function renderRefGal() {
+  var el = $('refGal');
+  if (!el || !active) return;
+  var refs = active.memory.visualRefs || [];
+  if (!refs.length) { el.innerHTML = ''; return; }
+  el.innerHTML = refs.map(function(r) {
+    return '<div class="ref-card" onclick="showRefDetail(\'' + r.id + '\')">' +
+      (r.dataUrl ? '<img src="' + r.dataUrl + '" alt="' + r.name + '">' : '<div class="ref-ph"><div style="font-size:20px">🖼️</div></div>') +
+      '<div class="ref-badge">' + (r.refType==='video'?'Video':'Img') + '</div>' +
+      (r.analyzing ? '<div class="ref-analyzing"><div class="spinner" style="width:14px;height:14px;border-width:1.5px"></div></div>' : '') +
+      '<div class="ref-ov"><div class="ref-name">' + r.name + '</div><div class="ref-snip">' + (r.analysis||'') + '</div></div>' +
+      '<div class="ref-del" onclick="event.stopPropagation();deleteRef(\'' + r.id + '\')">×</div></div>';
+  }).join('');
+}
 function deleteRef(id) {
   if (!active) return;
-  active.memory.visualRefs = (active.memory.visualRefs || []).filter(function(r) { return r.id !== id; });
-  save(); renderRefGallery();
+  active.memory.visualRefs = (active.memory.visualRefs||[]).filter(function(r){return r.id!==id;});
+  save(); renderRefGal(); renderRefSelRow();
 }
-
 function showRefDetail(id) {
   if (!active) return;
-  var ref = (active.memory.visualRefs || []).find(function(r) { return r.id === id; });
+  var ref = (active.memory.visualRefs||[]).find(function(r){return r.id===id;});
   if (!ref) return;
-  document.getElementById('mcIcon').textContent = ref.refType === 'video' ? '🎬' : '🖼️';
-  document.getElementById('mcTitle').textContent = ref.name;
-  document.getElementById('mcMeta').textContent = 'Referencia ' + ref.refType;
+  $('mcIcon').textContent = '🖼️';
+  $('mcTitle').textContent = ref.name;
+  $('mcMeta').textContent = 'Referencia visual';
   var html = '';
-  if (ref.dataUrl && ref.refType === 'image') html += '<img src="' + ref.dataUrl + '" style="width:100%;border-radius:8px;margin-bottom:14px;max-height:280px;object-fit:contain" alt="">';
-  if (ref.dataUrl && ref.refType === 'video') html += '<video src="' + ref.dataUrl + '" controls style="width:100%;border-radius:8px;margin-bottom:14px;max-height:240px"></video>';
-  html += '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Análisis de Claude</div>';
-  html += '<div style="font-size:13px;line-height:1.7;color:var(--text)">' + (ref.analysis || 'Analizando...') + '</div>';
-  document.getElementById('mcContent').innerHTML = html;
-  openModal('modalCreative');
+  if (ref.dataUrl && ref.refType==='image') html += '<img src="' + ref.dataUrl + '" style="width:100%;border-radius:8px;margin-bottom:12px;max-height:280px;object-fit:contain">';
+  html += '<div class="brief-stitle">Análisis de Claude</div><div style="font-size:13px;line-height:1.7">' + (ref.analysis||'Analizando...') + '</div>';
+  $('mcContent').innerHTML = html;
+  openM('mCr');
 }
 
-function brandContext() {
-  if (!active) return '';
+// ── REF SELECTOR (in generar tab) ─────────────────────
+function renderRefSelRow() {
+  var el = $('refSelRow');
+  if (!el || !active) return;
   var m = active.memory;
-  var parts = [];
+  var all = [];
+  (m.assets||[]).forEach(function(a) { if (a.dataUrl) all.push({ id:a.id, url:a.dataUrl, label:a.assetType==='logo'?'🎨':'📦', name:a.name }); });
+  (m.visualRefs||[]).forEach(function(r) { if (r.dataUrl && !r.analyzing) all.push({ id:r.id, url:r.dataUrl, label:'🖼️', name:r.name }); });
+  if (!all.length) { el.innerHTML = '<div style="font-size:11px;color:var(--mut2)">Cargá logos, fotos de producto o referencias visuales en Memoria de marca</div>'; return; }
+  all.forEach(function(r) { if (_selRefs[r.id] === undefined) _selRefs[r.id] = true; });
+  el.innerHTML = all.map(function(r) {
+    var sel = _selRefs[r.id] !== false;
+    return '<div class="ref-sel-chip' + (sel?' sel':'') + '" data-rid="' + r.id + '" title="' + r.name + '"><img src="' + r.url + '"><div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:9px;text-align:center">' + r.label + '</div>' + (sel ? '<div class="sel-check">✓</div>' : '') + '</div>';
+  }).join('');
+  el.querySelectorAll('.ref-sel-chip').forEach(function(chip) {
+    chip.onclick = function() { _selRefs[this.dataset.rid] = !(_selRefs[this.dataset.rid] !== false); renderRefSelRow(); };
+  });
+}
+function getActiveRefs() {
+  if (!active) return [];
+  var m = active.memory;
+  var all = [];
+  (m.assets||[]).forEach(function(a) { if (a.dataUrl && a.analysis) all.push(a); });
+  (m.visualRefs||[]).forEach(function(r) { if (r.dataUrl && r.analysis && !r.analyzing) all.push(r); });
+  return all.filter(function(r) { return _selRefs[r.id] !== false; });
+}
+
+// ── BRAND CONTEXT ──────────────────────────────────────
+function getLang() {
+  return (active && active.memory && active.memory.lang) ? active.memory.lang : 'es-AR';
+}
+function brandCtx() {
+  if (!active) return '';
+  var m = active.memory, parts = [];
+  parts.push('IDIOMA DE LOS CREATIVOS: ' + getLang() + ' — Todo el texto visible en imágenes, headlines, CTAs, copies y guiones debe estar en este idioma.');
   if (m.tone) parts.push('Tono de voz: ' + m.tone);
-  if (m.salesFocus) parts.push('ENFOQUE DE VENTA (prioritario): ' + m.salesFocus);
-  if (m.colors && m.colors.length) parts.push('Paleta/tipografía: ' + m.colors.join(', '));
-  if (m.products && m.products.length) parts.push('Productos: ' + m.products.join(', '));
-  if (m.refs && m.refs.length) parts.push('Referencias por nombre: ' + m.refs.join(', '));
-  if (m.avatars && m.avatars.length) parts.push('Avatares: ' + m.avatars.join(', '));
+  var sf = $('genSalesFocus');
+  if (sf && sf.value.trim()) parts.push('ENFOQUE DE VENTA (prioritario): ' + sf.value.trim());
+  if (m.colors&&m.colors.length) parts.push('Paleta/tipografía: ' + m.colors.join(', '));
+  if (m.products&&m.products.length) parts.push('Productos: ' + m.products.join(', '));
+  if (m.refs&&m.refs.length) parts.push('Referencias por nombre: ' + m.refs.join(', '));
+  if (m.avatars&&m.avatars.length) parts.push('Avatares: ' + m.avatars.join(', '));
   if (active.desc) parts.push('Descripción: ' + active.desc);
   if (active.rubro) parts.push('Rubro: ' + active.rubro);
-  var vRefs = (m.visualRefs || []).filter(function(r) { return r.analysis && !r.analyzing; });
-  if (vRefs.length) {
-    var lines = vRefs.map(function(r) { return '- ' + r.name + ' (' + r.refType + '): ' + r.analysis; });
-    parts.push('REFERENCIAS VISUALES ANALIZADAS (usar para inspirar estilo y concepto):\n' + lines.join('\n'));
-  }
+  var ar = getActiveRefs();
+  var logos = ar.filter(function(r){return r.assetType==='logo';});
+  var prods = ar.filter(function(r){return r.assetType==='product';});
+  var imgRefs = ar.filter(function(r){return !r.assetType;});
+  if (logos.length) parts.push('LOGO DE LA MARCA: ' + logos.map(function(a){return a.analysis;}).join(' | '));
+  if (prods.length) parts.push('FOTOS DE PRODUCTO (replicar este estilo visual exacto): ' + prods.map(function(a){return a.analysis;}).join(' | '));
+  if (imgRefs.length) parts.push('REFERENCIAS VISUALES: ' + imgRefs.map(function(r){return r.name+': '+r.analysis;}).join(' | '));
   return parts.join('\n');
 }
 
-function selType(el) {
-  document.querySelectorAll('.type-btn').forEach(function(b) { b.classList.remove('sel'); });
-  el.classList.add('sel');
-  selTypeVal = el.dataset.type;
-  document.getElementById('fmtImagen').classList.toggle('hidden', selTypeVal !== 'imagen');
-  document.getElementById('fmtCarrusel').classList.toggle('hidden', selTypeVal !== 'carrusel');
-  document.getElementById('fmtVideo').classList.toggle('hidden', selTypeVal !== 'video');
-  selFmtVal = '1080x1080';
-  document.querySelectorAll('.fmt-btn').forEach(function(b) { b.classList.toggle('sel', b.dataset.fmt === '1080x1080'); });
-  var ph = { imagen:'Ej: Anuncio de lanzamiento, 40% off, fondo oscuro...', carrusel:'Ej: 4 slides con beneficios del producto, CTA en el último...', video:'Ej: Reel de 30s con Lucas (founder) anunciando Black Friday...', copy:'Ej: 3 variaciones de copy para conversión, emprendedores 30-40...' };
-  document.getElementById('mainPrompt').placeholder = ph[selTypeVal] || '';
-  updateAvatarSelector();
+// ── TYPE / FORMAT / DUR ────────────────────────────────
+function setType(el) {
+  document.querySelectorAll('.type-btn').forEach(function(b){b.classList.remove('sel');});
+  el.classList.add('sel'); selType = el.dataset.type;
+  $('fmtImagen').classList.toggle('hidden', selType!=='imagen');
+  $('fmtCarrusel').classList.toggle('hidden', selType!=='carrusel');
+  $('fmtVideo').classList.toggle('hidden', selType!=='video');
+  selFmt = '1080x1080';
+  document.querySelectorAll('.fmt-btn').forEach(function(b){b.classList.toggle('sel', b.dataset.fmt==='1080x1080');});
+  var ph = { imagen:'Ej: Anuncio de lanzamiento, 40% off, fondo oscuro...', carrusel:'Ej: 4 slides con beneficios del producto, CTA en el último...', video:'Ej: Reel de 30s con el founder anunciando Black Friday...', copy:'Ej: 3 variaciones de copy para conversión...' };
+  $('mainPrompt').placeholder = ph[selType] || '';
+  updateAvatarSel();
 }
-
-function selFmt(el) {
-  document.querySelectorAll('.fmt-btn').forEach(function(b) { b.classList.remove('sel'); });
-  el.classList.add('sel');
-  selFmtVal = el.dataset.fmt;
-}
-
-function selDur(el) {
-  document.querySelectorAll('.dur-btn').forEach(function(b) { b.classList.remove('sel'); });
-  el.classList.add('sel');
-  selDurVal = el.dataset.dur;
-}
-
-function updateAvatarSelector() {
-  if (selTypeVal !== 'video') return;
-  renderVoiceClones();
-  var avs = (active && active.memory && active.memory.avatars) || [];
-  var el = document.getElementById('avatarSelector');
+function setFmt(el) { document.querySelectorAll('.fmt-btn').forEach(function(b){b.classList.remove('sel');}); el.classList.add('sel'); selFmt = el.dataset.fmt; }
+function setDur(el) { document.querySelectorAll('.dur-btn').forEach(function(b){b.classList.remove('sel');}); el.classList.add('sel'); selDur = el.dataset.dur; }
+function updateAvatarSel() {
+  if (selType !== 'video') return;
+  var avs = (active&&active.memory&&active.memory.avatars)||[];
+  var el = $('avatarSel');
   if (!el) return;
-  if (!avs.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Agregá avatares en Memoria de marca para asignarlos al video</div>'; return; }
-  el.innerHTML = '<div class="fmt-label">Avatar para el video</div><div class="fmt-row">' +
-    avs.map(function(a, i) { return '<button class="fmt-btn' + (i === 0 ? ' sel' : '') + '" data-av="' + a + '">' + a + '</button>'; }).join('') + '</div>';
-  el.querySelectorAll('[data-av]').forEach(function(btn) {
-    btn.onclick = function() { el.querySelectorAll('[data-av]').forEach(function(b) { b.classList.remove('sel'); }); this.classList.add('sel'); };
-  });
+  if (!avs.length) { el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:10px">Agregá avatares en Memoria de marca</div>'; return; }
+  el.innerHTML = '<div class="fmt-lbl">Avatar para el video</div><div class="fmt-row">' + avs.map(function(a,i){return '<button class="fmt-btn'+(i===0?' sel':'') + '" data-av="' + a + '">' + a + '</button>';}).join('') + '</div>';
+  el.querySelectorAll('[data-av]').forEach(function(btn){btn.onclick=function(){el.querySelectorAll('[data-av]').forEach(function(b){b.classList.remove('sel');});this.classList.add('sel');};});
 }
 
+// ── GENERATE ──────────────────────────────────────────
 async function generate() {
   if (!active) return;
-  var prompt = document.getElementById('mainPrompt').value.trim();
+  var prompt = $('mainPrompt').value.trim();
   if (!prompt) { alert('Describí qué querés crear'); return; }
   var keys = getKeys();
-  if (!keys.anthropic) { alert('Configurá tu API key de Anthropic primero'); openAPIConfig(); return; }
-  if ((selTypeVal === 'imagen' || selTypeVal === 'carrusel') && !keys.ideogram) {
-    if (!confirm('No tenés la API key de Ideogram configurada.\n\nSin ella Claude va a generar el brief y el prompt, pero no la imagen visual.\n\n¿Querés continuar igual?')) return;
+  if (!keys.ant) { alert('Configurá tu API key de Anthropic'); openAPIConfig(); return; }
+  if ((selType==='imagen'||selType==='carrusel') && !keys.ide) {
+    if (!confirm('No tenés API key de Ideogram configurada.\n\nClaude generará el brief y el prompt, pero no la imagen visual.\n\n¿Continuar igual?')) return;
   }
-  var btn = document.getElementById('genBtn');
+  var btn = $('genBtn');
   btn.disabled = true; btn.textContent = 'Generando...';
-  var oa = document.getElementById('outputArea');
-  oa.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--muted)">Creando con IA...</span></div>';
+  $('outputArea').innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--mut)">Creando con IA...</span></div>';
   try {
-    if (selTypeVal === 'imagen') await genImagen(prompt, keys);
-    else if (selTypeVal === 'carrusel') await genCarrusel(prompt, keys);
-    else if (selTypeVal === 'video') await genVideo(prompt, keys);
+    if (selType==='imagen') await genImagen(prompt, keys);
+    else if (selType==='carrusel') await genCarrusel(prompt, keys);
+    else if (selType==='video') await genVideo(prompt, keys);
     else await genCopy(prompt, keys);
   } catch(e) {
-    oa.innerHTML = '<div style="padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);color:var(--danger);font-size:13px">Error: ' + e.message + '</div>';
+    $('outputArea').innerHTML = '<div style="padding:16px;background:var(--card);border:1px solid var(--b);border-radius:var(--r);color:var(--dan);font-size:13px">Error: ' + e.message + '</div>';
   }
   btn.disabled = false; btn.textContent = '✦ Generar';
 }
 
 async function claudeCall(sys, user, keys, maxTok) {
-  var r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-    body: JSON.stringify({ model:'claude-opus-4-5', max_tokens: maxTok || 1500, system:sys, messages:[{ role:'user', content:user }] })
-  });
+  var r = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{ 'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' }, body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:maxTok||1500, system:sys, messages:[{role:'user',content:user}] }) });
   var d = await r.json();
   if (d.error) throw new Error(d.error.message);
-  return d.content.map(function(b) { return b.text || ''; }).join('');
+  return d.content.map(function(b){return b.text||'';}).join('');
 }
 
-function gf(raw, label) {
-  // Try standard KEY: value format
-  var m = raw.match(new RegExp(label + ':\\s*([^\\n]+(?:\\n(?!' + label.replace('_','.') + ')(?![A-Z_]{3,}:)[^\\n]*)*)'));
-  if (m) {
-    var val = m[1].trim();
-    // Strip markdown bold/italic artifacts
-    val = val.replace(/\*\*/g, '').replace(/\*/g, '').replace(/^[-•]\s*/, '').trim();
-    if (val && val !== '' && val !== '[]') return val;
+async function ideogramCall(prompt, aspectRatio, keys) {
+  var ar = active&&active.memory&&active.memory.assets ? active.memory.assets : [];
+  var logos = ar.filter(function(a){return a.assetType==='logo'&&a.dataUrl;});
+  var prods = ar.filter(function(a){return a.assetType==='product'&&a.dataUrl;});
+  var selAR = getActiveRefs().filter(function(r){return !r.assetType&&r.dataUrl;});
+  var allRefs = logos.slice(0,1).concat(prods.slice(0,1)).concat(selAR.slice(0,1));
+  var body = { image_request: { prompt: prompt + ' All visible text must be written in ' + getLang() + ' language.', aspect_ratio: aspectRatio, model: 'V_3', magic_prompt_option: 'AUTO' } };
+  if (allRefs.length) body.image_references = allRefs.map(function(r){ return { url: r.dataUrl, weight: r.assetType==='logo' ? 85 : 50 }; });
+  var r = await fetch('/api/ideogram', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ide }, body: JSON.stringify(body) });
+  var d = await r.json();
+  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  return d.data&&d.data[0] ? d.data[0].url : null;
+}
+
+function saveCr(cr) { if (!active.creatives) active.creatives=[]; active.creatives.unshift(cr); save(); }
+function snapContext() {
+  var sf = $('genSalesFocus'); var ar = getActiveRefs();
+  return { salesFocus: sf ? sf.value.trim() : '', activeRefs: ar.map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}) };
+}
+
+// ── IMAGEN ────────────────────────────────────────────
+async function genImagen(prompt, keys) {
+  var oa = $('outputArea');
+  var sys = 'Experto en marketing visual para la marca "' + active.name + '".\n' + brandCtx() + '\nIMPORTANTE: Respondé SOLO con el formato indicado. Sin markdown, sin asteriscos, sin secciones extra.';
+  var raw = await claudeCall(sys, 'Generá el brief de esta imagen publicitaria.\nFORMATO: ' + selFmt + '\nSOLICITUD: ' + prompt + '\n\nTodo el texto visible en la imagen debe estar en ' + getLang() + '.\n\nRespondé SOLO con estas líneas:\nCONCEPTO: [concepto visual en una línea]\nHEADLINE: [headline en español]\nSUBHEAD: [subhead en español]\nCTA: [CTA en español]\nIDEOGRAM_PROMPT: [prompt en inglés para Ideogram en una sola línea. OBLIGATORIO incluir: "All visible text in Spanish". Incluir textos exactos en español entre comillas. Describir logo si existe. Detallar estilo, colores, composición]', keys, 700);
+  var concepto=gf(raw,'CONCEPTO'), headline=gf(raw,'HEADLINE'), subhead=gf(raw,'SUBHEAD'), cta=gf(raw,'CTA'), ideoPr=gf(raw,'IDEOGRAM_PROMPT');
+  if (!concepto && !headline) { console.warn('Parse failed. Raw:', raw); showToast('Claude no devolvió el formato esperado', true); }
+  var imgUrl = null;
+  var aspMap = {'1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9'};
+  if (keys.ide) {
+    try {
+      oa.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--mut)">Generando imagen con Ideogram...</span></div>';
+      imgUrl = await ideogramCall(ideoPr, aspMap[selFmt]||'ASPECT_1_1', keys);
+    } catch(e) { showToast('Error Ideogram: '+e.message, true); }
   }
-  // Fallback: look for label in any case
-  var m2 = raw.match(new RegExp('(?:' + label + '|' + label.toLowerCase() + '):\\s*([^\\n]+)'));
-  if (m2) return m2[1].trim().replace(/\*\*/g,'').replace(/\*/g,'').trim();
-  return '';
+  var ctx = snapContext();
+  var cr = { id:Date.now().toString(), type:'imagen', title:prompt.substring(0,55), format:selFmt, concepto:concepto, headline:headline, subhead:subhead, cta:cta, ideogramPrompt:ideoPr, imgUrl:imgUrl, brief:raw, salesFocus:ctx.salesFocus, activeRefs:ctx.activeRefs, originalPrompt:prompt, createdAt:Date.now() };
+  saveCr(cr);
+  var cid = cr.id;
+  oa.innerHTML = '<div class="out-card"><div class="out-hdr"><span class="out-ico">🖼️</span><div><div class="out-title">Imagen · ' + selFmt + '</div><div class="out-meta">' + active.name + '</div></div><div class="out-acts">' + (imgUrl?'<a href="' + imgUrl + '" download class="btn">⬇ Descargar</a><button class="btn" onclick="exportToCanva(\'' + cr.id + '\')">🎨 Editar en Canva</button>':'') + '</div></div><div style="padding:16px">' +
+    (imgUrl?'<img src="' + imgUrl + '" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:360px;object-fit:contain">' : '<div id="noimg_'+cid+'" style="padding:18px;background:var(--bg3);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:13px;color:var(--mut);margin-bottom:12px">Key de Ideogram no activa al generar</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn" onclick="openAPIConfig()">⚙️ Verificar keys</button><button id="retry_'+cid+'" class="btn acc" onclick="retryIdeogram(\''+cid+'\')">🔄 Generar imagen</button></div></div>') +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div class="brief-stitle">Concepto</div><div class="brief-txt">' + concepto + '</div></div><div><div class="brief-stitle">Headline</div><div class="brief-txt">' + headline + '</div></div><div><div class="brief-stitle">Subhead</div><div class="brief-txt">' + subhead + '</div></div><div><div class="brief-stitle">CTA</div><div class="brief-txt">' + cta + '</div></div></div>' +
+    '<div style="margin-top:12px"><div class="brief-stitle">Prompt Ideogram</div><div class="prompt-box">' + ideoPr + '</div></div></div></div>';
 }
 
 async function retryIdeogram(cid) {
   var keys = getKeys();
-  if (!keys.ideogram) { showToast('Guardá tu API key de Ideogram en Configurar APIs', true); openAPIConfig(); return; }
-  var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
-  if (!c || !c.ideogramPrompt) { showToast('No hay prompt guardado para esta imagen', true); return; }
-  var btn = document.getElementById('retry_' + cid);
-  if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
-  var asp = {'1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9'};
+  if (!keys.ide) { showToast('Guardá tu API key de Ideogram en Configurar APIs', true); openAPIConfig(); return; }
+  var c = (active&&active.creatives||[]).find(function(x){return x.id===cid;});
+  if (!c||!c.ideogramPrompt) { showToast('No hay prompt guardado', true); return; }
+  var btn = $('retry_'+cid);
+  if (btn) { btn.disabled=true; btn.textContent='Generando...'; }
+  var aspMap = {'1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9'};
   try {
-    var r = await fetch('/api/ideogram', {
-      method:'POST', headers:{'Content-Type':'application/json','Api-Key':keys.ideogram},
-      body:JSON.stringify({image_request:{prompt:c.ideogramPrompt,aspect_ratio:asp[c.format]||'ASPECT_1_1',model:'V_3',magic_prompt_option:'AUTO'}})
-    });
-    var d = await r.json();
-    if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
-    var url = d.data && d.data[0] ? d.data[0].url : null;
-    if (!url) throw new Error('Sin imagen en respuesta: ' + JSON.stringify(d));
+    var url = await ideogramCall(c.ideogramPrompt, aspMap[c.format]||'ASPECT_1_1', keys);
     c.imgUrl = url; save();
-    var noDiv = document.getElementById('noimg_' + cid);
-    if (noDiv) {
+    var noDiv = $('noimg_'+cid);
+    if (noDiv && url) {
       var img = document.createElement('img');
-      img.src = url;
-      img.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:360px;object-fit:contain;display:block';
-      noDiv.parentNode.insertBefore(img, noDiv);
-      noDiv.remove();
+      img.src = url; img.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:360px;object-fit:contain;display:block';
+      noDiv.parentNode.insertBefore(img, noDiv); noDiv.remove();
     }
-    showToast('Imagen generada con Ideogram');
-  } catch(e) {
-    showToast('Error Ideogram: ' + e.message, true);
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 Reintentar'; }
-  }
-}
-async function genImagen(prompt, keys) {
-  var oa = document.getElementById('outputArea');
-  var sys = 'Sos un experto en marketing visual y publicidad digital para la marca "' + active.name + '".\n' + brandContext() + '\n\nREGLA CRÍTICA: Respondé ÚNICAMENTE en el formato indicado. NO uses markdown, NO uses asteriscos (**), NO agregues secciones extra. Solo las líneas exactas solicitadas con el formato CAMPO: valor.';
-  var raw = await claudeCall(sys, 'Brief para imagen publicitaria.\nFORMATO: ' + selFmtVal + '\nSOLICITUD: ' + prompt + '\n\nFormato EXACTO:\nCONCEPTO: [concepto visual]\nHEADLINE: [texto principal]\nSUBHEAD: [texto secundario]\nCTA: [llamada a la acción]\nIDEOGRAM_PROMPT: [prompt en inglés para Ideogram, detallado, máx 180 palabras]', keys, 700);
-  var concepto = gf(raw,'CONCEPTO'), headline = gf(raw,'HEADLINE'), subhead = gf(raw,'SUBHEAD'), cta = gf(raw,'CTA'), ideoPr = gf(raw,'IDEOGRAM_PROMPT');
-  if (!concepto && !headline) { console.warn('Parse failed. Raw response:', raw); showToast('Claude no devolvió el formato esperado — revisá la consola', true); }
-  if (!concepto && !headline && !ideoPr) {
-    showToast('Claude no devolvió el formato esperado — revisá el debug abajo', true);
-    console.warn('Raw response:', raw);
-  }
-  var imgUrl = null;
-  var asp = { '1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9' };
-  if (keys.ideogram) {
-    try {
-      oa.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--muted)">Generando imagen con Ideogram...</span></div>';
-      var ir = await fetch('/api/ideogram', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ideogram }, body: JSON.stringify({ image_request:{ prompt:ideoPr, aspect_ratio:asp[selFmtVal]||'ASPECT_1_1', model:'V_3', magic_prompt_option:'AUTO' }})});
-      var id = await ir.json();
-      imgUrl = id.data && id.data[0] ? id.data[0].url : null;
-    } catch(e) {}
-  }
-  var _sf = (typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
-  var _ar = (typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
-  var cr = { id:Date.now().toString(), type:'imagen', title:prompt.substring(0,55), format:selFmtVal, concepto:concepto, headline:headline, subhead:subhead, cta:cta, ideogramPrompt:ideoPr, imgUrl:imgUrl, brief:raw, salesFocus:_sf, activeRefs:_ar, originalPrompt:prompt, createdAt:Date.now() };
-  active.creatives.unshift(cr); save();
-  oa.innerHTML = '<div class="output-card"><div class="output-header"><span class="output-icon">🖼️</span><div><div class="output-title">Imagen · ' + selFmtVal + '</div><div class="output-meta">' + active.name + '</div></div><div class="output-actions"><button class="btn" onclick="editInCanva()">✏️ Canva</button>' + (imgUrl ? '<a href="' + imgUrl + '" download class="btn">⬇ Descargar</a>' : '') + '</div></div><div style="padding:16px">' +
-    (imgUrl ? '<img src="' + imgUrl + '" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:360px;object-fit:contain">' : '<div id="noimg_' + cr.id + '" style="padding:20px;background:var(--bg3);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:13px;color:var(--muted);margin-bottom:12px">Key de Ideogram no activa al generar</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn" onclick="openAPIConfig()">⚙️ Verificar keys</button><button id="retry_' + cr.id + '" class="btn acc" onclick="retryIdeogram(\'' + cr.id + '\')">🔄 Generar imagen</button></div></div>') +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div class="brief-sec-title">Concepto</div><div class="brief-text">' + concepto + '</div></div><div><div class="brief-sec-title">Headline</div><div class="brief-text">' + headline + '</div></div><div><div class="brief-sec-title">Subhead</div><div class="brief-text">' + subhead + '</div></div><div><div class="brief-sec-title">CTA</div><div class="brief-text">' + cta + '</div></div></div>' +
-    '<div style="margin-top:12px"><div class="brief-sec-title">Prompt Ideogram</div><div class="prompt-box">' + ideoPr + '</div></div>' +
-    ((!concepto && !headline) ? '<details style="margin-top:12px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Ver respuesta raw de Claude (debug)</summary><div class="prompt-box" style="margin-top:6px;font-size:11px;white-space:pre-wrap">' + raw.replace(/</g,'&lt;') + '</div></details>' : '') +
-    '</div></div>';
+    showToast('Imagen generada');
+  } catch(e) { showToast('Error Ideogram: '+e.message, true); if (btn){btn.disabled=false;btn.textContent='🔄 Reintentar';} }
 }
 
+// ── CARRUSEL ──────────────────────────────────────────
 async function genCarrusel(prompt, keys) {
-  var oa = document.getElementById('outputArea');
-  var sys = 'Experto en contenido para redes para la marca "' + active.name + '".\n' + brandContext() + '\nRespondé en español rioplatense.';
-  var raw = await claudeCall(sys, 'Carrusel 4 slides con correlación narrativa.\nFORMATO: ' + selFmtVal + '\nSOLICITUD: ' + prompt + '\n\nFormato EXACTO:\nSLIDE1_HEADLINE: [gancho]\nSLIDE1_BODY: [apoyo máx 12 palabras]\nSLIDE1_COLOR: [hex fondo]\nSLIDE1_PROMPT: [prompt inglés para Ideogram]\n\nSLIDE2_HEADLINE:\nSLIDE2_BODY:\nSLIDE2_COLOR:\nSLIDE2_PROMPT:\n\nSLIDE3_HEADLINE:\nSLIDE3_BODY:\nSLIDE3_COLOR:\nSLIDE3_PROMPT:\n\nSLIDE4_HEADLINE:\nSLIDE4_BODY:\nSLIDE4_COLOR:\nSLIDE4_PROMPT:\n\nNARRATIVA: [correlación entre slides]', keys, 1200);
-  var slides = [1,2,3,4].map(function(i) { return { headline:gf(raw,'SLIDE'+i+'_HEADLINE'), body:gf(raw,'SLIDE'+i+'_BODY'), color:gf(raw,'SLIDE'+i+'_COLOR')||'#111118', ideoPr:gf(raw,'SLIDE'+i+'_PROMPT'), imgUrl:null }; });
+  var oa = $('outputArea');
+  var sys = 'Experto en contenido para redes para la marca "' + active.name + '".\n' + brandCtx() + '\nRespondé en español rioplatense. Sin markdown, sin asteriscos.';
+  var raw = await claudeCall(sys, 'Carrusel 4 slides con correlación narrativa.\nFORMATO: ' + selFmt + '\nSOLICITUD: ' + prompt + '\n\nidioma ' + getLang() + '.\n\nFormato EXACTO:\nSLIDE1_HEADLINE: [gancho en español]\nSLIDE1_BODY: [apoyo en español, máx 12 palabras]\nSLIDE1_COLOR: [hex fondo]\nSLIDE1_PROMPT: [prompt en inglés para Ideogram. INCLUIR: "All text in Spanish language", textos exactos entre comillas]\n\nSLIDE2_HEADLINE:\nSLIDE2_BODY:\nSLIDE2_COLOR:\nSLIDE2_PROMPT:\n\nSLIDE3_HEADLINE:\nSLIDE3_BODY:\nSLIDE3_COLOR:\nSLIDE3_PROMPT:\n\nSLIDE4_HEADLINE:\nSLIDE4_BODY:\nSLIDE4_COLOR:\nSLIDE4_PROMPT:\n\nNARRATIVA: [correlación entre slides]', keys, 1200);
+  var slides = [1,2,3,4].map(function(i){ return { headline:gf(raw,'SLIDE'+i+'_HEADLINE'), body:gf(raw,'SLIDE'+i+'_BODY'), color:gf(raw,'SLIDE'+i+'_COLOR')||'#111118', ideoPr:gf(raw,'SLIDE'+i+'_PROMPT'), imgUrl:null }; });
   var narrativa = gf(raw,'NARRATIVA');
-  if (keys.ideogram) {
-    oa.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--muted)">Generando 4 imágenes...</span></div>';
-    var asp2 = selFmtVal === '1080x1350' ? 'ASPECT_4_5' : 'ASPECT_1_1';
+  if (keys.ide) {
+    oa.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--mut)">Generando 4 imágenes...</span></div>';
+    var asp2 = selFmt==='1080x1350'?'ASPECT_4_5':'ASPECT_1_1';
     await Promise.all(slides.map(async function(sl) {
-      try {
-        var ir = await fetch('/api/ideogram', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ideogram }, body: JSON.stringify({ image_request:{ prompt:sl.ideoPr, aspect_ratio:asp2, model:'V_3', magic_prompt_option:'AUTO' }})});
-        var id = await ir.json();
-        if (id.error) throw new Error(id.error.message || JSON.stringify(id.error));
-        sl.imgUrl = id.data && id.data[0] ? id.data[0].url : null;
-      } catch(e) { console.warn('Slide image error:', e.message); }
+      try { sl.imgUrl = await ideogramCall(sl.ideoPr, asp2, keys); } catch(e) { console.warn('Slide error:', e.message); }
     }));
   }
-  var _sf2=(typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
-  var _ar2=(typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
-  var cr = { id:Date.now().toString(), type:'carrusel', title:prompt.substring(0,55), format:selFmtVal, slides:slides, narrativa:narrativa, salesFocus:_sf2, activeRefs:_ar2, originalPrompt:prompt, createdAt:Date.now() };
-  active.creatives.unshift(cr); save();
-  var slidesHtml = slides.map(function(sl, i) {
-    var bg = 'background:' + sl.color + ';' + (sl.imgUrl ? 'background-image:url(' + sl.imgUrl + ');background-size:cover;background-position:center;' : '');
+  var ctx = snapContext();
+  var cr = { id:Date.now().toString(), type:'carrusel', title:prompt.substring(0,55), format:selFmt, slides:slides, narrativa:narrativa, salesFocus:ctx.salesFocus, activeRefs:ctx.activeRefs, originalPrompt:prompt, createdAt:Date.now() };
+  saveCr(cr);
+  var sHtml = slides.map(function(sl,i){
+    var bg = 'background:' + sl.color + ';' + (sl.imgUrl?'background-image:url('+sl.imgUrl+');background-size:cover;background-position:center;':'');
     return '<div style="' + bg + 'border-radius:8px;position:relative;aspect-ratio:1;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;overflow:hidden">' +
       '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 50%,transparent)"></div>' +
       '<div style="position:absolute;top:7px;right:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5)">' + (i+1) + '/4</div>' +
       '<div style="position:relative;z-index:1"><div style="font-family:var(--fh);font-size:11px;font-weight:700;line-height:1.2;margin-bottom:3px">' + sl.headline + '</div>' +
-      '<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1.3">' + sl.body + '</div>' +
-      (i === 3 ? '<div style="display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:var(--accent);color:#000">Ver más →</div>' : '') +
-      '</div></div>';
+      '<div style="font-size:9px;color:rgba(255,255,255,.7)">' + sl.body + '</div>' +
+      (i===3?'<div style="display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:var(--acc);color:#000">Ver más →</div>':'') + '</div></div>';
   }).join('');
-  oa.innerHTML = '<div class="output-card"><div class="output-header"><span class="output-icon">🎠</span><div><div class="output-title">Carrusel 4 slides · ' + selFmtVal + '</div><div class="output-meta">' + active.name + '</div></div><div class="output-actions"><button class="btn" onclick="editInCanva()">✏️ Canva</button></div></div><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:14px">' + slidesHtml + '</div><div style="padding:10px 14px;border-top:1px solid var(--border)"><div class="brief-sec-title" style="margin-bottom:3px">Narrativa</div><div style="font-size:13px;color:var(--muted)">' + narrativa + '</div></div></div>';
+  oa.innerHTML = '<div class="out-card"><div class="out-hdr"><span class="out-ico">🎠</span><div><div class="out-title">Carrusel 4 slides · ' + selFmt + '</div><div class="out-meta">' + active.name + '</div></div></div><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:14px">' + sHtml + '</div><div style="padding:10px 14px;border-top:1px solid var(--b)"><div class="brief-stitle" style="margin-bottom:3px">Narrativa</div><div style="font-size:13px;color:var(--mut)">' + narrativa + '</div></div></div>';
 }
 
-
-// ── VOICE CLONE ────────────────────────────────────────────────────
-async function handleVoiceUpload(files) {
-  if (!files.length) return;
-  var keys = getKeys();
-  if (!keys.heygen) { alert('Necesitás tu API key de HeyGen para clonar la voz'); openAPIConfig(); return; }
-  var file = files[0];
-  var statusEl = document.getElementById('clonedVoiceStatus');
-  var listEl = document.getElementById('voiceCloneList');
-  statusEl.innerHTML = '<div style="display:flex;align-items:center;gap:6px"><div class="spinner" style="width:14px;height:14px;border-width:1.5px"></div>Subiendo audio y clonando voz...</div>';
-  try {
-    var formData = new FormData();
-    formData.append('audio', file);
-    formData.append('name', (active ? active.name + ' - ' : '') + file.name.replace(/\.[^.]+$/, ''));
-    var resp = await fetch('https://api.heygen.com/v2/voice/clone', {
-      method: 'POST',
-      headers: { 'X-Api-Key': keys.heygen },
-      body: formData
-    });
-    var d = await resp.json();
-    if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
-    var voiceId = d.data && d.data.voice_id ? d.data.voice_id : null;
-    if (!voiceId) throw new Error('No se recibió voice_id de HeyGen');
-    // Save to project memory
-    if (!active.memory.clonedVoices) active.memory.clonedVoices = [];
-    active.memory.clonedVoices.push({ id: voiceId, name: formData.get('name'), file: file.name, createdAt: Date.now() });
-    save();
-    statusEl.textContent = 'Voz clonada lista ✓';
-    renderVoiceClones();
-    showToast('Voz clonada: ' + formData.get('name'));
-  } catch(e) {
-    statusEl.textContent = 'Error al clonar: ' + e.message;
-    showToast('Error al clonar voz: ' + e.message, true);
-  }
-  document.getElementById('voiceFileInput').value = '';
-}
-
-function renderVoiceClones() {
-  var listEl = document.getElementById('voiceCloneList');
-  if (!listEl || !active) return;
-  var voices = active.memory.clonedVoices || [];
-  if (!voices.length) { listEl.innerHTML = ''; return; }
-  listEl.innerHTML = voices.map(function(v, i) {
-    return '<div class="voice-clone-item' + (i === 0 ? ' sel' : '') + '" data-voiceid="' + v.id + '">' +
-      '<div style="width:28px;height:28px;border-radius:50%;background:var(--purple-dim);border:1px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🎙️</div>' +
-      '<div class="voice-clone-name">' + v.name + '</div>' +
-      '<div class="voice-clone-status">Listo</div>' +
-      '<button onclick="deleteVoiceClone(\'' + v.id + '\')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px">×</button>' +
-      '</div>';
-  }).join('');
-  listEl.querySelectorAll('.voice-clone-item').forEach(function(item) {
-    item.onclick = function() {
-      listEl.querySelectorAll('.voice-clone-item').forEach(function(x) { x.classList.remove('sel'); });
-      this.classList.add('sel');
-    };
-  });
-}
-
-function deleteVoiceClone(id) {
-  if (!active) return;
-  active.memory.clonedVoices = (active.memory.clonedVoices || []).filter(function(v) { return v.id !== id; });
-  save(); renderVoiceClones();
-}
-
-function getSelectedVoiceConfig() {
-  var vmode = document.querySelector('.voice-mode-btn.sel');
-  var mode = vmode ? vmode.dataset.vmode : 'heygen';
-  if (mode === 'cloned') {
-    var selClone = document.querySelector('.voice-clone-item.sel');
-    var voiceId = selClone ? selClone.dataset.voiceid : ((active && active.memory.clonedVoices && active.memory.clonedVoices[0]) ? active.memory.clonedVoices[0].id : null);
-    return { type: 'voice_clone', voice_id: voiceId };
-  }
-  if (mode === 'heygen') {
-    var selHG = document.querySelector('[data-hgvoice].sel');
-    return { type: 'text', voice_id: selHG ? selHG.dataset.hgvoice : '1bd001e7e50f421d891986aad5158bc8' };
-  }
-  // tts mode — handle in sendToHeyGen / preview
-  var selEng = document.querySelector('[data-ttseng].sel');
-  return { type: 'tts', engine: selEng ? selEng.dataset.ttseng : 'browser' };
-}
-
-// ── SCRIPT HANDLING ────────────────────────────────────────────────
-async function handleScriptUpload(files) {
-  if (!files.length) return;
-  var file = files[0];
-  var preview = document.getElementById('uploadedScriptPreview');
-  var textArea = document.getElementById('uploadedScriptText');
-  preview.style.display = 'none';
-  if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-    var text = await file.text();
-    textArea.value = text;
-    preview.style.display = 'block';
-    showToast('Guión cargado: ' + file.name);
-  } else if (file.type === 'application/pdf') {
-    var keys = getKeys();
-    if (!keys.anthropic) { alert('Necesitás la API key de Anthropic para leer PDFs'); return; }
-    var dataUrl = await readFile(file);
-    var b64 = dataUrl.split(',')[1];
-    try {
-      var resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 2000,
-          messages: [{ role: 'user', content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }},
-            { type: 'text', text: 'Extraé el texto de este guión tal como está escrito, sin modificaciones. Solo devolvé el texto del guión.' }
-          ]}]
-        })
-      });
-      var d = await resp.json();
-      textArea.value = d.content.map(function(b) { return b.text || ''; }).join('');
-      preview.style.display = 'block';
-      showToast('PDF leído: ' + file.name);
-    } catch(e) { showToast('Error al leer PDF: ' + e.message, true); }
-  }
-  document.getElementById('scriptFileInput').value = '';
-}
-
-function getScriptMode() {
-  var btn = document.querySelector('.script-mode-btn.sel');
-  return btn ? btn.dataset.smode : 'generate';
-}
-
-function getManualScript() {
-  var mode = getScriptMode();
-  if (mode === 'manual') return document.getElementById('manualScript').value.trim();
-  if (mode === 'upload') return document.getElementById('uploadedScriptText').value.trim();
-  return null;
-}
-
-// ── TTS PREVIEW ────────────────────────────────────────────────────
-function previewTTS(text) {
-  var vc = getSelectedVoiceConfig();
-  if (vc.engine === 'browser' || vc.type === 'tts') {
-    window.speechSynthesis.cancel();
-    var utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'es-AR';
-    utt.rate = 0.95;
-    window.speechSynthesis.speak(utt);
-  }
-}
-
+// ── VIDEO ─────────────────────────────────────────────
 async function genVideo(prompt, keys) {
-  var oa = document.getElementById('outputArea');
+  var oa = $('outputArea');
   var avEl = document.querySelector('[data-av].sel');
-  var selAv = avEl ? avEl.dataset.av : ((active && active.memory.avatars && active.memory.avatars[0]) || '');
-  var dur = parseInt(selDurVal);
-  var nSc = dur <= 15 ? 3 : dur <= 30 ? 5 : 8;
-  var voiceConfig = getSelectedVoiceConfig();
-  var scriptMode = getScriptMode();
-  var prewrittenScript = getManualScript();
-  var sys = 'Experto en producción de video para la marca "' + active.name + '".\n' + brandContext() + '\nRespondé en español rioplatense.';
-  var scFields = '';
-  for (var j = 1; j <= nSc; j++) scFields += 'ESCENA' + j + '_TIEMPO: [ej: 0-4s]\nESCENA' + j + '_GUION: [texto del locutor]\nESCENA' + j + '_VISUAL: [qué se ve]\nESCENA' + j + '_ONSCREEN: [texto en pantalla]\n\n';
-  var raw, titulo, objetivo, musica, gc, scenes = [];
-  if (prewrittenScript) {
-    gc = prewrittenScript;
-    titulo = prompt.substring(0, 55);
-    objetivo = 'Video con guión propio';
-    musica = 'A definir';
-    scenes = [{ num:1, tiempo:'0-' + dur + 's', guion:gc, visual:'A definir según el guión', onscreen:'' }];
-    raw = gc;
-  } else {
-    raw = await claudeCall(sys, 'Guión de ' + dur + 's' + (selAv ? ' para ' + selAv : '') + '.\nSOLICITUD: ' + prompt + '\n\n' + 'TITULO:\nOBJETIVO:\nMUSICA:\n\n' + scFields + 'GUION_COMPLETO: [guión corrido listo para HeyGen]', keys, 1600);
-    titulo = gf(raw,'TITULO'); objetivo = gf(raw,'OBJETIVO'); musica = gf(raw,'MUSICA');
-    var gcMatch = raw.match(/GUION_COMPLETO:\s*([\s\S]+?)$/);
-    gc = gcMatch ? gcMatch[1].trim() : '';
-    for (var k = 1; k <= nSc; k++) scenes.push({ num:k, tiempo:gf(raw,'ESCENA'+k+'_TIEMPO'), guion:gf(raw,'ESCENA'+k+'_GUION'), visual:gf(raw,'ESCENA'+k+'_VISUAL'), onscreen:gf(raw,'ESCENA'+k+'_ONSCREEN') });
-  }
-  var _sf3=(typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
-  var _ar3=(typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
-  var cr = { id:Date.now().toString(), type:'video', title:titulo||prompt.substring(0,55), format:dur+'s', avatar:selAv, dur:dur, titulo:titulo, objetivo:objetivo, musica:musica, guionCompleto:gc, scenes:scenes, voiceConfig:voiceConfig, scriptMode:scriptMode, salesFocus:_sf3, activeRefs:_ar3, originalPrompt:prompt, createdAt:Date.now() };
-  active.creatives.unshift(cr); save();
-  var cid = cr.id;
-  var scHtml = scenes.map(function(s) { return '<li class="scene"><div class="scene-num">' + s.num + '</div><div><div class="scene-time">' + s.tiempo + '</div><div class="scene-text">' + s.guion + '</div><div class="scene-dir">Visual: ' + s.visual + (s.onscreen ? ' · Pantalla: ' + s.onscreen : '') + '</div></div></li>'; }).join('');
-  oa.innerHTML = '<div class="output-card"><div class="output-header"><span class="output-icon">🎬</span><div><div class="output-title">' + (titulo||'Video') + ' · ' + dur + 's' + (selAv ? ' · ' + selAv : '') + '</div><div class="output-meta">' + active.name + '</div></div><div class="output-actions">' + (keys.heygen ? '<button class="btn acc" onclick="sendToHeyGen(\'' + cid + '\')">🤖 HeyGen</button>' : '') + '<button class="btn" onclick="copyScript(\'' + cid + '\')">📋 Guión</button></div></div><div style="padding:16px"><div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px"><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--muted)">⏱ ' + dur + 's</span>' + (selAv ? '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--muted)">👤 ' + selAv + '</span>' : '') + '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--muted)">🎵 ' + musica + '</span></div><ul class="scene-list" style="margin-bottom:16px">' + scHtml + '</ul><div class="brief-sec-title" style="margin-bottom:8px">Guión completo — editable</div><textarea class="script-editor" id="se_' + cid + '" oninput="updateScript(\'' + cid + '\',this.value)">' + gc + '</textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" onclick="copyScript(\'' + cid + '\')">📋 Copiar guión</button>' + (keys.heygen ? '<button class="btn acc" onclick="sendToHeyGen(\'' + cid + '\')">🤖 Generar con HeyGen →</button>' : '') + '</div>' + (keys.heygen ? '<div class="heygen-panel"><div class="heygen-title">🤖 HeyGen conectado</div><div class="heygen-note">Al hacer click, HeyGen generará el video con el avatar en 5-15 min.</div></div>' : '') + '</div></div>';
+  var selAv = avEl ? avEl.dataset.av : ((active&&active.memory.avatars&&active.memory.avatars[0])||'');
+  var dur = parseInt(selDur), nSc = dur<=15?3:dur<=30?5:8;
+  var sys = 'Experto en producción de video para la marca "' + active.name + '".\n' + brandCtx() + '\nRespondé en español rioplatense.';
+  var scF = '';
+  for (var j=1;j<=nSc;j++) scF += 'ESCENA' + j + '_TIEMPO:\nESCENA' + j + '_GUION:\nESCENA' + j + '_VISUAL:\nESCENA' + j + '_ONSCREEN:\n\n';
+  var raw = await claudeCall(sys, 'Guión de ' + dur + 's' + (selAv?' para '+selAv:'') + '.\nSOLICITUD: ' + prompt + '\n\nTITULO:\nOBJETIVO:\nMUSICA:\n\n' + scF + 'GUION_COMPLETO: [guión corrido listo para HeyGen]', keys, 1600);
+  var titulo=gf(raw,'TITULO'), objetivo=gf(raw,'OBJETIVO'), musica=gf(raw,'MUSICA');
+  var gcM=raw.match(/GUION_COMPLETO:\s*([\s\S]+?)$/), gc=gcM?gcM[1].trim():'';
+  var scenes=[];
+  for (var k=1;k<=nSc;k++) scenes.push({num:k,tiempo:gf(raw,'ESCENA'+k+'_TIEMPO'),guion:gf(raw,'ESCENA'+k+'_GUION'),visual:gf(raw,'ESCENA'+k+'_VISUAL'),onscreen:gf(raw,'ESCENA'+k+'_ONSCREEN')});
+  var ctx = snapContext();
+  var cr = { id:Date.now().toString(), type:'video', title:titulo||prompt.substring(0,55), format:dur+'s', avatar:selAv, dur:dur, titulo:titulo, objetivo:objetivo, musica:musica, guionCompleto:gc, scenes:scenes, salesFocus:ctx.salesFocus, activeRefs:ctx.activeRefs, originalPrompt:prompt, createdAt:Date.now() };
+  saveCr(cr);
+  var cid=cr.id;
+  var scHtml=scenes.map(function(s){return '<li class="scene"><div class="scene-num">'+s.num+'</div><div><div class="scene-time">'+s.tiempo+'</div><div class="scene-txt">'+s.guion+'</div><div class="scene-dir">Visual: '+s.visual+(s.onscreen?' · Pantalla: '+s.onscreen:'')+'</div></div></li>';}).join('');
+  oa.innerHTML='<div class="out-card"><div class="out-hdr"><span class="out-ico">🎬</span><div><div class="out-title">'+(titulo||'Video')+' · '+dur+'s'+(selAv?' · '+selAv:'')+'</div><div class="out-meta">'+active.name+'</div></div><div class="out-acts">'+(keys.hey?'<button class="btn acc" onclick="sendToHeyGen(\''+cid+'\')">🤖 HeyGen</button>':'')+'<button class="btn" onclick="copyScript(\''+cid+'\')">📋 Guión</button></div></div><div style="padding:16px"><ul class="scene-list" style="margin-bottom:16px">'+scHtml+'</ul><div class="brief-stitle" style="margin-bottom:8px">Guión — editable</div><textarea class="script-ed" id="se_'+cid+'" oninput="updateScript(\''+cid+'\',this.value)">'+gc+'</textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" onclick="copyScript(\''+cid+'\')">📋 Copiar guión</button>'+(keys.hey?'<button class="btn acc" onclick="sendToHeyGen(\''+cid+'\')">🤖 Generar con HeyGen →</button>':'')+'</div></div></div>';
+}
+function updateScript(cid,val){var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(c){c.guionCompleto=val;save();}}
+function copyScript(cid){var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(c)navigator.clipboard.writeText(c.guionCompleto||'');}
+async function sendToHeyGen(cid){
+  var keys=getKeys();if(!keys.hey){alert('Configurá API key de HeyGen');openAPIConfig();return;}
+  var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(!c)return;
+  var seEl=$('se_'+cid), script=seEl?seEl.value:c.guionCompleto;
+  try{
+    var r=await fetch('https://api.heygen.com/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:'Angela-inblackskirt-20220820',avatar_style:'normal'},voice:{type:'text',input_text:script,voice_id:'1bd001e7e50f421d891986aad5158bc8'},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920},aspect_ratio:'9:16'})});
+    var d=await r.json();
+    if(d.data&&d.data.video_id){alert('Video enviado a HeyGen!\nID: '+d.data.video_id+'\nListo en 5-15 min.');}
+    else{alert('Respuesta HeyGen: '+JSON.stringify(d));}
+  }catch(e){alert('Error HeyGen: '+e.message);}
 }
 
-function updateScript(cid, val) { var c = (active&&active.creatives||[]).find(function(x){return x.id===cid;}); if(c){c.guionCompleto=val;save();} }
-function copyScript(cid) { var c = (active&&active.creatives||[]).find(function(x){return x.id===cid;}); if(c) navigator.clipboard.writeText(c.guionCompleto||''); }
-
-async function sendToHeyGen(cid) {
-  var keys = getKeys();
-  if (!keys.heygen) { alert('Configurá tu API key de HeyGen'); openAPIConfig(); return; }
-  var c = (active&&active.creatives||[]).find(function(x){return x.id===cid;});
-  if (!c) return;
-  var seEl = document.getElementById('se_' + cid);
-  var script = seEl ? seEl.value : c.guionCompleto;
-
-  // Use saved voice config or current UI selection
-  var vc = c.voiceConfig || getSelectedVoiceConfig();
-
-  // TTS mode: use browser speech synthesis as preview, not HeyGen
-  if (vc.type === 'tts') {
-    previewTTS(script);
-    showToast('Reproduciendo guión con texto a voz del navegador');
-    return;
-  }
-
-  try {
-    var avatarId = 'Angela-inblackskirt-20220820';
-    if (c.avatar && active && active.memory && active.memory.avatars) {
-      // Use first available avatar — in production map name → HeyGen avatar_id
-    }
-    var voiceBlock;
-    if (vc.type === 'voice_clone' && vc.voice_id) {
-      voiceBlock = { type: 'voice_clone', voice_clone_id: vc.voice_id, input_text: script };
-    } else {
-      voiceBlock = { type: 'text', input_text: script, voice_id: vc.voice_id || '1bd001e7e50f421d891986aad5158bc8' };
-    }
-    var body = {
-      video_inputs: [{ character: { type:'avatar', avatar_id:avatarId, avatar_style:'normal' }, voice: voiceBlock, background: { type:'color', value:'#111118' } }],
-      dimension: { width:1080, height:1920 }, aspect_ratio: '9:16'
-    };
-    var r = await fetch('https://api.heygen.com/v2/video/generate', {
-      method: 'POST', headers: { 'Content-Type':'application/json', 'X-Api-Key':keys.heygen },
-      body: JSON.stringify(body)
-    });
-    var d = await r.json();
-    if (d.data && d.data.video_id) {
-      showToast('Video enviado a HeyGen · ID: ' + d.data.video_id);
-      alert('Video en proceso!\nID: ' + d.data.video_id + '\n\nEn 5-15 minutos estará listo en tu dashboard de HeyGen.\nVoz usada: ' + (vc.type === 'voice_clone' ? 'Tu voz clonada' : 'Voz HeyGen'));
-    } else {
-      alert('Respuesta HeyGen: ' + JSON.stringify(d));
-    }
-  } catch(e) { alert('Error HeyGen: ' + e.message); }
-}
-
+// ── COPY ──────────────────────────────────────────────
 async function genCopy(prompt, keys) {
-  var oa = document.getElementById('outputArea');
-  var sys = 'Experto en copywriting y Meta Ads para "' + active.name + '".\n' + brandContext() + '\nRespondé en español rioplatense.';
-  var raw = await claudeCall(sys, '3 variaciones de copy Meta Ads.\nSOLICITUD: ' + prompt + '\n\nFormato EXACTO:\nVAR1_HEADLINE: [máx 40 chars]\nVAR1_TEXTO: [texto principal]\nVAR1_CTA: [botón]\nVAR1_AUDIENCIA: [audiencia]\n\nVAR2_HEADLINE:\nVAR2_TEXTO:\nVAR2_CTA:\nVAR2_AUDIENCIA:\n\nVAR3_HEADLINE:\nVAR3_TEXTO:\nVAR3_CTA:\nVAR3_AUDIENCIA:', keys, 900);
-  var vars = [1,2,3].map(function(i) { return { headline:gf(raw,'VAR'+i+'_HEADLINE'), texto:gf(raw,'VAR'+i+'_TEXTO'), cta:gf(raw,'VAR'+i+'_CTA'), audiencia:gf(raw,'VAR'+i+'_AUDIENCIA') }; });
-  var _sf4=(typeof getGenSalesFocus==='function')?getGenSalesFocus():'';
-  var _ar4=(typeof getActiveRefs==='function')?getActiveRefs().map(function(r){return{id:r.id,name:r.name,url:r.dataUrl,label:r.assetType||'ref',analysis:r.analysis};}):[]; 
-  var cr = { id:Date.now().toString(), type:'copy', title:prompt.substring(0,55), variants:vars, raw:raw, salesFocus:_sf4, activeRefs:_ar4, originalPrompt:prompt, createdAt:Date.now() };
-  active.creatives.unshift(cr); save();
-  var rawEsc = raw.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  oa.innerHTML = '<div class="output-card"><div class="output-header"><span class="output-icon">✍️</span><div><div class="output-title">Copy Meta Ads · 3 variaciones</div><div class="output-meta">' + active.name + '</div></div><div class="output-actions"><button class="btn" onclick="navigator.clipboard.writeText(\'' + rawEsc + '\')">📋 Copiar todo</button></div></div><div style="padding:14px">' + vars.map(function(v,i) { return '<div class="copy-variant"><div class="copy-var-num">Variación ' + (i+1) + ' · ' + v.audiencia + '</div><div class="copy-headline">' + v.headline + '</div><div class="copy-body">' + v.texto + '</div><div class="copy-cta">→ ' + v.cta + '</div></div>'; }).join('') + '</div></div>';
+  var oa = $('outputArea');
+  var sys = 'Experto en copywriting y Meta Ads para la marca "' + active.name + '".\n' + brandCtx() + '\nRespondé en español rioplatense.';
+  var raw = await claudeCall(sys, '3 variaciones de copy para Meta Ads.\nSOLICITUD: ' + prompt + '\n\nFormato EXACTO:\nVAR1_HEADLINE: [máx 40 chars]\nVAR1_TEXTO: [texto principal]\nVAR1_CTA: [botón]\nVAR1_AUDIENCIA: [audiencia]\n\nVAR2_HEADLINE:\nVAR2_TEXTO:\nVAR2_CTA:\nVAR2_AUDIENCIA:\n\nVAR3_HEADLINE:\nVAR3_TEXTO:\nVAR3_CTA:\nVAR3_AUDIENCIA:', keys, 900);
+  var vars=[1,2,3].map(function(i){return{headline:gf(raw,'VAR'+i+'_HEADLINE'),texto:gf(raw,'VAR'+i+'_TEXTO'),cta:gf(raw,'VAR'+i+'_CTA'),audiencia:gf(raw,'VAR'+i+'_AUDIENCIA')};});
+  var ctx = snapContext();
+  var cr={id:Date.now().toString(),type:'copy',title:prompt.substring(0,55),variants:vars,raw:raw,salesFocus:ctx.salesFocus,activeRefs:ctx.activeRefs,originalPrompt:prompt,createdAt:Date.now()};
+  saveCr(cr);
+  oa.innerHTML='<div class="out-card"><div class="out-hdr"><span class="out-ico">✍️</span><div><div class="out-title">Copy Meta Ads · 3 variaciones</div><div class="out-meta">'+active.name+'</div></div><div class="out-acts"><button class="btn" onclick="navigator.clipboard.writeText(document.getElementById(\'copyRaw\').textContent)">📋 Copiar todo</button></div></div><div style="padding:14px"><span id="copyRaw" style="display:none">'+raw+'</span>'+vars.map(function(v,i){return '<div style="background:var(--bg3);border:1px solid var(--b);border-radius:9px;padding:12px;margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Variación '+(i+1)+' · '+v.audiencia+'</div><div style="font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:3px">'+v.headline+'</div><div style="font-size:12px;color:var(--mut);line-height:1.5">'+v.texto+'</div><div style="margin-top:5px;font-size:11px;font-weight:700;color:var(--acc)">→ '+v.cta+'</div></div>';}).join('')+'</div></div>';
 }
 
-function editInCanva() {
-  var keys = getKeys();
-  if (!keys.canvaId) { alert('Configurá tu Canva Client ID en APIs'); return; }
-  window.open('https://www.canva.com/design/create?embed_host=creativeos&client_id=' + keys.canvaId, '_blank');
-}
-
-var TICON  = { imagen:'🖼️', carrusel:'🎠', video:'🎬', copy:'✍️' };
-var TLABEL = { imagen:'Imagen', carrusel:'Carrusel', video:'Video', copy:'Copy' };
-var TCOLOR = { imagen:'#f472b6', carrusel:'#60a5fa', video:'#a78bfa', copy:'#c8ff00' };
-
-function crCard(c) {
-  var thumb = c.imgUrl ? '<img src="' + c.imgUrl + '" alt="">' : (c.slides && c.slides[0] && c.slides[0].imgUrl ? '<img src="' + c.slides[0].imgUrl + '" alt="">' : '<span class="no-img">' + (TICON[c.type]||'📄') + '</span>');
-  var date = new Date(c.createdAt).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
-  return '<div class="cr-card" data-cid="' + c.id + '">' +
-    '<div class="cr-thumb">' + thumb +
-    '<div class="cr-type-badge" style="color:' + (TCOLOR[c.type]||'#fff') + '">' + (TLABEL[c.type]||c.type) + '</div>' +
-    '<div class="cr-del-btn" data-cid="' + c.id + '" title="Eliminar" style="position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:#000a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;opacity:0;transition:opacity .15s">×</div>' +
-    '</div>' +
-    '<div class="cr-body"><div class="cr-title">' + (c.title||'Sin título') + '</div><div class="cr-meta"><div class="cr-status"></div>' + date + (c.format ? ' · ' + c.format : '') + '</div>' +
-    '<div class="cr-acts"><button class="cr-act view-btn" data-cid="' + c.id + '">Ver</button><button class="cr-act copy-btn" data-cid="' + c.id + '">Copiar</button><button class="cr-act var-btn" data-cid="' + c.id + '" style="color:var(--purple);border-color:var(--purple)33" title="Generar variación">↻ Variación</button><button class="cr-act del-btn" data-cid="' + c.id + '" style="color:var(--danger);border-color:var(--danger)22">✕</button></div></div></div>';
-}
-
-function bindCards(el) {
-  el.querySelectorAll('.cr-card').forEach(function(c) { c.onclick = function() { openCreative(this.dataset.cid); }; });
-  el.querySelectorAll('.view-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); openCreative(this.dataset.cid); }; });
-  el.querySelectorAll('.copy-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); copyCrContent(this.dataset.cid); }; });
-  el.querySelectorAll('.del-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); deleteCreative(this.dataset.cid); }; });
-  el.querySelectorAll('.var-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); generarVariacion(this.dataset.cid); }; });
-  el.querySelectorAll('.cr-del-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); deleteCreative(this.dataset.cid); }; });
-  el.querySelectorAll('.cr-card').forEach(function(c) {
-    c.addEventListener('mouseenter', function() { var d = this.querySelector('.cr-del-btn'); if(d) d.style.opacity='1'; });
-    c.addEventListener('mouseleave', function() { var d = this.querySelector('.cr-del-btn'); if(d) d.style.opacity='0'; });
-  });
-}
-
-function deleteCreative(cid) {
-  if (!active) return;
-  if (!confirm('¿Eliminar este creativo?')) return;
-  active.creatives = (active.creatives||[]).filter(function(c) { return c.id !== cid; });
-  save();
-  renderOverview();
-  renderAllCreatives();
-  updateStats();
-  showToast('Creativo eliminado');
-}
-
-function renderOverview() {
-  updateStats();
-  var crs = (active && active.creatives || []).slice(0,6);
-  var el = document.getElementById('overviewGrid');
-  el.innerHTML = crs.length ? crs.map(crCard).join('') : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">✦</div><div class="empty-title">Sin creativos todavía</div><div>Usá el panel Generar para crear tu primer creativo</div></div>';
-  if (crs.length) bindCards(el);
-}
-
-function renderAllCreatives() {
-  if (!active) return;
-  var crs = active.creatives || [];
-  if (crFilter !== 'all') crs = crs.filter(function(c) { return c.type === crFilter; });
-  var el = document.getElementById('allGrid');
-  el.innerHTML = crs.length ? crs.map(crCard).join('') : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-title">Sin creativos en esta categoría</div></div>';
-  if (crs.length) bindCards(el);
-}
-
-function updateStats() {
-  if (!active) return;
-  var c = active.creatives || [];
-  document.getElementById('stTotal').textContent = c.length;
-  document.getElementById('stImgs').textContent = c.filter(function(x){return x.type==='imagen';}).length;
-  document.getElementById('stCars').textContent = c.filter(function(x){return x.type==='carrusel';}).length;
-  document.getElementById('stVids').textContent = c.filter(function(x){return x.type==='video';}).length;
-}
-
-function openCreative(id) {
-  var c = (active&&active.creatives||[]).find(function(x){return x.id===id;});
-  if (!c) return;
-  viewCreativeId = id;
-  document.getElementById('mcIcon').textContent = TICON[c.type]||'📄';
-  document.getElementById('mcTitle').textContent = c.title||'Sin título';
-  document.getElementById('mcMeta').textContent = (TLABEL[c.type]||c.type) + ' · ' + (c.format||'') + ' · ' + new Date(c.createdAt).toLocaleDateString('es-AR');
-  var mc = document.getElementById('mcContent');
-  if (c.type === 'imagen') {
-    var refsHtml = renderSavedRefs(c.activeRefs||[]);
-    var sfHtml = c.salesFocus ? '<div style="margin-top:10px"><div class="brief-sec-title" style="margin-bottom:3px">Enfoque de venta</div><div style="font-size:12px;color:var(--muted);line-height:1.5">' + c.salesFocus + '</div></div>' : '';
-    mc.innerHTML = (c.imgUrl ? '<img src="' + c.imgUrl + '" style="width:100%;border-radius:8px;margin-bottom:12px" alt="">' : '') + '<div class="prompt-box" style="font-size:13px;font-family:var(--fb);white-space:pre-wrap">' + (c.brief||'') + '</div>' + sfHtml + refsHtml;
-  } else if (c.type === 'carrusel') {
-    mc.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">' + (c.slides||[]).map(function(s,i){ return '<div style="background:' + s.color + ';border-radius:8px;padding:10px;min-height:80px;position:relative;overflow:hidden">' + (s.imgUrl ? '<img src="' + s.imgUrl + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4">' : '') + '<div style="position:relative;font-family:var(--fh);font-size:11px;font-weight:700;margin-bottom:3px">' + s.headline + '</div><div style="position:relative;font-size:9px;opacity:.8">' + s.body + '</div></div>'; }).join('') + '</div><div style="font-size:12px;color:var(--muted)">' + (c.narrativa||'') + '</div>';
-  } else if (c.type === 'video') {
-    mc.innerHTML = '<textarea style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;color:var(--text);font-family:var(--fb);font-size:13px;min-height:200px;outline:none;resize:vertical" oninput="updateScript(\'' + c.id + '\',this.value)">' + (c.guionCompleto||'') + '</textarea>';
-  } else {
-    mc.innerHTML = '<div style="font-size:13px;line-height:1.7;white-space:pre-wrap">' + (c.raw||'') + '</div>';
-  }
-  openModal('modalCreative');
-}
-
-function copyCreative() {
-  var c = (active&&active.creatives||[]).find(function(x){return x.id===viewCreativeId;});
-  if (c) navigator.clipboard.writeText(c.guionCompleto||c.brief||c.raw||'');
-}
-function copyCrContent(id) {
-  var c = (active&&active.creatives||[]).find(function(x){return x.id===id;});
-  if (c) navigator.clipboard.writeText(c.guionCompleto||c.brief||c.raw||'');
-}
-
-
-// ── ASSET UPLOAD (logo + product photos) ──────────────────────────
-async function handleAssetUpload(files, assetType) {
-  if (!files.length || !active) return;
-  var keys = getKeys();
-  if (!keys.anthropic) { alert('Configurá tu API key de Anthropic primero'); openAPIConfig(); return; }
-  if (!active.memory.assets) active.memory.assets = [];
-  for (var i = 0; i < files.length; i++) {
-    var file = files[i];
-    var aid = Date.now().toString() + '_' + i;
-    var ph = { id: aid, name: file.name, assetType: assetType, dataUrl: null, analysis: null };
-    active.memory.assets.push(ph);
-    save(); renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
-    try {
-      var dataUrl = await readFile(file);
-      ph.dataUrl = dataUrl;
-      var b64 = dataUrl.split(',')[1];
-      var prompt = assetType === 'logo'
-        ? 'Analizá este logo/isotipo/isologo. Describí: colores exactos (con hex si podés), tipografía usada, estilo gráfico, formas y elementos, y cómo debería aparecer en materiales de marketing. En español rioplatense, máximo 3 oraciones.'
-        : 'Analizá esta foto de producto para uso publicitario. Describí: estilo fotográfico, paleta de colores, composición, tipo de fondo, iluminación y cómo replicar este estilo en imágenes generadas por IA. En español rioplatense, máximo 3 oraciones.';
-      var resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 300, messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: file.type || 'image/png', data: b64 } },
-          { type: 'text', text: prompt }
-        ]}]})
-      });
-      var d = await resp.json();
-      if (d.error) throw new Error(d.error.message);
-      ph.analysis = d.content.map(function(b) { return b.text || ''; }).join('');
-      save();
-      renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
-      showToast((assetType === 'logo' ? 'Logo' : 'Foto') + ' analizado: ' + file.name);
-    } catch(e) {
-      ph.analysis = 'Error: ' + e.message;
-      save();
-      renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
-      showToast('Error: ' + e.message, true);
-    }
-  }
-  document.getElementById(assetType === 'logo' ? 'logoFileInput' : 'productPhotoInput').value = '';
-}
-
-function renderAssetGallery(assetType, galleryId) {
-  if (!active) return;
-  var el = document.getElementById(galleryId);
-  if (!el) return;
-  var assets = (active.memory.assets || []).filter(function(a) { return a.assetType === assetType; });
-  if (!assets.length) { el.innerHTML = ''; return; }
-  el.innerHTML = assets.map(function(a) {
-    return '<div class="ref-card" title="' + (a.analysis || a.name) + '" style="cursor:default">' +
-      (a.dataUrl ? '<img src="' + a.dataUrl + '" alt="' + a.name + '">' : '<div class="ref-placeholder"><div style="font-size:20px">' + (assetType === 'logo' ? '🎨' : '📦') + '</div></div>') +
-      '<div class="ref-badge">' + (assetType === 'logo' ? 'Logo' : 'Producto') + '</div>' +
-      '<div class="ref-overlay"><div class="ref-name">' + a.name + '</div><div class="ref-snippet">' + (a.analysis || 'Analizando...') + '</div></div>' +
-      '<div class="ref-del" onclick="deleteAsset(\'' + a.id + '\',\'' + assetType + '\')">×</div>' +
-      '</div>';
-  }).join('');
-}
-
-function deleteAsset(id, assetType) {
-  if (!active) return;
-  active.memory.assets = (active.memory.assets || []).filter(function(a) { return a.id !== id; });
-  save();
-  renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
-  renderGenRefSelector();
-}
-
-// ── GEN REF PANEL (mini gallery in Generar tab) ───────────────────
-function renderGenRefPanel() {
-  if (!active) return;
-  var panel = document.getElementById('refContextPanel');
-  var mini = document.getElementById('genRefMiniGallery');
-  var salesFocusEl = document.getElementById('genSalesFocus');
-  if (!panel || !mini) return;
-  var refs = (active.memory.visualRefs || []).filter(function(r) { return r.dataUrl; });
-  var logos = (active.memory.assets || []).filter(function(a) { return a.assetType === 'logo' && a.dataUrl; });
-  var products = (active.memory.assets || []).filter(function(a) { return a.assetType === 'product' && a.dataUrl; });
-  var allRefs = logos.concat(products).concat(refs);
-  if (salesFocusEl && active.memory.salesFocus) salesFocusEl.value = active.memory.salesFocus;
-  if (!allRefs.length && !active.memory.salesFocus) { panel.classList.add('hidden'); return; }
-  panel.classList.remove('hidden');
-  mini.innerHTML = allRefs.slice(0, 8).map(function(r) {
-    var label = r.assetType === 'logo' ? '🎨' : r.assetType === 'product' ? '📦' : '🖼️';
-    return '<div style="position:relative;width:44px;height:44px;border-radius:6px;overflow:hidden;border:1px solid var(--border2)" title="' + r.name + '">' +
-      '<img src="' + r.dataUrl + '" style="width:100%;height:100%;object-fit:cover">' +
-      '<div style="position:absolute;bottom:0;left:0;right:0;background:#000a;font-size:9px;text-align:center;padding:1px">' + label + '</div>' +
-      '</div>';
-  }).join('') + (allRefs.length > 8 ? '<div style="font-size:11px;color:var(--muted);align-self:center">+' + (allRefs.length - 8) + ' más</div>' : '');
-}
-
-
-// ── GEN REF SELECTOR ──────────────────────────────────────────────
-var _selectedRefIds = {};  // { id: true/false }
-
-function renderGenRefSelector() {
-  if (!active) return;
-  var el = document.getElementById('genRefSelector');
-  if (!el) return;
-  var m = active.memory;
-  var all = [];
-  (m.assets || []).forEach(function(a) {
-    if (a.dataUrl) all.push({ id: a.id, name: a.name, url: a.dataUrl, label: a.assetType === 'logo' ? '🎨' : '📦', analysis: a.analysis });
-  });
-  (m.visualRefs || []).forEach(function(r) {
-    if (r.dataUrl) all.push({ id: r.id, name: r.name, url: r.dataUrl, label: r.refType === 'video' ? '🎬' : '🖼️', analysis: r.analysis });
-  });
-  if (!all.length) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--muted2)">Sin referencias en memoria — subí imágenes en Memoria de marca</div>';
-    return;
-  }
-  // init selection: all active by default
-  all.forEach(function(r) { if (_selectedRefIds[r.id] === undefined) _selectedRefIds[r.id] = true; });
-  el.innerHTML = all.map(function(r) {
-    var sel = _selectedRefIds[r.id] !== false;
-    return '<div class="gen-ref-chip' + (sel ? ' sel' : '') + '" data-refid="' + r.id + '" title="' + r.name + '">' +
-      '<img src="' + r.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block">' +
-      '<div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:9px;text-align:center;padding:1px;border-radius:0 0 4px 4px">' + r.label + '</div>' +
-      (sel ? '<div style="position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:8px;color:#000;font-weight:700">✓</div>' : '') +
-      '</div>';
-  }).join('');
-  el.querySelectorAll('.gen-ref-chip').forEach(function(chip) {
-    chip.onclick = function() {
-      var id = this.dataset.refid;
-      _selectedRefIds[id] = !(_selectedRefIds[id] !== false);
-      renderGenRefSelector();
-    };
-  });
-}
-
-function getActiveRefs() {
-  if (!active) return [];
-  var m = active.memory;
-  var all = [];
-  (m.assets || []).forEach(function(a) { if (a.dataUrl && a.analysis) all.push(a); });
-  (m.visualRefs || []).forEach(function(r) { if (r.dataUrl && r.analysis) all.push(r); });
-  return all.filter(function(r) { return _selectedRefIds[r.id] !== false; });
-}
-
-function getGenSalesFocus() {
-  var el = document.getElementById('genSalesFocus');
-  return el ? el.value.trim() : '';
-}
-
-
-// ── GENERAR VARIACIÓN ─────────────────────────────────────────────
-async function generarVariacion(cid) {
+// ── VARIATION ─────────────────────────────────────────
+function makeVariation(cid) {
   var c = (active&&active.creatives||[]).find(function(x){return x.id===cid;});
   if (!c) return;
-  // Restore the context from the original creative
-  var sfEl = document.getElementById('genSalesFocus');
-  if (sfEl && c.salesFocus) sfEl.value = c.salesFocus;
-  // Restore ref selection from saved refs
-  if (c.activeRefs && c.activeRefs.length) {
-    Object.keys(_selectedRefIds).forEach(function(k) { _selectedRefIds[k] = false; });
-    c.activeRefs.forEach(function(r) { _selectedRefIds[r.id] = true; });
-    renderGenRefSelector();
-  }
-  // Set prompt in main input and switch to generar tab
-  var mp = document.getElementById('mainPrompt');
-  if (mp) mp.value = (c.originalPrompt || c.title || '') + ' (variación)';
-  // Set matching type/format
-  document.querySelectorAll('.type-btn').forEach(function(b) { b.classList.toggle('sel', b.dataset.type === c.type); });
-  selTypeVal = c.type;
-  document.getElementById('fmtImagen') && document.getElementById('fmtImagen').classList.toggle('hidden', c.type !== 'imagen');
-  document.getElementById('fmtCarrusel') && document.getElementById('fmtCarrusel').classList.toggle('hidden', c.type !== 'carrusel');
-  document.getElementById('fmtVideo') && document.getElementById('fmtVideo').classList.toggle('hidden', c.type !== 'video');
-  // Set format
-  if (c.format && c.format.includes('x')) {
-    selFmtVal = c.format;
-    document.querySelectorAll('.fmt-btn').forEach(function(b) { b.classList.toggle('sel', b.dataset.fmt === c.format); });
-  }
-  showTab('generar');
+  var sf=$('genSalesFocus'); if(sf&&c.salesFocus) sf.value=c.salesFocus;
+  if(c.activeRefs&&c.activeRefs.length){Object.keys(_selRefs).forEach(function(k){_selRefs[k]=false;});c.activeRefs.forEach(function(r){_selRefs[r.id]=true;});}
+  var mp=$('mainPrompt'); if(mp) mp.value=(c.originalPrompt||c.title||'')+(c.originalPrompt?' (variación)':'');
+  document.querySelectorAll('.type-btn').forEach(function(b){b.classList.toggle('sel',b.dataset.type===c.type);});
+  selType=c.type;
+  $('fmtImagen').classList.toggle('hidden',c.type!=='imagen');
+  $('fmtCarrusel').classList.toggle('hidden',c.type!=='carrusel');
+  $('fmtVideo').classList.toggle('hidden',c.type!=='video');
+  if(c.format&&c.format.includes('x')){selFmt=c.format;document.querySelectorAll('.fmt-btn').forEach(function(b){b.classList.toggle('sel',b.dataset.fmt===c.format);});}
+  showTab('generar'); renderRefSelRow();
   showToast('Contexto cargado — editá el prompt y generá la variación');
 }
 
-// ── SHOW SAVED REFS on creative card detail ───────────────────────
-function renderSavedRefs(refs) {
-  if (!refs || !refs.length) return '';
-  return '<div style="margin-top:12px"><div class="brief-sec-title" style="margin-bottom:6px">Referencias usadas</div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:5px">' +
-    refs.map(function(r) {
-      return '<div style="position:relative;width:44px;height:44px;border-radius:6px;overflow:hidden;border:1px solid var(--border2)" title="' + r.name + '">' +
-        '<img src="' + r.url + '" style="width:100%;height:100%;object-fit:cover">' +
-        '<div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:9px;text-align:center">' + r.label + '</div></div>';
-    }).join('') + '</div>' +
-    (refs[0] && refs[0].analysis ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Analizadas por Claude · click en un creativo para ver el detalle completo</div>' : '') +
-    '</div>';
+// ── CREATIVES GRID ─────────────────────────────────────
+var TICON={imagen:'🖼️',carrusel:'🎠',video:'🎬',copy:'✍️'};
+var TLBL={imagen:'Imagen',carrusel:'Carrusel',video:'Video',copy:'Copy'};
+var TCOL={imagen:'#f472b6',carrusel:'#60a5fa',video:'#a78bfa',copy:'#c8ff00'};
+
+function crCard(c) {
+  var thumb = c.imgUrl?'<img src="'+c.imgUrl+'" alt="">':(c.slides&&c.slides[0]&&c.slides[0].imgUrl?'<img src="'+c.slides[0].imgUrl+'" alt="">':'<span class="no-img">'+(TICON[c.type]||'📄')+'</span>');
+  var date = new Date(c.createdAt).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
+  return '<div class="cr-card" data-cid="'+c.id+'"><div class="cr-thumb">'+thumb+'<div class="cr-tbadge" style="color:'+(TCOL[c.type]||'#fff')+'">'+(TLBL[c.type]||c.type)+'</div></div><div class="cr-body"><div class="cr-title">'+(c.title||'Sin título')+'</div><div class="cr-meta"><div class="cr-dot"></div>'+date+(c.format?' · '+c.format:'')+'</div><div class="cr-acts"><button class="cr-act v-btn" data-cid="'+c.id+'">Ver</button><button class="cr-act cp-btn" data-cid="'+c.id+'">Copiar</button><button class="cr-act var-btn" data-cid="'+c.id+'" style="color:var(--pur);border-color:var(--pur)33">↻ Var.</button><button class="cr-act del-btn" data-cid="'+c.id+'" style="color:var(--dan);border-color:var(--dan)22">✕</button></div></div></div>';
+}
+function bindCards(el) {
+  el.querySelectorAll('.v-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();openCr(this.dataset.cid);};});
+  el.querySelectorAll('.cp-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();copyCrById(this.dataset.cid);};});
+  el.querySelectorAll('.var-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();makeVariation(this.dataset.cid);};});
+  el.querySelectorAll('.del-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();deleteCr(this.dataset.cid);};});
+  el.querySelectorAll('.canva-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();exportToCanva(this.dataset.cid);};});
+  el.querySelectorAll('.canva-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();exportToCanva(this.dataset.cid);};});
+  el.querySelectorAll('.canva-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();exportToCanva(this.dataset.cid);};});
+  el.querySelectorAll('.cr-card').forEach(function(c){c.onclick=function(){openCr(this.dataset.cid);};});
+}
+function deleteCr(cid) {
+  if (!active||!confirm('¿Eliminar este creativo?')) return;
+  active.creatives=(active.creatives||[]).filter(function(c){return c.id!==cid;});
+  save(); renderOverview(); renderAllCr(); updateStats();
+  showToast('Creativo eliminado');
+}
+function renderOverview() {
+  updateStats();
+  var crs=(active&&active.creatives||[]).slice(0,6);
+  var el=$('ovGrid');
+  el.innerHTML=crs.length?crs.map(crCard).join(''):'<div class="empty" style="grid-column:1/-1"><div class="empty-icon">✦</div><div class="empty-title">Sin creativos todavía</div><div>Usá Generar para crear tu primer creativo</div></div>';
+  if(crs.length) bindCards(el);
+}
+function renderAllCr() {
+  if(!active) return;
+  var crs=active.creatives||[];
+  if(crFilter!=='all') crs=crs.filter(function(c){return c.type===crFilter;});
+  var el=$('crGrid');
+  el.innerHTML=crs.length?crs.map(crCard).join(''):'<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-title">Sin creativos en esta categoría</div></div>';
+  if(crs.length) bindCards(el);
+}
+function updateStats() {
+  if(!active) return;
+  var c=active.creatives||[];
+  $('stTot').textContent=c.length;
+  $('stImg').textContent=c.filter(function(x){return x.type==='imagen';}).length;
+  $('stCar').textContent=c.filter(function(x){return x.type==='carrusel';}).length;
+  $('stVid').textContent=c.filter(function(x){return x.type==='video';}).length;
 }
 
-function showToast(msg, isError) {
-  var t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;background:' + (isError ? 'var(--danger)' : '#1a2a0a') + ';color:' + (isError ? '#fff' : 'var(--accent)') + ';border:1px solid ' + (isError ? 'var(--danger)' : 'var(--accent)') + ';max-width:360px;line-height:1.4;animation:fadeUp .2s ease';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(function() { t.remove(); }, 4000);
+// ── VIEW CREATIVE ──────────────────────────────────────
+function openCr(id) {
+  var c=(active&&active.creatives||[]).find(function(x){return x.id===id;});
+  if(!c) return; viewCrId=id;
+  $('mcIcon').textContent=TICON[c.type]||'📄';
+  $('mcTitle').textContent=c.title||'Sin título';
+  $('mcMeta').textContent=(TLBL[c.type]||c.type)+' · '+(c.format||'')+' · '+new Date(c.createdAt).toLocaleDateString('es-AR');
+  var mc=$('mcContent'), sfHtml='', refsHtml='';
+  if(c.salesFocus) sfHtml='<div style="margin-top:10px"><div class="brief-stitle" style="margin-bottom:3px">Enfoque de venta</div><div style="font-size:12px;color:var(--mut);line-height:1.5">'+c.salesFocus+'</div></div>';
+  if(c.activeRefs&&c.activeRefs.length) refsHtml='<div style="margin-top:10px"><div class="brief-stitle" style="margin-bottom:5px">Referencias usadas</div><div style="display:flex;flex-wrap:wrap;gap:5px">'+c.activeRefs.map(function(r){return '<div style="position:relative;width:44px;height:44px;border-radius:6px;overflow:hidden;border:1px solid var(--b2)" title="'+r.name+'"><img src="'+r.url+'" style="width:100%;height:100%;object-fit:cover"><div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:9px;text-align:center">'+r.label+'</div></div>';}).join('')+'</div></div>';
+  if(c.type==='imagen'){
+    mc.innerHTML=(c.imgUrl?'<img src="'+c.imgUrl+'" style="width:100%;border-radius:8px;margin-bottom:12px" alt="">':'')+'<div class="prompt-box" style="font-size:13px;font-family:var(--fb);white-space:pre-wrap">'+(c.brief||'')+'</div>'+sfHtml+refsHtml;
+  } else if(c.type==='carrusel'){
+    var slHtml=(c.slides||[]).map(function(s,i){return '<div style="background:'+s.color+';border-radius:8px;padding:10px;min-height:80px;position:relative;overflow:hidden">'+(s.imgUrl?'<img src="'+s.imgUrl+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4" alt="">':'')+'<div style="position:relative;font-family:var(--fh);font-size:11px;font-weight:700;margin-bottom:3px">'+s.headline+'</div><div style="position:relative;font-size:9px;opacity:.8">'+s.body+'</div></div>';}).join('');
+    mc.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+slHtml+'</div><div style="font-size:12px;color:var(--mut)">'+(c.narrativa||'')+'</div>'+sfHtml+refsHtml;
+  } else if(c.type==='video'){
+    mc.innerHTML='<textarea style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:12px;color:var(--txt);font-family:var(--fb);font-size:13px;min-height:200px;outline:none;resize:vertical" oninput="updateScript(\''+c.id+'\',this.value)">'+(c.guionCompleto||'')+'</textarea>'+sfHtml+refsHtml;
+  } else {
+    mc.innerHTML='<div style="font-size:13px;line-height:1.7;white-space:pre-wrap">'+(c.raw||'')+'</div>'+sfHtml+refsHtml;
+  }
+  openM('mCr');
 }
+function copyCr(){var c=(active&&active.creatives||[]).find(function(x){return x.id===viewCrId;});if(c)navigator.clipboard.writeText(c.guionCompleto||c.brief||c.raw||'');}
+function copyCrById(id){var c=(active&&active.creatives||[]).find(function(x){return x.id===id;});if(c)navigator.clipboard.writeText(c.guionCompleto||c.brief||c.raw||'');}
+
+
+// ── EXPORT TO CANVA ───────────────────────────────────
+function exportToCanva(cid) {
+  var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
+  if (!c) return;
+
+  // Get the image URL — from direct imgUrl or first slide
+  var imgUrl = c.imgUrl || (c.slides && c.slides[0] && c.slides[0].imgUrl) || null;
+  var keys = getKeys();
+
+  if (!imgUrl) {
+    showToast('No hay imagen generada para exportar a Canva', true);
+    return;
+  }
+
+  // Canva Button API — opens Canva with the image pre-loaded
+  // Uses the public Canva Button which works with any hosted image URL
+  var canvaUrl = 'https://www.canva.com/design/create?' +
+    'template_type=photo_print&' +
+    (keys.canId ? 'embed_host=' + encodeURIComponent(window.location.host) + '&client_id=' + encodeURIComponent(keys.canId) + '&' : '') +
+    'image=' + encodeURIComponent(imgUrl);
+
+  window.open(canvaUrl, '_blank');
+  showToast('Abriendo en Canva...');
+}
+
+// Also bind canva-btn in bindCards (called from bindCards fn)
 
 init();
 </script>
 </body>
-</html>  var activeRefs = (typeof getActiveRefs === 'function') ? getActiveRefs() : [];
-  var logos = activeRefs.filter(function(r) { return r.assetType === 'logo'; });
-  if (logos.length) parts.push('LOGO/ISOTIPO DE LA MARCA: ' + logos.map(function(a) { return a.analysis; }).join(' | '));
-  var prods = activeRefs.filter(function(r) { return r.assetType === 'product'; });
-  if (prods.length) parts.push('FOTOS DE PRODUCTOS (replicar este estilo visual exacto): ' + prods.map(function(a) { return a.analysis; }).join(' | '));
-  var imgRefs = activeRefs.filter(function(r) { return !r.assetType; });
-  if (imgRefs.length) parts.push('REFERENCIAS VISUALES SELECCIONADAS: ' + imgRefs.map(function(r) { return r.name + ': ' + r.analysis; }).join(' | '));
-  var salesFocus = (typeof getGenSalesFocus === 'function') ? getGenSalesFocus() : '';
-  if (salesFocus) parts.push('ENFOQUE DE VENTA PARA ESTE CREATIVO (prioritario): ' + salesFocus);
-  
+</html<button class=\"cr-act canva-btn\" data-cid=\"\'+c.id+\'\">🎨</button>>
