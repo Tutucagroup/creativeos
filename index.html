@@ -1203,24 +1203,30 @@ function exportToCanva(cid) {
   var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
   if (!c) return;
 
-  // Get the image URL — from direct imgUrl or first slide
   var imgUrl = c.imgUrl || (c.slides && c.slides[0] && c.slides[0].imgUrl) || null;
-  var keys = getKeys();
 
   if (!imgUrl) {
     showToast('No hay imagen generada para exportar a Canva', true);
     return;
   }
 
-  // Canva Button API — opens Canva with the image pre-loaded
-  // Uses the public Canva Button which works with any hosted image URL
-  var canvaUrl = 'https://www.canva.com/design/create?' +
-    'template_type=photo_print&' +
-    (keys.canId ? 'embed_host=' + encodeURIComponent(window.location.host) + '&client_id=' + encodeURIComponent(keys.canId) + '&' : '') +
-    'image=' + encodeURIComponent(imgUrl);
-
-  window.open(canvaUrl, '_blank');
-  showToast('Abriendo en Canva...');
+  // Show a mini modal with options
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  overlay.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--b2);border-radius:18px;padding:28px;max-width:420px;width:100%">' +
+    '<div style="font-family:var(--fh);font-size:17px;font-weight:700;margin-bottom:6px">Exportar a Canva</div>' +
+    '<div style="font-size:13px;color:var(--mut);margin-bottom:20px;line-height:1.6">Descargá la imagen y súbela a Canva para editarla, o abrí Canva directamente.</div>' +
+    '<div style="display:flex;flex-direction:column;gap:10px">' +
+    '<a href="' + imgUrl + '" download="creativo-mykora.png" style="display:block;padding:12px 16px;background:var(--acc);color:#000;border-radius:9px;text-align:center;font-family:var(--fh);font-weight:700;font-size:13px;text-decoration:none">⬇ 1. Descargar imagen</a>' +
+    '<a href="https://www.canva.com/create/" target="_blank" style="display:block;padding:12px 16px;background:var(--bg3);border:1px solid var(--b2);color:var(--txt);border-radius:9px;text-align:center;font-family:var(--fh);font-weight:700;font-size:13px;text-decoration:none">🎨 2. Abrir Canva</a>' +
+    '<div style="font-size:11px;color:var(--mut);text-align:center;line-height:1.5">En Canva: Crear diseño → Subir imagen → editá textos, logo y CTA</div>' +
+    '</div>' +
+    '<button id="canvaCloseBtn" style="width:100%;margin-top:16px;padding:9px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:13px;cursor:pointer;font-family:var(--fb)">Cerrar</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var cb = document.getElementById('canvaCloseBtn');
+  if (cb) cb.onclick = function() { overlay.remove(); };
 }
 
 // Also bind canva-btn in bindCards (called from bindCards fn)
