@@ -201,6 +201,21 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
 .lang-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--b2);background:var(--bg3);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
 .lang-btn:hover{border-color:var(--b3);color:var(--txt)}
 .lang-btn.sel{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
+.img-editor{position:relative;width:100%;border-radius:10px;overflow:hidden;background:#000;margin-bottom:14px;cursor:crosshair}
+.img-editor img{width:100%;display:block;max-height:480px;object-fit:contain}
+.img-editor .text-layer{position:absolute;inset:0}
+.txt-block{position:absolute;cursor:move;user-select:none;padding:4px 8px;border:2px dashed transparent;border-radius:4px;transition:border-color .15s;min-width:40px}
+.txt-block:hover,.txt-block.active{border-color:rgba(255,255,255,.6)}
+.txt-block.active{border-color:var(--acc)}
+.txt-block span{display:block;outline:none;white-space:pre-wrap;word-break:break-word}
+.txt-block .blk-del{position:absolute;top:-10px;right:-10px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:10}
+.txt-block.active .blk-del{display:flex}
+.txt-toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg3);border-top:1px solid var(--b);flex-wrap:wrap}
+.txt-toolbar select,.txt-toolbar input[type=number]{background:var(--bg2);border:1px solid var(--b2);border-radius:6px;padding:4px 8px;color:var(--txt);font-size:12px;outline:none;cursor:pointer}
+.txt-toolbar input[type=color]{width:28px;height:28px;border:1px solid var(--b2);border-radius:4px;cursor:pointer;padding:2px;background:var(--bg2)}
+.txt-toolbar .tb-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--b2);background:transparent;color:var(--txt);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
+.txt-toolbar .tb-btn:hover{border-color:var(--acc);color:var(--acc)}
+.txt-toolbar .tb-btn.active{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
 .hidden{display:none!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
@@ -467,13 +482,24 @@ function save() {
   var d = JSON.stringify(projects);
   window._pc = d;
   try { localStorage.setItem(SKEY, d); } catch(e) {}
-  try { sessionStorage.setItem(SKEY, d); } catch(e) {}
+  try { sessionStorage.setItem(SKEY + '_s', d); } catch(e) {}
 }
 function load() {
-  try {
-    var d = window._pc || localStorage.getItem(SKEY) || sessionStorage.getItem(SKEY);
-    if (d) { projects = JSON.parse(d); return; }
-  } catch(e) {}
+  // Always prefer localStorage (persists across tabs and sessions)
+  var sources = [];
+  try { var ls = localStorage.getItem(SKEY); if (ls) sources.push(ls); } catch(e) {}
+  try { var ss = sessionStorage.getItem(SKEY + '_s'); if (ss) sources.push(ss); } catch(e) {}
+  if (window._pc) sources.push(window._pc);
+  // Pick the source with the most creatives
+  var best = null, bestCount = -1;
+  sources.forEach(function(s) {
+    try {
+      var p = JSON.parse(s);
+      var count = p.reduce(function(acc, proj) { return acc + (proj.creatives ? proj.creatives.length : 0); }, 0);
+      if (count > bestCount) { best = p; bestCount = count; }
+    } catch(e) {}
+  });
+  if (best) { projects = best; window._pc = JSON.stringify(best); return; }
   projects = [];
 }
 function saveKeys() {
@@ -1002,10 +1028,13 @@ async function genImagen(prompt, keys) {
   var cr = { id:Date.now().toString(), type:'imagen', title:prompt.substring(0,55), format:selFmt, concepto:concepto, headline:headline, subhead:subhead, cta:cta, ideogramPrompt:ideoPr, imgUrl:imgUrl, brief:raw, salesFocus:ctx.salesFocus, activeRefs:ctx.activeRefs, originalPrompt:prompt, createdAt:Date.now() };
   saveCr(cr);
   var cid = cr.id;
-  oa.innerHTML = '<div class="out-card"><div class="out-hdr"><span class="out-ico">🖼️</span><div><div class="out-title">Imagen · ' + selFmt + '</div><div class="out-meta">' + active.name + '</div></div><div class="out-acts">' + (imgUrl?'<a href="' + imgUrl + '" download class="btn">⬇ Descargar</a><button class="btn" onclick="exportToCanva(\'' + cr.id + '\')">🎨 Editar en Canva</button>':'') + '</div></div><div style="padding:16px">' +
-    (imgUrl?'<img src="' + imgUrl + '" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:360px;object-fit:contain">' : '<div id="noimg_'+cid+'" style="padding:18px;background:var(--bg3);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:13px;color:var(--mut);margin-bottom:12px">Key de Ideogram no activa al generar</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn" onclick="openAPIConfig()">⚙️ Verificar keys</button><button id="retry_'+cid+'" class="btn acc" onclick="retryIdeogram(\''+cid+'\')">🔄 Generar imagen</button></div></div>') +
+  console.log('genImagen: imgUrl =', imgUrl);
+  oa.innerHTML = '<div class="out-card"><div class="out-hdr"><span class="out-ico">🖼️</span><div><div class="out-title">Imagen · ' + selFmt + '</div><div class="out-meta">' + active.name + '</div></div><div class="out-acts">' + (imgUrl?'<button class="btn" onclick="downloadImg(\'' + imgUrl + '\', \'' + cr.id + '\')">⬇ Descargar</button><button class="btn" onclick="exportToCanva(\'' + cr.id + '\')">🎨 Editar en Canva</button>':'') + '</div></div><div style="padding:16px">' +
+    (imgUrl?'<div id="editor_' + cr.id + '" class="img-editor"><img src="' + imgUrl + '" style="width:100%;display:block;max-height:480px;object-fit:contain"><div class="text-layer" id="tlayer_' + cr.id + '"></div></div><div class="txt-toolbar" id="toolbar_' + cr.id + '"><button class="tb-btn" onclick="addTxtBlock(\'' + cr.id + '\',\'' + encodeURIComponent(cr.headline||'') + '\',50,8,28,700,\' #ffffff\')" title="Agregar headline">+ Headline</button><button class="tb-btn" onclick="addTxtBlock(\'' + cr.id + '\',\'' + encodeURIComponent(cr.subhead||'') + '\',50,20,18,400,\' #ffffffcc\')" title="Agregar subhead">+ Subhead</button><button class="tb-btn" onclick="addTxtBlock(\'' + cr.id + '\',\'' + encodeURIComponent(cr.cta||'') + '\',50,75,15,700,\' #000000\',\' #c8ff00\')" title="Agregar CTA">+ CTA</button><span style="color:var(--mut);font-size:11px;padding:0 4px">|</span><select id="fs_' + cr.id + '" onchange="updateActiveTxt(\'' + cr.id + '\',\'size\',this.value)"><option value="14">14px</option><option value="18">18px</option><option value="22" selected>22px</option><option value="28">28px</option><option value="36">36px</option><option value="48">48px</option></select><input type="color" id="fc_' + cr.id + '" value="#ffffff" onchange="updateActiveTxt(\'' + cr.id + '\',\'color\',this.value)" title="Color texto"><select id="fw_' + cr.id + '" onchange="updateActiveTxt(\'' + cr.id + '\',\'weight\',this.value)"><option value="400">Normal</option><option value="700" selected>Bold</option><option value="900">Extra Bold</option></select><button class="tb-btn" onclick="addTxtBlock(\'' + cr.id + '\',\'\',50,50,22,700,\' #ffffff\')">+ Texto libre</button><span style="margin-left:auto;display:flex;gap:6px"><button class="tb-btn" onclick="exportEditorImg(\'' + cr.id + '\')" style="color:var(--acc);border-color:var(--acc)44">⬇ Exportar PNG</button><button class="tb-btn" onclick="exportToCanva(\'' + cr.id + '\')" style="color:#7c3fce;border-color:#7c3fce33">🎨 Canva</button></span></div>' : '<div id="noimg_'+cid+'" style="padding:18px;background:var(--bg3);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:13px;color:var(--mut);margin-bottom:12px">Key de Ideogram no activa al generar</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn" onclick="openAPIConfig()">⚙️ Verificar keys</button><button id="retry_'+cid+'" class="btn acc" onclick="retryIdeogram(\''+cid+'\')">🔄 Generar imagen</button></div></div>') +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div class="brief-stitle">Concepto</div><div class="brief-txt">' + concepto + '</div></div><div><div class="brief-stitle">Headline</div><div class="brief-txt">' + headline + '</div></div><div><div class="brief-stitle">Subhead</div><div class="brief-txt">' + subhead + '</div></div><div><div class="brief-stitle">CTA</div><div class="brief-txt">' + cta + '</div></div></div>' +
     '<div style="margin-top:12px"><div class="brief-stitle">Prompt Ideogram</div><div class="prompt-box">' + ideoPr + '</div></div></div></div>';
+  setTimeout(function() { oa.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+  if (imgUrl) { initEditorTexts(cid, concepto ? headline : '', subhead, cta); }
 }
 
 async function retryIdeogram(cid) {
@@ -1048,14 +1077,16 @@ async function genCarrusel(prompt, keys) {
   saveCr(cr);
   var sHtml = slides.map(function(sl,i){
     var bg = 'background:' + sl.color + ';' + (sl.imgUrl?'background-image:url('+sl.imgUrl+');background-size:cover;background-position:center;':'');
-    return '<div style="' + bg + 'border-radius:8px;position:relative;aspect-ratio:1;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;overflow:hidden">' +
+    return '<div onclick="openSlideEditor(\'' + cr.id + '\''  + ',' + i + ')" style="cursor:pointer;' + bg + 'border-radius:8px;position:relative;aspect-ratio:1;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;overflow:hidden">' +
       '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 50%,transparent)"></div>' +
+      '<div style="position:absolute;top:4px;left:4px;background:#000a;color:var(--acc);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">Click para editar</div>' +
       '<div style="position:absolute;top:7px;right:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5)">' + (i+1) + '/4</div>' +
       '<div style="position:relative;z-index:1"><div style="font-family:var(--fh);font-size:11px;font-weight:700;line-height:1.2;margin-bottom:3px">' + sl.headline + '</div>' +
       '<div style="font-size:9px;color:rgba(255,255,255,.7)">' + sl.body + '</div>' +
-      (i===3?'<div style="display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:var(--acc);color:#000">Ver más →</div>':'') + '</div></div>';
+      (i===3?'<div style="display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:var(--acc);color:#000">Ver más →</div>':'') +
+      '</div></div>';
   }).join('');
-  oa.innerHTML = '<div class="out-card"><div class="out-hdr"><span class="out-ico">🎠</span><div><div class="out-title">Carrusel 4 slides · ' + selFmt + '</div><div class="out-meta">' + active.name + '</div></div></div><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:14px">' + sHtml + '</div><div style="padding:10px 14px;border-top:1px solid var(--b)"><div class="brief-stitle" style="margin-bottom:3px">Narrativa</div><div style="font-size:13px;color:var(--mut)">' + narrativa + '</div></div></div>';
+  oa.innerHTML = '<div class="out-card"><div class="out-hdr"><span class="out-ico">🎠</span><div><div class="out-title">Carrusel 4 slides · ' + selFmt + '</div><div class="out-meta">' + active.name + '</div></div><div class="out-acts"><button class="btn" onclick="openSlideEditor(\'' + cr.id + '\',0)">🔍 Editar slides</button></div></div><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:14px">' + sHtml + '</div><div style="padding:10px 14px;border-top:1px solid var(--b)"><div class="brief-stitle" style="margin-bottom:3px">Narrativa</div><div style="font-size:13px;color:var(--mut)">' + narrativa + '</div></div></div>';
 }
 
 // ── VIDEO ─────────────────────────────────────────────
@@ -1199,34 +1230,501 @@ function copyCrById(id){var c=(active&&active.creatives||[]).find(function(x){re
 
 
 // ── EXPORT TO CANVA ───────────────────────────────────
+
+
+// ── IMAGE TEXT EDITOR ─────────────────────────────────────────────
+var _activeBlk = null;  // { cid, el }
+
+function addTxtBlock(cid, encodedText, xPct, yPct, fontSize, fontWeight, color, bgColor) {
+  var layer = document.getElementById('tlayer_' + cid);
+  var editor = document.getElementById('editor_' + cid);
+  if (!layer || !editor) return;
+
+  var text = encodedText ? decodeURIComponent(encodedText) : 'Texto';
+  var blk = document.createElement('div');
+  blk.className = 'txt-block';
+  blk.style.left   = xPct + '%';
+  blk.style.top    = yPct + '%';
+  blk.style.transform = 'translate(-50%, -50%)';
+
+  var span = document.createElement('span');
+  span.contentEditable = 'true';
+  span.textContent = text;
+  span.style.fontSize   = (fontSize || 22) + 'px';
+  span.style.fontWeight = fontWeight || '700';
+  span.style.color      = color || '#ffffff';
+  span.style.fontFamily = "'Syne', sans-serif";
+  span.style.textShadow = '0 1px 4px rgba(0,0,0,.7)';
+  if (bgColor) { blk.style.background = bgColor; blk.style.padding = '6px 14px'; blk.style.borderRadius = '6px'; }
+
+  var del = document.createElement('div');
+  del.className = 'blk-del';
+  del.textContent = '×';
+  del.onclick = function(e) { e.stopPropagation(); blk.remove(); _activeBlk = null; };
+
+  blk.appendChild(span);
+  blk.appendChild(del);
+  layer.appendChild(blk);
+
+  // Make draggable
+  makeDraggable(blk, editor);
+
+  // Activate on click
+  blk.addEventListener('mousedown', function(e) {
+    if (e.target === del || e.target === span) return;
+    activateBlk(cid, blk);
+  });
+  span.addEventListener('focus', function() { activateBlk(cid, blk); });
+
+  activateBlk(cid, blk);
+  if (text === 'Texto') { setTimeout(function() { span.focus(); document.execCommand('selectAll', false, null); }, 50); }
+}
+
+function activateBlk(cid, blk) {
+  // Deactivate previous
+  document.querySelectorAll('.txt-block.active').forEach(function(b) { b.classList.remove('active'); });
+  blk.classList.add('active');
+  _activeBlk = { cid: cid, el: blk };
+
+  // Sync toolbar to current block styles
+  var span = blk.querySelector('span');
+  if (!span) return;
+  var fs = document.getElementById('fs_' + cid);
+  var fc = document.getElementById('fc_' + cid);
+  var fw = document.getElementById('fw_' + cid);
+  var curSize = parseInt(span.style.fontSize) || 22;
+  if (fs) fs.value = [14,18,22,28,36,48].reduce(function(a,b) { return Math.abs(b-curSize) < Math.abs(a-curSize) ? b : a; });
+  if (fc) {
+    var c = span.style.color;
+    if (c && c.indexOf('rgb') === 0) {
+      var m = c.match(/\d+/g);
+      if (m && m.length >= 3) fc.value = '#' + [0,1,2].map(function(i) { return ('0'+parseInt(m[i]).toString(16)).slice(-2); }).join('');
+    }
+  }
+  if (fw) fw.value = span.style.fontWeight || '700';
+}
+
+function updateActiveTxt(cid, prop, val) {
+  if (!_activeBlk || _activeBlk.cid !== cid) return;
+  var span = _activeBlk.el.querySelector('span');
+  if (!span) return;
+  if (prop === 'size')   span.style.fontSize   = val + 'px';
+  if (prop === 'color')  span.style.color       = val;
+  if (prop === 'weight') span.style.fontWeight  = val;
+}
+
+function makeDraggable(el, container) {
+  var startX, startY, startLeft, startTop, isDragging = false;
+
+  el.addEventListener('mousedown', function(e) {
+    if (e.target.contentEditable === 'true' || e.target.className === 'blk-del') return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    var rect = container.getBoundingClientRect();
+    var elRect = el.getBoundingClientRect();
+    startLeft = (elRect.left + elRect.width / 2 - rect.left) / rect.width * 100;
+    startTop  = (elRect.top  + elRect.height/ 2 - rect.top ) / rect.height* 100;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var rect = container.getBoundingClientRect();
+    var dx = (e.clientX - startX) / rect.width  * 100;
+    var dy = (e.clientY - startY) / rect.height * 100;
+    el.style.left = Math.min(95, Math.max(5, startLeft + dx)) + '%';
+    el.style.top  = Math.min(95, Math.max(5, startTop  + dy)) + '%';
+  });
+
+  document.addEventListener('mouseup', function() { isDragging = false; });
+}
+
+// ── EXPORT EDITOR AS PNG ──────────────────────────────────────────
+async function exportEditorImg(cid) {
+  var editor = document.getElementById('editor_' + cid);
+  if (!editor) { showToast('Editor no encontrado', true); return; }
+
+  // Use html2canvas if available, else fallback to canvas manual draw
+  showToast('Preparando exportación...');
+
+  var img = editor.querySelector('img');
+  var layer = document.getElementById('tlayer_' + cid);
+  if (!img || !layer) return;
+
+  var editorRect = editor.getBoundingClientRect();
+  var canvas = document.createElement('canvas');
+  // Use actual image dimensions for best quality
+  var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
+  var fmt = (c && c.format) || '1080x1080';
+  var parts = fmt.split('x');
+  canvas.width  = parseInt(parts[0]) || 1080;
+  canvas.height = parseInt(parts[1]) || 1080;
+  var ctx = canvas.getContext('2d');
+
+  // Draw the background image
+  var bgImg = new Image();
+  bgImg.crossOrigin = 'anonymous';
+  bgImg.onload = function() {
+    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+    // Draw each text block
+    var blocks = layer.querySelectorAll('.txt-block');
+    blocks.forEach(function(blk) {
+      var span = blk.querySelector('span');
+      if (!span) return;
+
+      var blkRect = blk.getBoundingClientRect();
+      var scaleX = canvas.width  / editorRect.width;
+      var scaleY = canvas.height / editorRect.height;
+
+      var x = (blkRect.left + blkRect.width  / 2 - editorRect.left) * scaleX;
+      var y = (blkRect.top  + blkRect.height / 2 - editorRect.top ) * scaleY;
+
+      var fontSize   = parseInt(span.style.fontSize || '22') * scaleX;
+      var fontWeight = span.style.fontWeight || '700';
+      var color      = span.style.color || '#ffffff';
+      var text       = span.textContent || '';
+
+      // Background pill if present
+      var bg = blk.style.background;
+      if (bg) {
+        ctx.fillStyle = bg;
+        var tw = ctx.measureText(text).width;
+        ctx.beginPath();
+        ctx.roundRect(x - tw/2 - 14*scaleX, y - fontSize/2 - 8*scaleY, tw + 28*scaleX, fontSize + 16*scaleY, 8);
+        ctx.fill();
+      }
+
+      ctx.font = fontWeight + ' ' + fontSize + 'px Syne, sans-serif';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(text, x, y);
+      ctx.shadowBlur = 0;
+    });
+
+    // Download
+    canvas.toBlob(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'creativo-editado.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+      showToast('Imagen exportada con textos');
+    }, 'image/png');
+  };
+  bgImg.onerror = function() {
+    showToast('Error al cargar imagen para exportar — intentá desde Descargar', true);
+  };
+  bgImg.src = img.src;
+}
+
+// Auto-add text blocks after image loads in genImagen
+function initEditorTexts(cid, headline, subhead, cta) {
+  setTimeout(function() {
+    var layer = document.getElementById('tlayer_' + cid);
+    if (!layer) return;
+    if (headline) addTxtBlock(cid, encodeURIComponent(headline), 50, 15, 32, '700', '#ffffff', '');
+    if (subhead)  addTxtBlock(cid, encodeURIComponent(subhead),  50, 27, 20, '400', '#ffffffdd', '');
+    if (cta)      addTxtBlock(cid, encodeURIComponent(cta),      50, 82, 16, '700', '#000000', '#c8ff00');
+    _activeBlk = null;
+    document.querySelectorAll('.txt-block.active').forEach(function(b) { b.classList.remove('active'); });
+  }, 800);
+}
+
+
+// ── SLIDE EDITOR MODAL ───────────────────────────────────────────
+function openSlideEditor(cid, slideIdx) {
+  var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
+  if (!c || !c.slides) return;
+
+  var currentSlide = slideIdx || 0;
+
+  // Remove existing if open
+  var existing = document.getElementById('slideEditorModal');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'slideEditorModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+
+  function buildModal() {
+    var sl = c.slides[currentSlide];
+    var editorId = 'slEditor_' + cid + '_' + currentSlide;
+    var layerId  = 'slLayer_'  + cid + '_' + currentSlide;
+
+    overlay.innerHTML =
+      '<div style="background:var(--bg2);border:1px solid var(--b2);border-radius:18px;width:100%;max-width:560px;max-height:94vh;overflow-y:auto;display:flex;flex-direction:column">' +
+
+      // Header
+      '<div style="display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--b);flex-shrink:0">' +
+      '<span style="font-size:18px">🎠</span>' +
+      '<div><div style="font-family:var(--fh);font-weight:700;font-size:15px">Slide ' + (currentSlide+1) + ' / 4</div>' +
+      '<div style="font-size:11px;color:var(--mut)">' + (sl.headline || '') + '</div></div>' +
+      '<button id="slCloseBtn" style="margin-left:auto;background:transparent;border:none;color:var(--mut);font-size:22px;cursor:pointer;line-height:1">×</button>' +
+      '</div>' +
+
+      // Slide navigator (thumbnails)
+      '<div style="display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--b);flex-shrink:0">' +
+      c.slides.map(function(s, i) {
+        var thumbBg = 'background:' + s.color + ';' + (s.imgUrl ? 'background-image:url(' + s.imgUrl + ');background-size:cover;background-position:center;' : '');
+        return '<div onclick="switchSlide(' + i + ')" style="cursor:pointer;' + thumbBg + 'width:56px;height:56px;border-radius:7px;border:2px solid ' + (i === currentSlide ? 'var(--acc)' : 'var(--b2)') + ';flex-shrink:0;position:relative;overflow:hidden">' +
+          '<div style="position:absolute;bottom:2px;right:3px;font-size:8px;font-weight:700;color:rgba(255,255,255,.8)">' + (i+1) + '</div></div>';
+      }).join('') +
+      '</div>' +
+
+      // Editor area
+      '<div style="padding:14px 16px;flex:1">' +
+      '<div id="' + editorId + '" class="img-editor" style="border-radius:10px;margin-bottom:10px">' +
+      (sl.imgUrl
+        ? '<img src="' + sl.imgUrl + '" style="width:100%;display:block;border-radius:10px;max-height:380px;object-fit:contain">'
+        : '<div style="width:100%;aspect-ratio:1;background:' + sl.color + ';border-radius:10px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:13px">Sin imagen generada</div>') +
+      '<div class="text-layer" id="' + layerId + '"></div>' +
+      '</div>' +
+
+      // Toolbar
+      '<div class="txt-toolbar" style="border-radius:9px;border:1px solid var(--b);margin-bottom:10px">' +
+      '<button class="tb-btn" onclick="addTxtBlock(\'' + editorId + '\',\'' + encodeURIComponent(sl.headline||'') + '\',50,15,28,\'700\',\'#ffffff\',\'\')">+ Headline</button>' +
+      '<button class="tb-btn" onclick="addTxtBlock(\'' + editorId + '\',\'' + encodeURIComponent(sl.body||'') + '\',50,28,18,\'400\',\'#ffffffcc\',\'\')">+ Body</button>' +
+      '<button class="tb-btn" onclick="addTxtBlock(\'' + editorId + '\',\'Ver más →\',50,82,14,\'700\',\'#000000\',\'#c8ff00\')">+ CTA</button>' +
+      '<button class="tb-btn" onclick="addTxtBlock(\'' + editorId + '\',\'\',50,50,20,\'700\',\'#ffffff\',\'\')">+ Texto libre</button>' +
+      '<span style="color:var(--mut);font-size:11px;padding:0 4px">|</span>' +
+      '<select id="sfs_' + editorId + '" onchange="updateActiveTxtById(\'' + editorId + '\',\'size\',this.value)"><option value="14">14</option><option value="18">18</option><option value="22">22</option><option value="28" selected>28</option><option value="36">36</option><option value="48">48</option></select>' +
+      '<input type="color" id="sfc_' + editorId + '" value="#ffffff" onchange="updateActiveTxtById(\'' + editorId + '\',\'color\',this.value)">' +
+      '<select id="sfw_' + editorId + '" onchange="updateActiveTxtById(\'' + editorId + '\',\'weight\',this.value)"><option value="400">Normal</option><option value="700" selected>Bold</option><option value="900">Extra Bold</option></select>' +
+      '</div>' +
+      '</div>' +
+
+      // Footer
+      '<div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--b);flex-shrink:0">' +
+      '<button id="slPrevBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--txt);font-size:12px;cursor:pointer;font-family:var(--fb)"' + (currentSlide===0?' disabled style="opacity:.4;padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:12px;cursor:not-allowed;font-family:var(--fb)"':'') + '>← Anterior</button>' +
+      '<button id="slNextBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--txt);font-size:12px;cursor:pointer;font-family:var(--fb)"' + (currentSlide===3?' disabled style="opacity:.4;padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:12px;cursor:not-allowed;font-family:var(--fb)"':'') + '>Siguiente →</button>' +
+      '<button id="slDlBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--txt);font-size:12px;cursor:pointer;font-family:var(--fb)">⬇ Descargar slide</button>' +
+      '<button id="slDlAllBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--acc);border-color:var(--acc)44;font-size:12px;cursor:pointer;font-family:var(--fh);font-weight:700">⬇ Todos los slides</button>' +
+      '<button id="slCloseBtn2" style="padding:9px 18px;background:var(--acc);color:#000;border:none;border-radius:8px;font-family:var(--fh);font-weight:700;font-size:12px;cursor:pointer;margin-left:auto">Listo</button>' +
+      '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+    document.getElementById('slCloseBtn').onclick  = function() { overlay.remove(); };
+    document.getElementById('slCloseBtn2').onclick = function() { overlay.remove(); };
+
+    // Navigation
+    var prevBtn = document.getElementById('slPrevBtn');
+    var nextBtn = document.getElementById('slNextBtn');
+    if (prevBtn && currentSlide > 0) prevBtn.onclick = function() { switchSlide(currentSlide - 1); };
+    if (nextBtn && currentSlide < 3) nextBtn.onclick = function() { switchSlide(currentSlide + 1); };
+
+    // Download current slide
+    document.getElementById('slDlBtn').onclick = function() {
+      exportSlideImg(editorId, sl, c.format, 'slide-' + (currentSlide+1));
+    };
+
+    // Download all slides
+    document.getElementById('slDlAllBtn').onclick = function() {
+      downloadAllSlides(cid);
+    };
+
+    // Auto-add text blocks after img loads
+    if (sl.imgUrl) {
+      setTimeout(function() {
+        addTxtBlock(editorId, encodeURIComponent(sl.headline||''), 50, 15, 28, '700', '#ffffff', '');
+        addTxtBlock(editorId, encodeURIComponent(sl.body||''), 50, 28, 16, '400', '#ffffffcc', '');
+        if (currentSlide === 3) addTxtBlock(editorId, encodeURIComponent('Ver más →'), 50, 82, 14, '700', '#000000', '#c8ff00');
+        _activeBlk = null;
+        document.querySelectorAll('.txt-block.active').forEach(function(b) { b.classList.remove('active'); });
+      }, 400);
+    }
+  }
+
+  function switchSlide(idx) {
+    currentSlide = idx;
+    overlay.remove();
+    openSlideEditor(cid, idx);
+  }
+  window.switchSlide = switchSlide;
+
+  buildModal();
+}
+
+// Variant of updateActiveTxt that works with any editor id
+function updateActiveTxtById(editorId, prop, val) {
+  if (!_activeBlk || _activeBlk.cid !== editorId) return;
+  var span = _activeBlk.el.querySelector('span');
+  if (!span) return;
+  if (prop === 'size')   span.style.fontSize   = val + 'px';
+  if (prop === 'color')  span.style.color       = val;
+  if (prop === 'weight') span.style.fontWeight  = val;
+}
+
+function exportSlideImg(editorId, sl, fmt, filename) {
+  var editor = document.getElementById(editorId);
+  if (!editor) { showToast('Editor no encontrado', true); return; }
+  var img = editor.querySelector('img');
+  var layer = editor.querySelector('.text-layer');
+  if (!img || !layer) {
+    // No image, just download direct URL
+    if (sl.imgUrl) downloadImg(sl.imgUrl, filename);
+    return;
+  }
+  var editorRect = editor.getBoundingClientRect();
+  var canvas = document.createElement('canvas');
+  var parts = (fmt || '1080x1080').split('x');
+  canvas.width  = parseInt(parts[0]) || 1080;
+  canvas.height = parseInt(parts[1]) || 1080;
+  var ctx = canvas.getContext('2d');
+  var bgImg = new Image();
+  bgImg.crossOrigin = 'anonymous';
+  bgImg.onload = function() {
+    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    var blocks = layer.querySelectorAll('.txt-block');
+    blocks.forEach(function(blk) {
+      var span = blk.querySelector('span');
+      if (!span) return;
+      var blkRect = blk.getBoundingClientRect();
+      var scaleX = canvas.width  / editorRect.width;
+      var scaleY = canvas.height / editorRect.height;
+      var x = (blkRect.left + blkRect.width/2  - editorRect.left) * scaleX;
+      var y = (blkRect.top  + blkRect.height/2 - editorRect.top ) * scaleY;
+      var fontSize   = parseInt(span.style.fontSize || '22') * scaleX;
+      var fontWeight = span.style.fontWeight || '700';
+      var color      = span.style.color || '#ffffff';
+      var text       = span.textContent || '';
+      var bg = blk.style.background;
+      if (bg) {
+        ctx.font = fontWeight + ' ' + fontSize + 'px Syne, sans-serif';
+        var tw = ctx.measureText(text).width;
+        ctx.fillStyle = bg;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x - tw/2 - 14*scaleX, y - fontSize/2 - 8*scaleY, tw + 28*scaleX, fontSize + 16*scaleY, 8);
+        else ctx.rect(x - tw/2 - 14*scaleX, y - fontSize/2 - 8*scaleY, tw + 28*scaleX, fontSize + 16*scaleY);
+        ctx.fill();
+      }
+      ctx.font = fontWeight + ' ' + fontSize + 'px Syne, sans-serif';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(text, x, y);
+      ctx.shadowBlur = 0;
+    });
+    canvas.toBlob(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (filename || 'slide') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+      showToast('Slide exportado');
+    }, 'image/png');
+  };
+  bgImg.onerror = function() { if (sl.imgUrl) downloadImg(sl.imgUrl, filename); };
+  bgImg.src = img.src;
+}
+
+function downloadAllSlides(cid) {
+  var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
+  if (!c || !c.slides) return;
+  var delay = 0;
+  c.slides.forEach(function(sl, i) {
+    if (sl.imgUrl) {
+      setTimeout(function() {
+        downloadImg(sl.imgUrl, 'slide-' + (i+1));
+      }, delay);
+      delay += 600;
+    }
+  });
+  showToast('Descargando ' + c.slides.filter(function(s){return s.imgUrl;}).length + ' slides...');
+}
+
+function downloadImg(url, filename) {
+  // Use fetch + blob to download without leaving the page
+  fetch(url)
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (filename || 'creativo') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+    })
+    .catch(function() {
+      // Fallback: open in new tab if fetch fails (CORS)
+      window.open(url, '_blank');
+    });
+}
+
 function exportToCanva(cid) {
   var c = (active && active.creatives || []).find(function(x) { return x.id === cid; });
   if (!c) return;
+  var imgUrl = c.imgUrl || (c.slides && c.slides.map(function(s){return s.imgUrl;}).filter(Boolean)[0]) || null;
 
-  var imgUrl = c.imgUrl || (c.slides && c.slides[0] && c.slides[0].imgUrl) || null;
+  // Build Canva design URL with pre-filled text via query params
+  // This uses Canva's "Create with Image" URL scheme
+  var headline = c.headline || c.titulo || '';
+  var subhead  = c.subhead  || c.objetivo || '';
+  var cta      = c.cta      || '';
 
-  if (!imgUrl) {
-    showToast('No hay imagen generada para exportar a Canva', true);
-    return;
-  }
-
-  // Show a mini modal with options
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
-  overlay.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--b2);border-radius:18px;padding:28px;max-width:420px;width:100%">' +
-    '<div style="font-family:var(--fh);font-size:17px;font-weight:700;margin-bottom:6px">Exportar a Canva</div>' +
-    '<div style="font-size:13px;color:var(--mut);margin-bottom:20px;line-height:1.6">Descargá la imagen y súbela a Canva para editarla, o abrí Canva directamente.</div>' +
-    '<div style="display:flex;flex-direction:column;gap:10px">' +
-    '<a href="' + imgUrl + '" download="creativo-mykora.png" style="display:block;padding:12px 16px;background:var(--acc);color:#000;border-radius:9px;text-align:center;font-family:var(--fh);font-weight:700;font-size:13px;text-decoration:none">⬇ 1. Descargar imagen</a>' +
-    '<a href="https://www.canva.com/create/" target="_blank" style="display:block;padding:12px 16px;background:var(--bg3);border:1px solid var(--b2);color:var(--txt);border-radius:9px;text-align:center;font-family:var(--fh);font-weight:700;font-size:13px;text-decoration:none">🎨 2. Abrir Canva</a>' +
-    '<div style="font-size:11px;color:var(--mut);text-align:center;line-height:1.5">En Canva: Crear diseño → Subir imagen → editá textos, logo y CTA</div>' +
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+
+  var sizeMap = {'1080x1080':'1080x1080','1080x1920':'1080x1920','1080x1350':'1080x1350','1920x1080':'1920x1080'};
+  var canvaSize = sizeMap[c.format] || '1080x1080';
+
+  overlay.innerHTML =
+    '<div style="background:var(--bg2);border:1px solid var(--b2);border-radius:18px;padding:28px;max-width:440px;width:100%">' +
+    '<div style="font-family:var(--fh);font-size:17px;font-weight:700;margin-bottom:4px">🎨 Exportar a Canva</div>' +
+    '<div style="font-size:12px;color:var(--mut);margin-bottom:20px;line-height:1.6">Descargá la imagen y abrí Canva para editarla con los textos generados.</div>' +
+
+    (imgUrl ?
+    '<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;max-height:180px;display:flex;align-items:center;justify-content:center;background:var(--bg3)">' +
+    '<img src="' + imgUrl + '" style="max-width:100%;max-height:180px;object-fit:contain"></div>' : '') +
+
+    '<div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;line-height:1.8">' +
+    (headline ? '<div><span style="color:var(--mut)">Headline:</span> <strong>' + headline + '</strong></div>' : '') +
+    (subhead  ? '<div><span style="color:var(--mut)">Subhead:</span> ' + subhead + '</div>' : '') +
+    (cta      ? '<div><span style="color:var(--mut)">CTA:</span> ' + cta + '</div>' : '') +
     '</div>' +
-    '<button id="canvaCloseBtn" style="width:100%;margin-top:16px;padding:9px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:13px;cursor:pointer;font-family:var(--fb)">Cerrar</button>' +
+
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+
+    (imgUrl ?
+    '<button id="canvaDlBtn" style="padding:12px 16px;background:var(--acc);color:#000;border:none;border-radius:9px;font-family:var(--fh);font-weight:700;font-size:13px;cursor:pointer">⬇ Paso 1: Descargar imagen</button>' : '') +
+
+    '<a href="https://www.canva.com/design/create?type=SocialMedia&format=' + canvaSize + '" target="_blank" ' +
+    'style="display:block;padding:12px 16px;background:var(--bg3);border:1px solid var(--b2);color:var(--txt);border-radius:9px;text-align:center;font-family:var(--fh);font-weight:700;font-size:13px;text-decoration:none">' +
+    '🎨 Paso 2: Abrir Canva (' + canvaSize + ')</a>' +
+
+    '<div style="font-size:11px;color:var(--mut);text-align:center;line-height:1.5;padding:4px 0">' +
+    'En Canva: subí la imagen → agregá un cuadro de texto → copiá los textos de arriba</div>' +
+
+    '</div>' +
+    '<button id="canvaCloseBtn" style="width:100%;margin-top:14px;padding:9px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:13px;cursor:pointer;font-family:var(--fb)">Cerrar</button>' +
     '</div>';
+
   document.body.appendChild(overlay);
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   var cb = document.getElementById('canvaCloseBtn');
   if (cb) cb.onclick = function() { overlay.remove(); };
+
+  // Download button — uses blob to avoid navigation
+  if (imgUrl) {
+    var dlBtn = document.getElementById('canvaDlBtn');
+    if (dlBtn) {
+      dlBtn.onclick = function() {
+        downloadImg(imgUrl, cid);
+        dlBtn.textContent = '✓ Descargando...';
+        setTimeout(function() { dlBtn.textContent = '⬇ Paso 1: Descargar imagen'; }, 2000);
+      };
+    }
+  }
 }
 
 // Also bind canva-btn in bindCards (called from bindCards fn)
