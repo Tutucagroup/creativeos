@@ -406,6 +406,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
   <div class="field"><label>Anthropic (Claude)</label><input type="password" id="kAnt" placeholder="sk-ant-api03-..."></div>
   <div class="field"><label>Ideogram v3</label><input type="password" id="kIde" placeholder="Y6m0..."></div>
   <div class="field"><label>HeyGen</label><input type="password" id="kHey" placeholder="sk_V2_..."></div>
+  <div class="field"><label>Canva Client ID</label><input type="text" id="kCanId" placeholder="OC-..."></div>
+  <div class="field"><label>Canva Client Secret</label><input type="password" id="kCanSec" placeholder="cnvcau..."></div>
   <div class="mfooter">
     <button class="btn" id="btnCancelAPI">Cancelar</button>
     <button class="btn acc" id="btnSaveAPI">Guardar keys</button>
@@ -486,7 +488,7 @@ function load() {
   projects = best || [];
 }
 function saveKeys() {
-  var k = { ant: _$('kAnt').value.trim(), ide: _$('kIde').value.trim(), hey: _$('kHey').value.trim() };
+  var k = { ant: _$('kAnt').value.trim(), ide: _$('kIde').value.trim(), hey: _$('kHey').value.trim(), canId: _$('kCanId').value.trim(), canSec: _$('kCanSec').value.trim() };
   window._ck = k;
   try { localStorage.setItem('ceos_k', JSON.stringify(k)); } catch(e) {}
   closeM('mAPI'); updateAPIStatus();
@@ -554,6 +556,8 @@ function openAPIConfig() {
   if (k.ant) _$('kAnt').value = k.ant;
   if (k.ide) _$('kIde').value = k.ide;
   if (k.hey) _$('kHey').value = k.hey;
+  if (k.canId) _$('kCanId').value = k.canId;
+  if (k.canSec) _$('kCanSec').value = k.canSec;
   openM('mAPI');
 }
 
