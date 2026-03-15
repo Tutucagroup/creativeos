@@ -270,13 +270,37 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
     <!-- MEMORIA -->
     <div id="tab-memoria" class="content hidden">
       <div class="sec-title"><div class="sec-dot"></div>Memoria de marca</div>
-      <div class="mem-grid">
+
+      <!-- IDENTIDAD VISUAL: brandbook + logo + fotos al tope -->
+      <div class="mem-grid" style="margin-bottom:12px">
         <div class="mc">
-          <div class="mc-title">Identidad visual & brandbook</div>
+          <div class="mc-title">Brandbook & archivos de identidad</div>
           <div id="memBrand"></div>
           <div class="uz" id="brandZone" style="margin-top:8px">📄 Subir brandbook / archivos<div style="font-size:10px;margin-top:2px;opacity:.6">PDF, PNG, JPG — Claude extrae la info</div></div>
           <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple style="display:none">
         </div>
+        <div class="mc">
+          <div class="mc-title" style="display:flex;align-items:center;gap:6px">
+            <span>🎨 Logo / Isologo / Isotipo</span>
+          </div>
+          <div style="font-size:10px;color:var(--acc);margin-bottom:8px;font-weight:600">Usado como referencia en todos los creativos</div>
+          <div class="ref-gal" id="logoGal" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr))"></div>
+          <div class="uz" id="logoZone" style="padding:10px;margin-top:6px">🎨 Subir logo / isotipo<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, SVG, JPG — incluido en cada imagen generada</div></div>
+          <input type="file" id="logoInput" accept=".png,.jpg,.jpeg,.svg,.webp" multiple style="display:none">
+        </div>
+      </div>
+
+      <div class="mc" style="margin-bottom:12px">
+        <div class="mc-title" style="display:flex;align-items:center;gap:6px">
+          <span>📦 Fotos de productos</span>
+          <span class="mc-note">Ideogram las usa como referencia visual de estilo</span>
+        </div>
+        <div class="ref-gal" id="prodGal" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr));margin-bottom:8px"></div>
+        <div class="uz" id="prodPhotoZone" style="padding:10px">📦 Subir fotos de productos<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP — Ideogram replica el estilo visual</div></div>
+        <input type="file" id="prodPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
+      </div>
+
+      <div class="mem-grid">
         <div class="mc">
           <div class="mc-title">Paleta & tipografía</div>
           <div id="memColors"></div>
@@ -292,40 +316,24 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
           <div class="av-wrap" id="avGrid"></div>
           <input class="mini-in" id="avIn" placeholder="Ej: Lucas (founder), María (CEO)">
         </div>
+        <div class="mc">
+          <div class="mc-title">Idioma de los creativos</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px" id="langRow">
+            <button class="lang-btn sel" data-lang="es-AR">🇦🇷 ES (AR)</button>
+            <button class="lang-btn" data-lang="es">🌎 ES</button>
+            <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
+            <button class="lang-btn" data-lang="pt-BR">🇧🇷 PT</button>
+            <button class="lang-btn" data-lang="fr">🇫🇷 FR</button>
+            <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
+            <button class="lang-btn" data-lang="de">🇩🇪 DE</button>
+          </div>
+          <input class="mini-in" id="customLangIn" placeholder="Otro idioma...">
+        </div>
       </div>
-      <div class="mc" style="margin-bottom:12px">
+
+      <div class="mc" style="margin-top:12px">
         <div class="mc-title">Tono de voz</div>
         <textarea class="ta" id="toneIn" placeholder="Ej: Marca directa y joven. Humor sin ser payasos. CTAs urgentes. Audiencia: emprendedores 25-40."></textarea>
-      </div>
-      <div class="mc" style="margin-bottom:12px">
-        <div class="mc-title">Idioma de los creativos</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px" id="langRow">
-          <button class="lang-btn sel" data-lang="es-AR">🇦🇷 Español (AR)</button>
-          <button class="lang-btn" data-lang="es">🌎 Español (neutro)</button>
-          <button class="lang-btn" data-lang="en">🇺🇸 English</button>
-          <button class="lang-btn" data-lang="pt-BR">🇧🇷 Português</button>
-          <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
-          <button class="lang-btn" data-lang="it">🇮🇹 Italiano</button>
-          <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
-          <span style="font-size:12px;color:var(--mut)">O especificá otro:</span>
-          <input class="mini-in" id="customLangIn" placeholder="Ej: Catalán, Japonés..." style="flex:1;margin-top:0">
-        </div>
-      </div>
-      <div class="mem-grid">
-        <div class="mc">
-          <div class="mc-title">Logo / Isologo / Isotipo <span class="mc-note">Claude analiza colores y estilo</span></div>
-          <div class="ref-gal" id="logoGal" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr))"></div>
-          <div class="uz" id="logoZone" style="padding:10px;margin-top:6px">🎨 Subir logo / isotipo<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, SVG, JPG</div></div>
-          <input type="file" id="logoInput" accept=".png,.jpg,.jpeg,.svg,.webp" multiple style="display:none">
-        </div>
-        <div class="mc">
-          <div class="mc-title">Fotos de productos <span class="mc-note">Ideogram las usa como referencia</span></div>
-          <div class="ref-gal" id="prodGal" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr))"></div>
-          <div class="uz" id="prodPhotoZone" style="padding:10px;margin-top:6px">📦 Subir fotos de productos<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP</div></div>
-          <input type="file" id="prodPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
-        </div>
       </div>
     </div>
     <!-- GENERAR -->
@@ -924,7 +932,7 @@ function brandCtx() {
   var logos = ar.filter(function(r){return r.assetType==='logo';});
   var prods = ar.filter(function(r){return r.assetType==='product';});
   var imgRefs = ar.filter(function(r){return !r.assetType;});
-  if (logos.length) parts.push('LOGO DE LA MARCA: ' + logos.map(function(a){return a.analysis;}).join(' | '));
+  if (logos.length) parts.push('LOGO DE LA MARCA (OBLIGATORIO incluirlo en la imagen): ' + logos.map(function(a){return a.analysis;}).join(' | ') + ' — El logo debe aparecer visible en la imagen, respetando sus colores y tipografía exactos.');
   if (prods.length) parts.push('FOTOS DE PRODUCTO (replicar este estilo visual exacto): ' + prods.map(function(a){return a.analysis;}).join(' | '));
   if (imgRefs.length) parts.push('REFERENCIAS VISUALES: ' + imgRefs.map(function(r){return r.name+': '+r.analysis;}).join(' | '));
   return parts.join('\n');
@@ -1013,7 +1021,9 @@ function snapContext() {
 async function genImagen(prompt, keys) {
   var oa = $('outputArea');
   var sys = 'Experto en marketing visual para la marca "' + active.name + '".\n' + brandCtx() + '\nIMPORTANTE: Respondé SOLO con el formato indicado. Sin markdown, sin asteriscos, sin secciones extra.';
-  var raw = await claudeCall(sys, 'Generá el brief de esta imagen publicitaria.\nFORMATO: ' + selFmt + '\nSOLICITUD: ' + prompt + '\n\nTodo el texto visible en la imagen debe estar en ' + getLang() + '.\n\nRespondé SOLO con estas líneas:\nCONCEPTO: [concepto visual en una línea]\nHEADLINE: [headline en español]\nSUBHEAD: [subhead en español]\nCTA: [CTA en español]\nIDEOGRAM_PROMPT: [prompt en inglés para Ideogram en una sola línea. OBLIGATORIO incluir: "All visible text in Spanish". Incluir textos exactos en español entre comillas. Describir logo si existe. Detallar estilo, colores, composición]', keys, 700);
+  var hasLogo = active && active.memory && active.memory.assets && active.memory.assets.some(function(a){return a.assetType==='logo';});
+  var logoInstr = hasLogo ? 'OBLIGATORIO: incluir el logo de la marca en la imagen, en la posición indicada o bottom center, respetando sus colores exactos. ' : '';
+  var raw = await claudeCall(sys, 'Generá el brief de esta imagen publicitaria.\nFORMATO: ' + selFmt + '\nSOLICITUD: ' + prompt + '\n\n' + logoInstr + 'Todo el texto visible debe estar en ' + getLang() + '.\n\nRespondé SOLO con estas líneas:\nCONCEPTO: [concepto visual en una línea]\nHEADLINE: [headline en ' + getLang() + ']\nSUBHEAD: [subhead en ' + getLang() + ']\nCTA: [CTA en ' + getLang() + ']\nIDEOGRAM_PROMPT: [prompt en inglés para Ideogram en una sola línea. Incluir textos exactos entre comillas. ' + (hasLogo ? 'Incluir posición del logo. ' : '') + 'Detallar estilo, colores, composición, iluminación]', keys, 700);
   var concepto=gf(raw,'CONCEPTO'), headline=gf(raw,'HEADLINE'), subhead=gf(raw,'SUBHEAD'), cta=gf(raw,'CTA'), ideoPr=gf(raw,'IDEOGRAM_PROMPT');
   if (!concepto && !headline) { console.warn('Parse failed. Raw:', raw); showToast('Claude no devolvió el formato esperado', true); }
   var imgUrl = null;
