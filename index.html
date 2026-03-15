@@ -968,7 +968,7 @@ function renderImageOutput(cr, container) {
     '<div style="padding:14px">'+
     (cr.imgUrl?
       '<div class="ed-wrap" id="'+edId+'">'+
-      '<img src="'+cr.imgUrl+'" alt="imagen generada" crossorigin="anonymous">'+
+      '<img src="'+cr.imgUrl+'" alt="imagen generada">'+
       '<div class="ed-layer" id="edL_'+cr.id+'"></div>'+
       '</div>'+
       buildToolbar(edId, cr)+
@@ -1183,8 +1183,14 @@ async function exportEditor(edId) {
       showToast('Exportado con textos ✓');
     },'image/png');
   };
-  bgImg.onerror=function(){showToast('Error cargando imagen — descargala directamente',true);};
-  bgImg.src=img.src;
+  bgImg.onerror=function(){
+    // Fallback: download original without text overlays
+    showToast('No se pudo procesar con canvas — descargando imagen original',true);
+    dlBlob(img.src, 'slide-export');
+  };
+  // Add crossorigin for canvas — may fail for Ideogram CDN (CORS)
+  bgImg.crossOrigin='anonymous';
+  bgImg.src=img.src+'?t='+Date.now(); // cache bust
 }
 
 // ────────────────────────────────────────────────
@@ -1282,46 +1288,53 @@ function openSlide(cid, idx) {
   _$('slEditorArea').innerHTML=
     '<div class="ed-wrap" id="'+edId+'" style="min-height:200px">'+
     (sl.imgUrl
-      ? '<img src="'+sl.imgUrl+'" alt="slide '+(idx+1)+'" crossorigin="anonymous" style="width:100%;display:block;max-height:420px;object-fit:contain;border-radius:10px 10px 0 0">'
-      : '<div style="width:100%;padding-bottom:100%;background:'+sl.color+';border-radius:10px 10px 0 0;position:relative"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">Sin imagen</div></div>')+
+      ? '<img src="'+sl.imgUrl+'" alt="slide '+(idx+1)+'" style="width:100%;display:block;max-height:420px;object-fit:contain;border-radius:10px 10px 0 0" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">' +
+        '<div style="display:none;width:100%;aspect-ratio:1;background:'+sl.color+';border-radius:10px 10px 0 0;align-items:center;justify-content:center;flex-direction:column;gap:8px"><div style="color:rgba(255,255,255,.5);font-size:12px">URL de imagen expirada</div><a href="'+sl.imgUrl+'" target="_blank" style="color:var(--acc);font-size:11px;font-weight:600">Abrir imagen →</a></div>'
+      : '<div style="width:100%;aspect-ratio:1;background:'+sl.color+';border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">Sin imagen generada</div>')+
     '<div class="ed-layer" id="edL_sl_'+cid+'_'+idx+'"></div>'+
     '</div>'+
     buildToolbar(edId, {headline:sl.headline,subhead:sl.body,cta:idx===3?'Ver más →':'',id:cid});
-  // Auto-add texts
+  // Auto-add texts (only if editor still exists — prevents stale timeout)
+  var _slideTs = Date.now();
+  window._lastSlideTs = _slideTs;
   if(sl.imgUrl){
     setTimeout(function(){
-      if(sl.headline) addBlk(edId, sl.headline, 50, 15, 26, '700', '#ffffff', '');
-      if(sl.body)     addBlk(edId, sl.body, 50, 28, 16, '400', '#ffffffcc', '');
+      if(window._lastSlideTs !== _slideTs) return; // Stale — user switched slide
+      var layer = document.getElementById('edL_sl_'+cid+'_'+idx);
+      if(!layer) return; // Editor was closed
+      if(sl.headline) addBlk(edId, sl.headline, 50, 12, 26, '700', '#ffffff', '');
+      if(sl.body)     addBlk(edId, sl.body,     50, 26, 16, '400', '#ffffffcc', '');
       if(idx===3)     addBlk(edId, 'Ver más →', 50, 83, 13, '700', '#000000', '#c8ff00');
       deselAll();
-    }, 400);
+    }, 500);
   }
   openM('mSlide');
 }
 function dlAllSlides(cid) {
   var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;}); if(!c) return;
   var slides=c.slides.filter(function(s){return s.imgUrl;});
-  if(!slides.length){showToast('Sin imágenes generadas para descargar',true);return;}
-  // Download each slide with delay to avoid popup blocker
-  slides.forEach(function(sl,i){
-    setTimeout(function(){
-      // Try blob download first, fallback to direct link
-      fetch(sl.imgUrl).then(function(r){return r.blob();}).then(function(blob){
-        var a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download='slide-'+(i+1)+'.png';
-        document.body.appendChild(a); a.click();
-        setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(a.href);},100);
-      }).catch(function(){
-        // CORS fallback: open in new tab
-        var a=document.createElement('a');
-        a.href=sl.imgUrl; a.target='_blank'; a.download='slide-'+(i+1)+'.png';
-        document.body.appendChild(a); a.click();
-        setTimeout(function(){document.body.removeChild(a);},100);
-      });
-    }, i*700);
-  });
-  showToast('Descargando '+slides.length+' slides...');
+  if(!slides.length){showToast('Sin imágenes generadas',true);return;}
+  // Show download links modal so user can save each one
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  ov.innerHTML='<div style="background:var(--bg2);border:1px solid var(--b2);border-radius:16px;padding:24px;max-width:420px;width:100%">'+
+    '<div style="font-family:var(--fh);font-size:16px;font-weight:700;margin-bottom:4px">⬇ Descargar slides</div>'+
+    '<div style="font-size:11px;color:var(--mut);margin-bottom:16px">Hacé click en cada botón para descargar el slide</div>'+
+    '<div style="display:flex;flex-direction:column;gap:8px">'+
+    slides.map(function(sl,i){
+      return '<div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:9px;padding:8px 12px">'+
+        '<img src="'+sl.imgUrl+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0">'+
+        '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">Slide '+(i+1)+'</div><div style="font-size:10px;color:var(--mut)">'+sl.headline+'</div></div>'+
+        '<a href="'+sl.imgUrl+'" download="slide-'+(i+1)+'.png" target="_blank" style="padding:6px 12px;background:var(--acc);color:#000;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;flex-shrink:0;white-space:nowrap">⬇ Bajar</a>'+
+        '</div>';
+    }).join('')+
+    '</div>'+
+    '<button id="dlCloseBtn" style="width:100%;margin-top:14px;padding:9px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:12px;cursor:pointer;font-family:var(--fb)">Cerrar</button>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  document.getElementById('dlCloseBtn').onclick=function(){ov.remove();};
+  showToast('Click en cada slide para descargar');
 }
 
 // ────────────────────────────────────────────────
