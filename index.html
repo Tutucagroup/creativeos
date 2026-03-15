@@ -817,7 +817,7 @@ async function handleBrandUpload(files) {
       else parts.push({ type:'image', source:{ type:'base64', media_type:file.type || 'image/jpeg', data:b64 }});
       parts.push({ type:'text', text:'Analizá este brandbook. Respondé SOLO en JSON válido sin markdown:\n{"nombre_marca":"","descripcion":"","colores":[],"tipografias":[],"tono_voz":"","valores":[],"productos":[],"audiencia":""}' });
       var resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01' },
+        method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
         body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:700, messages:[{ role:'user', content:parts }] })
       });
       var d = await resp.json();
@@ -856,7 +856,7 @@ async function handleRefUpload(files, refType) {
       var b64 = dataUrl.split(',')[1];
       if (refType === 'image') {
         var r2 = await fetch('https://api.anthropic.com/v1/messages', {
-          method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01' },
+          method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
           body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:350, messages:[{ role:'user', content:[
             { type:'image', source:{ type:'base64', media_type:file.type || 'image/jpeg', data:b64 }},
             { type:'text', text:'Analizá esta imagen publicitaria de referencia. Describí: composición, paleta, tipografía, tono emocional y concepto creativo. En español rioplatense, sin preamble, máximo 4 oraciones.' }
@@ -893,7 +893,7 @@ async function analyzeVideo(file, dataUrl, keys) {
         cv.getContext('2d').drawImage(vid, 0, 0, 640, 360);
         var fb64 = cv.toDataURL('image/jpeg', 0.8).split(',')[1];
         var r2 = await fetch('https://api.anthropic.com/v1/messages', {
-          method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01' },
+          method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
           body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:350, messages:[{ role:'user', content:[
             { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:fb64 }},
             { type:'text', text:'Analizá este frame de video publicitario (' + file.name + '). Describí: estilo visual, composición, energía y concepto creativo. En español rioplatense, sin preamble, máximo 4 oraciones.' }
@@ -1039,7 +1039,7 @@ async function generate() {
 
 async function claudeCall(sys, user, keys, maxTok) {
   var r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01' },
+    method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key':keys.anthropic, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
     body: JSON.stringify({ model:'claude-opus-4-5', max_tokens: maxTok || 1500, system:sys, messages:[{ role:'user', content:user }] })
   });
   var d = await r.json();
