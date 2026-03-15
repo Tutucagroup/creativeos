@@ -277,6 +277,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
         <div class="mem-card-title">Tono de voz</div>
         <textarea class="tone-area" id="toneIn" placeholder="Ej: Marca directa y joven. Humor sin ser payasos. Vendemos soluciones, no features. CTAs urgentes. Audiencia: emprendedores 25-40."></textarea>
       </div>
+
+      <div class="mem-grid" style="margin-bottom:12px">
+        <div class="mem-card">
+          <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Logo / Isologo / Isotipo</span>
+            <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Claude analiza colores y estilo</span>
+          </div>
+          <div class="ref-gallery" id="logoGallery" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
+          <div class="upload-zone" id="logoUploadZone" style="margin-top:6px;padding:10px">
+            🎨 Subir logo / isotipo
+            <div style="font-size:10px;margin-top:2px;opacity:.6">PNG, SVG, JPG</div>
+          </div>
+          <input type="file" id="logoFileInput" accept=".png,.jpg,.jpeg,.svg,.webp" multiple style="display:none">
+        </div>
+        <div class="mem-card">
+          <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Fotos de productos</span>
+            <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Ideogram las usa como referencia visual</span>
+          </div>
+          <div class="ref-gallery" id="productPhotoGallery" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
+          <div class="upload-zone" id="productPhotoZone" style="margin-top:6px;padding:10px">
+            📦 Subir fotos de productos
+            <div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP — varios a la vez</div>
+          </div>
+          <input type="file" id="productPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
+        </div>
+      </div>
       <div class="mem-card full">
         <div class="mem-card-title" style="display:flex;align-items:center;justify-content:space-between">
           <span>Referencias visuales</span>
@@ -411,6 +438,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px
           </div>
         </div>
       </div>
+      <div id="refContextPanel" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px">Contexto activo para esta generación</div>
+          <button onclick="document.getElementById('refContextPanel').classList.toggle('hidden')" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1">×</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Enfoque de venta</div>
+            <textarea class="tone-area" id="genSalesFocus" style="min-height:60px;font-size:12px" placeholder="Enfoque específico para este creativo..."></textarea>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Referencias activas</div>
+            <div id="genRefMiniGallery" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+            <div style="font-size:11px;color:var(--muted2);margin-top:4px">Las referencias de memoria de marca se usan automáticamente</div>
+          </div>
+        </div>
+      </div>
       <div id="outputArea"></div>
     </div>
     <div id="tab-creativos" class="content hidden">
@@ -497,8 +541,21 @@ var crFilter = 'all';
 var viewCreativeId = null;
 var SKEY = 'creativeos_v3';
 
-function save() { try { localStorage.setItem(SKEY, JSON.stringify(projects)); } catch(e) {} }
-function load() { try { var d = localStorage.getItem(SKEY); if (d) projects = JSON.parse(d); } catch(e) { projects = []; } }
+function save() {
+  var d = JSON.stringify(projects);
+  window._pc = d;
+  try { localStorage.setItem(SKEY, d); } catch(e) {}
+  try { sessionStorage.setItem(SKEY + '_ss', d); } catch(e) {}
+}
+function load() {
+  try {
+    var d = window._pc;
+    if (!d) { try { d = localStorage.getItem(SKEY); } catch(e) {} }
+    if (!d) { try { d = sessionStorage.getItem(SKEY + '_ss'); } catch(e) {} }
+    if (d) { projects = JSON.parse(d); return; }
+  } catch(e) {}
+  projects = [];
+}
 function saveKeys() {
   var _kd = {
     anthropic: document.getElementById('keyAnthropic').value.trim(),
@@ -589,6 +646,12 @@ function bindAll() {
   document.getElementById('refVideoInput').onchange = function() { handleRefUpload(this.files, 'video'); };
   setupDrop('refImgZone', function(f) { handleRefUpload(f, 'image'); });
   setupDrop('refVidZone', function(f) { handleRefUpload(f, 'video'); });
+  document.getElementById('logoUploadZone').onclick = function() { document.getElementById('logoFileInput').click(); };
+  document.getElementById('logoFileInput').onchange = function() { handleAssetUpload(this.files, 'logo'); };
+  setupDrop('logoUploadZone', function(f) { handleAssetUpload(f, 'logo'); });
+  document.getElementById('productPhotoZone').onclick = function() { document.getElementById('productPhotoInput').click(); };
+  document.getElementById('productPhotoInput').onchange = function() { handleAssetUpload(this.files, 'product'); };
+  setupDrop('productPhotoZone', function(f) { handleAssetUpload(f, 'product'); });
   document.querySelectorAll('.type-btn').forEach(function(b) { b.onclick = function() { selType(this); }; });
   document.querySelectorAll('.fmt-btn').forEach(function(b) { b.onclick = function() { selFmt(this); }; });
   document.querySelectorAll('.dur-btn').forEach(function(b) { b.onclick = function() { selDur(this); }; });
@@ -700,7 +763,7 @@ function showTab(name) {
   });
   if (name === 'overview') renderOverview();
   if (name === 'creativos') renderAllCreatives();
-  if (name === 'generar') updateAvatarSelector();
+  if (name === 'generar') { updateAvatarSelector(); renderGenRefPanel(); }
 }
 
 function createProject() {
@@ -745,6 +808,9 @@ function loadMemoryUI() {
   renderAvatars();
   renderRefGallery();
   renderVoiceClones();
+  renderAssetGallery('logo', 'logoGallery');
+  renderAssetGallery('product', 'productPhotoGallery');
+  renderGenRefPanel();
 }
 
 function renderTags(cid, arr, key) {
@@ -1408,15 +1474,35 @@ function crCard(c) {
   var thumb = c.imgUrl ? '<img src="' + c.imgUrl + '" alt="">' : (c.slides && c.slides[0] && c.slides[0].imgUrl ? '<img src="' + c.slides[0].imgUrl + '" alt="">' : '<span class="no-img">' + (TICON[c.type]||'📄') + '</span>');
   var date = new Date(c.createdAt).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   return '<div class="cr-card" data-cid="' + c.id + '">' +
-    '<div class="cr-thumb">' + thumb + '<div class="cr-type-badge" style="color:' + (TCOLOR[c.type]||'#fff') + '">' + (TLABEL[c.type]||c.type) + '</div></div>' +
+    '<div class="cr-thumb">' + thumb +
+    '<div class="cr-type-badge" style="color:' + (TCOLOR[c.type]||'#fff') + '">' + (TLABEL[c.type]||c.type) + '</div>' +
+    '<div class="cr-del-btn" data-cid="' + c.id + '" title="Eliminar" style="position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:#000a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;opacity:0;transition:opacity .15s">×</div>' +
+    '</div>' +
     '<div class="cr-body"><div class="cr-title">' + (c.title||'Sin título') + '</div><div class="cr-meta"><div class="cr-status"></div>' + date + (c.format ? ' · ' + c.format : '') + '</div>' +
-    '<div class="cr-acts"><button class="cr-act view-btn" data-cid="' + c.id + '">Ver</button><button class="cr-act copy-btn" data-cid="' + c.id + '">Copiar</button></div></div></div>';
+    '<div class="cr-acts"><button class="cr-act view-btn" data-cid="' + c.id + '">Ver</button><button class="cr-act copy-btn" data-cid="' + c.id + '">Copiar</button><button class="cr-act del-btn" data-cid="' + c.id + '" style="color:var(--danger);border-color:var(--danger)22">Eliminar</button></div></div></div>';
 }
 
 function bindCards(el) {
   el.querySelectorAll('.cr-card').forEach(function(c) { c.onclick = function() { openCreative(this.dataset.cid); }; });
   el.querySelectorAll('.view-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); openCreative(this.dataset.cid); }; });
   el.querySelectorAll('.copy-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); copyCrContent(this.dataset.cid); }; });
+  el.querySelectorAll('.del-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); deleteCreative(this.dataset.cid); }; });
+  el.querySelectorAll('.cr-del-btn').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); deleteCreative(this.dataset.cid); }; });
+  el.querySelectorAll('.cr-card').forEach(function(c) {
+    c.addEventListener('mouseenter', function() { var d = this.querySelector('.cr-del-btn'); if(d) d.style.opacity='1'; });
+    c.addEventListener('mouseleave', function() { var d = this.querySelector('.cr-del-btn'); if(d) d.style.opacity='0'; });
+  });
+}
+
+function deleteCreative(cid) {
+  if (!active) return;
+  if (!confirm('¿Eliminar este creativo?')) return;
+  active.creatives = (active.creatives||[]).filter(function(c) { return c.id !== cid; });
+  save();
+  renderOverview();
+  renderAllCreatives();
+  updateStats();
+  showToast('Creativo eliminado');
 }
 
 function renderOverview() {
@@ -1474,6 +1560,97 @@ function copyCrContent(id) {
   if (c) navigator.clipboard.writeText(c.guionCompleto||c.brief||c.raw||'');
 }
 
+
+// ── ASSET UPLOAD (logo + product photos) ──────────────────────────
+async function handleAssetUpload(files, assetType) {
+  if (!files.length || !active) return;
+  var keys = getKeys();
+  if (!keys.anthropic) { alert('Configurá tu API key de Anthropic primero'); openAPIConfig(); return; }
+  if (!active.memory.assets) active.memory.assets = [];
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    var aid = Date.now().toString() + '_' + i;
+    var ph = { id: aid, name: file.name, assetType: assetType, dataUrl: null, analysis: null };
+    active.memory.assets.push(ph);
+    save(); renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
+    try {
+      var dataUrl = await readFile(file);
+      ph.dataUrl = dataUrl;
+      var b64 = dataUrl.split(',')[1];
+      var prompt = assetType === 'logo'
+        ? 'Analizá este logo/isotipo/isologo. Describí: colores exactos (con hex si podés), tipografía usada, estilo gráfico, formas y elementos, y cómo debería aparecer en materiales de marketing. En español rioplatense, máximo 3 oraciones.'
+        : 'Analizá esta foto de producto para uso publicitario. Describí: estilo fotográfico, paleta de colores, composición, tipo de fondo, iluminación y cómo replicar este estilo en imágenes generadas por IA. En español rioplatense, máximo 3 oraciones.';
+      var resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 300, messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: file.type || 'image/png', data: b64 } },
+          { type: 'text', text: prompt }
+        ]}]})
+      });
+      var d = await resp.json();
+      if (d.error) throw new Error(d.error.message);
+      ph.analysis = d.content.map(function(b) { return b.text || ''; }).join('');
+      save();
+      renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
+      showToast((assetType === 'logo' ? 'Logo' : 'Foto') + ' analizado: ' + file.name);
+    } catch(e) {
+      ph.analysis = 'Error: ' + e.message;
+      save();
+      renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
+      showToast('Error: ' + e.message, true);
+    }
+  }
+  document.getElementById(assetType === 'logo' ? 'logoFileInput' : 'productPhotoInput').value = '';
+}
+
+function renderAssetGallery(assetType, galleryId) {
+  if (!active) return;
+  var el = document.getElementById(galleryId);
+  if (!el) return;
+  var assets = (active.memory.assets || []).filter(function(a) { return a.assetType === assetType; });
+  if (!assets.length) { el.innerHTML = ''; return; }
+  el.innerHTML = assets.map(function(a) {
+    return '<div class="ref-card" title="' + (a.analysis || a.name) + '" style="cursor:default">' +
+      (a.dataUrl ? '<img src="' + a.dataUrl + '" alt="' + a.name + '">' : '<div class="ref-placeholder"><div style="font-size:20px">' + (assetType === 'logo' ? '🎨' : '📦') + '</div></div>') +
+      '<div class="ref-badge">' + (assetType === 'logo' ? 'Logo' : 'Producto') + '</div>' +
+      '<div class="ref-overlay"><div class="ref-name">' + a.name + '</div><div class="ref-snippet">' + (a.analysis || 'Analizando...') + '</div></div>' +
+      '<div class="ref-del" onclick="deleteAsset(\'' + a.id + '\',\'' + assetType + '\')">×</div>' +
+      '</div>';
+  }).join('');
+}
+
+function deleteAsset(id, assetType) {
+  if (!active) return;
+  active.memory.assets = (active.memory.assets || []).filter(function(a) { return a.id !== id; });
+  save();
+  renderAssetGallery(assetType, assetType === 'logo' ? 'logoGallery' : 'productPhotoGallery');
+  renderGenRefPanel();
+}
+
+// ── GEN REF PANEL (mini gallery in Generar tab) ───────────────────
+function renderGenRefPanel() {
+  if (!active) return;
+  var panel = document.getElementById('refContextPanel');
+  var mini = document.getElementById('genRefMiniGallery');
+  var salesFocusEl = document.getElementById('genSalesFocus');
+  if (!panel || !mini) return;
+  var refs = (active.memory.visualRefs || []).filter(function(r) { return r.dataUrl; });
+  var logos = (active.memory.assets || []).filter(function(a) { return a.assetType === 'logo' && a.dataUrl; });
+  var products = (active.memory.assets || []).filter(function(a) { return a.assetType === 'product' && a.dataUrl; });
+  var allRefs = logos.concat(products).concat(refs);
+  if (salesFocusEl && active.memory.salesFocus) salesFocusEl.value = active.memory.salesFocus;
+  if (!allRefs.length && !active.memory.salesFocus) { panel.classList.add('hidden'); return; }
+  panel.classList.remove('hidden');
+  mini.innerHTML = allRefs.slice(0, 8).map(function(r) {
+    var label = r.assetType === 'logo' ? '🎨' : r.assetType === 'product' ? '📦' : '🖼️';
+    return '<div style="position:relative;width:44px;height:44px;border-radius:6px;overflow:hidden;border:1px solid var(--border2)" title="' + r.name + '">' +
+      '<img src="' + r.dataUrl + '" style="width:100%;height:100%;object-fit:cover">' +
+      '<div style="position:absolute;bottom:0;left:0;right:0;background:#000a;font-size:9px;text-align:center;padding:1px">' + label + '</div>' +
+      '</div>';
+  }).join('') + (allRefs.length > 8 ? '<div style="font-size:11px;color:var(--muted);align-self:center">+' + (allRefs.length - 8) + ' más</div>' : '');
+}
+
 function showToast(msg, isError) {
   var t = document.createElement('div');
   t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;background:' + (isError ? 'var(--danger)' : '#1a2a0a') + ';color:' + (isError ? '#fff' : 'var(--accent)') + ';border:1px solid ' + (isError ? 'var(--danger)' : 'var(--accent)') + ';max-width:360px;line-height:1.4;animation:fadeUp .2s ease';
@@ -1485,4 +1662,10 @@ function showToast(msg, isError) {
 init();
 </script>
 </body>
-</html>
+</html>  var logos = (m.assets || []).filter(function(a) { return a.assetType === 'logo' && a.analysis; });
+  if (logos.length) parts.push('LOGO/ISOTIPO: ' + logos.map(function(a) { return a.analysis; }).join(' | '));
+  var prods = (m.assets || []).filter(function(a) { return a.assetType === 'product' && a.analysis; });
+  if (prods.length) parts.push('FOTOS DE PRODUCTOS (replicar estilo): ' + prods.map(function(a) { return a.analysis; }).join(' | '));
+  var gf = document.getElementById('genSalesFocus');
+  if (gf && gf.value.trim()) parts.push('ENFOQUE ESPECIFICO: ' + gf.value.trim());
+  
