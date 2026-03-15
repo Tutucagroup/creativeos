@@ -1169,15 +1169,27 @@ var TLBL={imagen:'Imagen',carrusel:'Carrusel',video:'Video',copy:'Copy'};
 var TCOL={imagen:'#f472b6',carrusel:'#60a5fa',video:'#a78bfa',copy:'#c8ff00'};
 
 function crCard(c) {
-  var thumb = c.imgUrl?'<img src="'+c.imgUrl+'" alt="">':(c.slides&&c.slides[0]&&c.slides[0].imgUrl?'<img src="'+c.slides[0].imgUrl+'" alt="">':'<span class="no-img">'+(TICON[c.type]||'📄')+'</span>');
+  var thumb;
+  if (c.type === 'carrusel' && c.slides && c.slides.length) {
+    // Show 2x2 grid of slide thumbnails
+    var thumbSlides = c.slides.slice(0,4).map(function(s,i){
+      var bg = 'background:'+s.color+';'+(s.imgUrl?'background-image:url('+s.imgUrl+');background-size:cover;background-position:center;':'');
+      return '<div style="'+bg+'position:relative;overflow:hidden"><div style="position:absolute;bottom:2px;left:2px;font-size:7px;font-weight:700;color:rgba(255,255,255,.7)background:#0005;padding:1px 3px;border-radius:2px">'+(i+1)+'</div></div>';
+    }).join('');
+    thumb = '<div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;width:100%;height:100%;gap:1px">'+thumbSlides+'</div>';
+  } else {
+    thumb = c.imgUrl?'<img src="'+c.imgUrl+'" alt="">':(c.slides&&c.slides[0]&&c.slides[0].imgUrl?'<img src="'+c.slides[0].imgUrl+'" alt="">':'<span class="no-img">'+(TICON[c.type]||'📄')+'</span>');
+  }
   var date = new Date(c.createdAt).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
-  return '<div class="cr-card" data-cid="'+c.id+'"><div class="cr-thumb">'+thumb+'<div class="cr-tbadge" style="color:'+(TCOL[c.type]||'#fff')+'">'+(TLBL[c.type]||c.type)+'</div></div><div class="cr-body"><div class="cr-title">'+(c.title||'Sin título')+'</div><div class="cr-meta"><div class="cr-dot"></div>'+date+(c.format?' · '+c.format:'')+'</div><div class="cr-acts"><button class="cr-act v-btn" data-cid="'+c.id+'">Ver</button><button class="cr-act cp-btn" data-cid="'+c.id+'">Copiar</button><button class="cr-act var-btn" data-cid="'+c.id+'" style="color:var(--pur);border-color:var(--pur)33">↻ Var.</button><button class="cr-act del-btn" data-cid="'+c.id+'" style="color:var(--dan);border-color:var(--dan)22">✕</button></div></div></div>';
+  return '<div class="cr-card" data-cid="'+c.id+'"><div class="cr-thumb">'+thumb+'<div class="cr-tbadge" style="color:'+(TCOL[c.type]||'#fff')+'">'+(TLBL[c.type]||c.type)+'</div></div><div class="cr-body"><div class="cr-title">'+(c.title||'Sin título')+'</div><div class="cr-meta"><div class="cr-dot"></div>'+date+(c.format?' · '+c.format:'')+'</div><div class="cr-acts">'+(c.type==='carrusel'?'<button class="cr-act slides-btn" data-cid="'+c.id+'">🖼️ Slides</button>':'<button class="cr-act v-btn" data-cid="'+c.id+'">Ver</button>')+'<button class="cr-act var-btn" data-cid="'+c.id+'" style="color:var(--pur);border-color:var(--pur)33">↻ Var.</button><button class="cr-act del-btn" data-cid="'+c.id+'" style="color:var(--dan);border-color:var(--dan)22">✕</button></div></div></div>';
 }
 function bindCards(el) {
   el.querySelectorAll('.v-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();openCr(this.dataset.cid);};});
   el.querySelectorAll('.cp-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();copyCrById(this.dataset.cid);};});
   el.querySelectorAll('.var-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();makeVariation(this.dataset.cid);};});
   el.querySelectorAll('.del-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();deleteCr(this.dataset.cid);};});
+  el.querySelectorAll('.slides-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();openSlideEditor(this.dataset.cid,0);};});
+  el.querySelectorAll('.v-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();openCr(this.dataset.cid);};});
   el.querySelectorAll('.canva-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();exportToCanva(this.dataset.cid);};});
   el.querySelectorAll('.canva-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();exportToCanva(this.dataset.cid);};});
   el.querySelectorAll('.canva-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();exportToCanva(this.dataset.cid);};});
@@ -1226,8 +1238,24 @@ function openCr(id) {
   if(c.type==='imagen'){
     mc.innerHTML=(c.imgUrl?'<img src="'+c.imgUrl+'" style="width:100%;border-radius:8px;margin-bottom:12px" alt="">':'')+'<div class="prompt-box" style="font-size:13px;font-family:var(--fb);white-space:pre-wrap">'+(c.brief||'')+'</div>'+sfHtml+refsHtml;
   } else if(c.type==='carrusel'){
-    var slHtml=(c.slides||[]).map(function(s,i){return '<div style="background:'+s.color+';border-radius:8px;padding:10px;min-height:80px;position:relative;overflow:hidden">'+(s.imgUrl?'<img src="'+s.imgUrl+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4" alt="">':'')+'<div style="position:relative;font-family:var(--fh);font-size:11px;font-weight:700;margin-bottom:3px">'+s.headline+'</div><div style="position:relative;font-size:9px;opacity:.8">'+s.body+'</div></div>';}).join('');
-    mc.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+slHtml+'</div><div style="font-size:12px;color:var(--mut)">'+(c.narrativa||'')+'</div>'+sfHtml+refsHtml;
+    // Clickable slide grid — each opens the slide editor
+    var slHtml = (c.slides||[]).map(function(s,i){
+      var bg = 'background:'+s.color+';'+(s.imgUrl?'background-image:url('+s.imgUrl+');background-size:cover;background-position:center;':'');
+      return '<div onclick="closeM(\'mCr\');openSlideEditor(\''+c.id+'\','+i+')" style="cursor:pointer;'+bg+'border-radius:10px;position:relative;aspect-ratio:1;overflow:hidden;transition:transform .15s" onmouseover="this.style.transform=\'scale(1.03)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+        '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8) 50%,transparent)"></div>' +
+        '<div style="position:absolute;top:6px;left:6px;background:#000a;color:var(--acc);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">Slide '+(i+1)+'</div>' +
+        '<div style="position:absolute;bottom:0;left:0;right:0;padding:8px;z-index:1">' +
+          '<div style="font-family:var(--fh);font-size:11px;font-weight:700;line-height:1.2;margin-bottom:2px;color:#fff">'+s.headline+'</div>' +
+          '<div style="font-size:9px;color:rgba(255,255,255,.7)">'+s.body+'</div>' +
+        '</div>' +
+        '<div style="position:absolute;bottom:6px;right:6px;background:var(--acc);color:#000;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px">✏️ Editar</div>' +
+      '</div>';
+    }).join('');
+    var dlAllBtn = '<div style="display:flex;gap:8px;margin-top:10px">' +
+      '<button onclick="downloadAllSlides(\\\''+c.id+'\\\')" style="flex:1;padding:9px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--acc);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fh)">⬇ Descargar todos</button>' +
+      '<button onclick="closeM(\\\'mCr\\\');makeVariation(\\\''+c.id+'\\\')" style="flex:1;padding:9px;background:var(--pur-dim);border:1px solid var(--pur);border-radius:8px;color:var(--pur);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fh)">↻ Generar variación</button>' +
+      '</div>';
+    mc.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+slHtml+'</div>'+dlAllBtn+'<div style="font-size:12px;color:var(--mut);margin-top:10px;line-height:1.5">'+(c.narrativa||'')+'</div>'+sfHtml+refsHtml;
   } else if(c.type==='video'){
     mc.innerHTML='<textarea style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:12px;color:var(--txt);font-family:var(--fb);font-size:13px;min-height:200px;outline:none;resize:vertical" oninput="updateScript(\''+c.id+'\',this.value)">'+(c.guionCompleto||'')+'</textarea>'+sfHtml+refsHtml;
   } else {
@@ -1514,7 +1542,8 @@ function openSlideEditor(cid, slideIdx) {
       '<button id="slPrevBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--txt);font-size:12px;cursor:pointer;font-family:var(--fb)"' + (currentSlide===0?' disabled style="opacity:.4;padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:12px;cursor:not-allowed;font-family:var(--fb)"':'') + '>← Anterior</button>' +
       '<button id="slNextBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--txt);font-size:12px;cursor:pointer;font-family:var(--fb)"' + (currentSlide===3?' disabled style="opacity:.4;padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--mut);font-size:12px;cursor:not-allowed;font-family:var(--fb)"':'') + '>Siguiente →</button>' +
       '<button id="slDlBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--txt);font-size:12px;cursor:pointer;font-family:var(--fb)">⬇ Descargar slide</button>' +
-      '<button id="slDlAllBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--acc);border-color:var(--acc)44;font-size:12px;cursor:pointer;font-family:var(--fh);font-weight:700">⬇ Todos los slides</button>' +
+      '<button id="slDlAllBtn" style="padding:9px 14px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;color:var(--acc);border-color:var(--acc)44;font-size:12px;cursor:pointer;font-family:var(--fh);font-weight:700">⬇ Todos</button>' +
+      '<button id="slVarBtn" style="padding:9px 14px;background:var(--pur-dim);border:1px solid var(--pur);border-radius:8px;color:var(--pur);font-size:12px;cursor:pointer;font-family:var(--fh);font-weight:700">↻ Variación</button>' +
       '<button id="slCloseBtn2" style="padding:9px 18px;background:var(--acc);color:#000;border:none;border-radius:8px;font-family:var(--fh);font-weight:700;font-size:12px;cursor:pointer;margin-left:auto">Listo</button>' +
       '</div>' +
       '</div>';
@@ -1538,6 +1567,10 @@ function openSlideEditor(cid, slideIdx) {
     // Download all slides
     document.getElementById('slDlAllBtn').onclick = function() {
       downloadAllSlides(cid);
+    };
+    document.getElementById('slVarBtn').onclick = function() {
+      overlay.remove();
+      makeVariation(cid);
     };
 
     // Auto-add text blocks after img loads
