@@ -966,8 +966,11 @@ async function ideogramCall(prompt, aspectRatio, keys) {
   var prods = ar.filter(function(a){return a.assetType==='product'&&a.dataUrl;});
   var selAR = getActiveRefs().filter(function(r){return !r.assetType&&r.dataUrl;});
   var allRefs = logos.slice(0,1).concat(prods.slice(0,1)).concat(selAR.slice(0,1));
-  var body = { image_request: { prompt: prompt + ' All visible text must be written in ' + getLang() + ' language.', aspect_ratio: aspectRatio, model: 'V_3', magic_prompt_option: 'AUTO' } };
-  if (allRefs.length) body.image_references = allRefs.map(function(r){ return { url: r.dataUrl, weight: r.assetType==='logo' ? 85 : 50 }; });
+  var lang = (getLang() || 'Spanish').replace(/'/g, '').replace(/"/g, '');
+  var body = { image_request: { prompt: prompt + '. All visible text in the image must be written in ' + lang + '.', aspect_ratio: aspectRatio } };
+  // Only pass http(s) image refs — base64 dataUrls not supported by Ideogram
+  var httpRefs = allRefs.filter(function(r){ return r.dataUrl && (r.dataUrl.indexOf('http://') === 0 || r.dataUrl.indexOf('https://') === 0); });
+  if (httpRefs.length) body.image_references = httpRefs.map(function(r){ return { url: r.dataUrl, weight: r.assetType==='logo' ? 85 : 50 }; });
   var r = await fetch('/api/ideogram', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ide }, body: JSON.stringify(body) });
   var d = await r.json();
   if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
