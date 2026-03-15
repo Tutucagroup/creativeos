@@ -131,8 +131,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
 /* IMAGE EDITOR */
 .ed-wrap{position:relative;width:100%;margin-bottom:0;background:#000}
 .ed-wrap img{width:100%;display:block;max-height:460px;object-fit:contain;border-radius:10px 10px 0 0}
-.ed-layer{position:absolute;inset:0;border-radius:10px 10px 0 0;overflow:hidden}
-.blk{position:absolute;cursor:move;user-select:none;padding:4px 8px;border:2px dashed transparent;border-radius:4px;transition:border-color .12s;touch-action:none}
+.ed-layer{position:absolute;inset:0;border-radius:10px 10px 0 0;pointer-events:none}
+.blk{position:absolute;cursor:move;user-select:none;pointer-events:all;padding:4px 8px;border:2px dashed transparent;border-radius:4px;transition:border-color .12s;touch-action:none}
 .blk.sel{border-color:var(--acc)!important}
 .blk span{display:block;outline:none;white-space:pre-wrap;word-break:break-word;line-height:1.2}
 .blk-x{position:absolute;top:-10px;right:-10px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:10;line-height:1}
@@ -1226,7 +1226,7 @@ async function genCarrusel(prompt, keys) {
   var hasLogo=(active.memory.assets||[]).some(function(a){return a.assetType==='logo';});
   var logoCtx=hasLogo?'MANTENER IDENTIDAD DE MARCA CONSISTENTE EN TODOS LOS SLIDES: mismo logo, misma paleta, misma tipografía. ':'';
   var sys='Experto en contenido para redes para la marca "'+active.name+'".\n'+brandCtx()+'\n'+logoCtx+'Sin markdown.';
-  var raw=await claudeCall(sys,'Carrusel 4 slides con correlación narrativa.\nFORMATO: '+selFmt+'\nSOLICITUD: '+prompt+'\n\nIDIOMA OBLIGATORIO: '+getLang()+' — todos los textos visibles deben estar en ese idioma.\nIdentidad de marca CONSISTENTE en los 4 slides.\n\nFormato EXACTO:\nSLIDE1_HEADLINE: [gancho]\nSLIDE1_BODY: [apoyo, máx 12 palabras]\nSLIDE1_COLOR: [hex fondo]\nSLIDE1_PROMPT: [prompt inglés para Ideogram, una línea. Incluir: "All text in '+getLang()+' language". Mencionar identidad visual de marca. Textos entre comillas]\n\nSLIDE2_HEADLINE:\nSLIDE2_BODY:\nSLIDE2_COLOR:\nSLIDE2_PROMPT:\n\nSLIDE3_HEADLINE:\nSLIDE3_BODY:\nSLIDE3_COLOR:\nSLIDE3_PROMPT:\n\nSLIDE4_HEADLINE:\nSLIDE4_BODY:\nSLIDE4_COLOR:\nSLIDE4_PROMPT:\n\nNARRATIVA: [correlación entre slides]',keys,1200);
+  var raw=await claudeCall(sys,'Carrusel 4 slides con correlación narrativa.\nFORMATO: '+selFmt+'\nSOLICITUD: '+prompt+'\n\nIDIOMA OBLIGATORIO: '+getLang()+' — todos los textos visibles deben estar en ese idioma.\nIdentidad de marca CONSISTENTE en los 4 slides.\n\nFormato EXACTO:\nSLIDE1_HEADLINE: [gancho]\nSLIDE1_BODY: [apoyo, máx 12 palabras]\nSLIDE1_COLOR: [hex fondo]\nSLIDE1_PROMPT: [prompt en inglés para Ideogram, una línea. OBLIGATORIO: (1) textos exactos del slide entre comillas (2) "All text written in language" (3) logo marca visible corner (4) misma paleta e identidad visual en todos los slides]]\n\nSLIDE2_HEADLINE:\nSLIDE2_BODY:\nSLIDE2_COLOR:\nSLIDE2_PROMPT:\n\nSLIDE3_HEADLINE:\nSLIDE3_BODY:\nSLIDE3_COLOR:\nSLIDE3_PROMPT:\n\nSLIDE4_HEADLINE:\nSLIDE4_BODY:\nSLIDE4_COLOR:\nSLIDE4_PROMPT:\n\nNARRATIVA: [correlación entre slides]',keys,1200);
   var slides=[1,2,3,4].map(function(i){return{headline:gf(raw,'SLIDE'+i+'_HEADLINE'),body:gf(raw,'SLIDE'+i+'_BODY'),color:gf(raw,'SLIDE'+i+'_COLOR')||'#111118',ideoPr:gf(raw,'SLIDE'+i+'_PROMPT'),imgUrl:null};});
   var narrativa=gf(raw,'NARRATIVA');
   if(keys.ide){
@@ -1280,10 +1280,10 @@ function openSlide(cid, idx) {
   var sl=c.slides[idx];
   var edId='slEd_'+cid+'_'+idx;
   _$('slEditorArea').innerHTML=
-    '<div class="ed-wrap" id="'+edId+'">'+
+    '<div class="ed-wrap" id="'+edId+'" style="min-height:200px">'+
     (sl.imgUrl
-      ? '<img src="'+sl.imgUrl+'" alt="slide '+(idx+1)+'" crossorigin="anonymous">'
-      : '<div style="width:100%;aspect-ratio:1;background:'+sl.color+';border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">Sin imagen</div>')+
+      ? '<img src="'+sl.imgUrl+'" alt="slide '+(idx+1)+'" crossorigin="anonymous" style="width:100%;display:block;max-height:420px;object-fit:contain;border-radius:10px 10px 0 0">'
+      : '<div style="width:100%;padding-bottom:100%;background:'+sl.color+';border-radius:10px 10px 0 0;position:relative"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">Sin imagen</div></div>')+
     '<div class="ed-layer" id="edL_sl_'+cid+'_'+idx+'"></div>'+
     '</div>'+
     buildToolbar(edId, {headline:sl.headline,subhead:sl.body,cta:idx===3?'Ver más →':'',id:cid});
@@ -1300,11 +1300,28 @@ function openSlide(cid, idx) {
 }
 function dlAllSlides(cid) {
   var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;}); if(!c) return;
-  var delay=0;
-  c.slides.forEach(function(sl,i){
-    if(sl.imgUrl){ setTimeout(function(){dlBlob(sl.imgUrl,'slide-'+(i+1));},delay); delay+=600; }
+  var slides=c.slides.filter(function(s){return s.imgUrl;});
+  if(!slides.length){showToast('Sin imágenes generadas para descargar',true);return;}
+  // Download each slide with delay to avoid popup blocker
+  slides.forEach(function(sl,i){
+    setTimeout(function(){
+      // Try blob download first, fallback to direct link
+      fetch(sl.imgUrl).then(function(r){return r.blob();}).then(function(blob){
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='slide-'+(i+1)+'.png';
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(a.href);},100);
+      }).catch(function(){
+        // CORS fallback: open in new tab
+        var a=document.createElement('a');
+        a.href=sl.imgUrl; a.target='_blank'; a.download='slide-'+(i+1)+'.png';
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){document.body.removeChild(a);},100);
+      });
+    }, i*700);
   });
-  showToast('Descargando '+c.slides.filter(function(s){return s.imgUrl;}).length+' slides...');
+  showToast('Descargando '+slides.length+' slides...');
 }
 
 // ────────────────────────────────────────────────
