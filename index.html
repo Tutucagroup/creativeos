@@ -1071,7 +1071,7 @@ async function retryIdeogram(cid) {
   if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
   var asp = {'1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9'};
   try {
-    var r = await fetch('https://api.ideogram.ai/generate', {
+    var r = await fetch('/api/ideogram', {
       method:'POST', headers:{'Content-Type':'application/json','Api-Key':keys.ideogram},
       body:JSON.stringify({image_request:{prompt:c.ideogramPrompt,aspect_ratio:asp[c.format]||'ASPECT_1_1',model:'V_3',magic_prompt_option:'AUTO'}})
     });
@@ -1109,7 +1109,7 @@ async function genImagen(prompt, keys) {
   if (keys.ideogram) {
     try {
       oa.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:13px;color:var(--muted)">Generando imagen con Ideogram...</span></div>';
-      var ir = await fetch('https://api.ideogram.ai/generate', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ideogram }, body: JSON.stringify({ image_request:{ prompt:ideoPr, aspect_ratio:asp[selFmtVal]||'ASPECT_1_1', model:'V_3', magic_prompt_option:'AUTO' }})});
+      var ir = await fetch('/api/ideogram', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ideogram }, body: JSON.stringify({ image_request:{ prompt:ideoPr, aspect_ratio:asp[selFmtVal]||'ASPECT_1_1', model:'V_3', magic_prompt_option:'AUTO' }})});
       var id = await ir.json();
       imgUrl = id.data && id.data[0] ? id.data[0].url : null;
     } catch(e) {}
@@ -1135,7 +1135,7 @@ async function genCarrusel(prompt, keys) {
     var asp2 = selFmtVal === '1080x1350' ? 'ASPECT_4_5' : 'ASPECT_1_1';
     await Promise.all(slides.map(async function(sl) {
       try {
-        var ir = await fetch('https://api.ideogram.ai/generate', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ideogram }, body: JSON.stringify({ image_request:{ prompt:sl.ideoPr, aspect_ratio:asp2, model:'V_3', magic_prompt_option:'AUTO' }})});
+        var ir = await fetch('/api/ideogram', { method:'POST', headers:{ 'Content-Type':'application/json','Api-Key':keys.ideogram }, body: JSON.stringify({ image_request:{ prompt:sl.ideoPr, aspect_ratio:asp2, model:'V_3', magic_prompt_option:'AUTO' }})});
         var id = await ir.json();
         if (id.error) throw new Error(id.error.message || JSON.stringify(id.error));
         sl.imgUrl = id.data && id.data[0] ? id.data[0].url : null;
