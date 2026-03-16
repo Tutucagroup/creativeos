@@ -334,6 +334,68 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
           </div>
         </div>
       </div>
+      <!-- ELEMENTOS FIJOS: MOCKUP + LOGO -->
+      <div class="mc" style="margin-bottom:12px">
+        <div class="mc-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>🎯 Elementos fijos en la imagen</span>
+          <span class="mc-note">Se superponen exactos sobre el fondo generado por IA</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Mockup del producto</div>
+            <div id="mockupPreview" style="display:none;position:relative;margin-bottom:7px">
+              <img id="mockupImg" style="width:100%;max-height:120px;object-fit:contain;border-radius:8px;background:var(--bg3)">
+              <button onclick="clearOverlayEl('mockup')" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+            </div>
+            <div class="uz" id="mockupZone" style="padding:9px">
+              📦 Subir mockup del producto
+              <div style="font-size:10px;margin-top:2px;opacity:.6">PNG con fondo transparente ideal</div>
+            </div>
+            <input type="file" id="mockupInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
+            <div style="margin-top:7px" id="mockupPosRow" style="display:none">
+              <div style="font-size:10px;color:var(--mut);margin-bottom:4px">Posición</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="fmt-btn on" data-mpos="center-center">Centro</button>
+                <button class="fmt-btn" data-mpos="center-bottom">Abajo</button>
+                <button class="fmt-btn" data-mpos="left-center">Izquierda</button>
+                <button class="fmt-btn" data-mpos="right-center">Derecha</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+                <span style="font-size:10px;color:var(--mut)">Tamaño:</span>
+                <input type="range" id="mockupSize" min="10" max="80" value="45" style="flex:1;accent-color:var(--acc)">
+                <span id="mockupSizeLbl" style="font-size:10px;color:var(--acc);min-width:28px">45%</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Logo exacto</div>
+            <div id="overlayLogoPreview" style="display:none;position:relative;margin-bottom:7px">
+              <img id="overlayLogoImg" style="width:100%;max-height:120px;object-fit:contain;border-radius:8px;background:var(--bg3)">
+              <button onclick="clearOverlayEl('logo')" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+            </div>
+            <div class="uz" id="overlayLogoZone" style="padding:9px">
+              🎨 Subir logo exacto
+              <div style="font-size:10px;margin-top:2px;opacity:.6">PNG con fondo transparente ideal</div>
+            </div>
+            <input type="file" id="overlayLogoInput" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none">
+            <div style="margin-top:7px" id="logoPosRow">
+              <div style="font-size:10px;color:var(--mut);margin-bottom:4px">Posición</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="fmt-btn" data-lpos="top-left">Arriba Izq</button>
+                <button class="fmt-btn on" data-lpos="bottom-center">Abajo Centro</button>
+                <button class="fmt-btn" data-lpos="bottom-right">Abajo Der</button>
+                <button class="fmt-btn" data-lpos="top-right">Arriba Der</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+                <span style="font-size:10px;color:var(--mut)">Tamaño:</span>
+                <input type="range" id="logoOverlaySize" min="5" max="40" value="20" style="flex:1;accent-color:var(--acc)">
+                <span id="logoOverlaySizeLbl" style="font-size:10px;color:var(--acc);min-width:28px">20%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ENFOQUE + REFERENCIAS -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="mc">
@@ -461,6 +523,10 @@ var projects = [], active = null, npColor = '#c8ff00';
 var selType = 'imagen', selFmt = '1080x1080', selDur = '15';
 var crFilter = 'all', viewCrId = null, slideState = null;
 var selRefs = {};  // { id: bool }
+var overlayState = {
+  mockup: { dataUrl: null, pos: 'center-center', size: 45 },
+  logo:   { dataUrl: null, pos: 'bottom-center', size: 20 }
+};
 var SKEY = 'creativeos_v5';
 
 // ────────────────────────────────────────────────
@@ -524,6 +590,120 @@ function showToast(msg, isErr) {
   t.textContent = msg; document.body.appendChild(t);
   setTimeout(function(){t.remove();},3500);
 }
+
+// ── OVERLAY ELEMENTS (mockup + logo exact) ───────────────────────
+async function loadOverlayEl(type, file) {
+  if (!file) return;
+  var dataUrl = await readFile(file);
+  overlayState[type].dataUrl = dataUrl;
+  if (type === 'mockup') {
+    _$('mockupImg').src = dataUrl;
+    _$('mockupPreview').style.display = 'block';
+    _$('mockupPosRow').style.display = 'block';
+    _$('mockupZone').style.display = 'none';
+  } else {
+    _$('overlayLogoImg').src = dataUrl;
+    _$('overlayLogoPreview').style.display = 'block';
+    _$('overlayLogoZone').style.display = 'none';
+  }
+  showToast((type==='mockup'?'Mockup':'Logo') + ' cargado — se superpondrá exacto en la imagen');
+}
+
+function clearOverlayEl(type) {
+  overlayState[type].dataUrl = null;
+  if (type === 'mockup') {
+    _$('mockupPreview').style.display = 'none';
+    _$('mockupPosRow').style.display = 'none';
+    _$('mockupZone').style.display = '';
+    _$('mockupInput').value = '';
+  } else {
+    _$('overlayLogoPreview').style.display = 'none';
+    _$('overlayLogoZone').style.display = '';
+    _$('overlayLogoInput').value = '';
+  }
+}
+
+// Composite: draw bg image + mockup + logo onto canvas and return blob URL
+async function compositeImage(bgUrl) {
+  var hasMockup = overlayState.mockup.dataUrl;
+  var hasLogo   = overlayState.logo.dataUrl;
+  if (!hasMockup && !hasLogo) return bgUrl; // Nothing to composite
+
+  // Determine canvas size from selFmt
+  var parts = selFmt.split('x');
+  var cw = parseInt(parts[0]) || 1080;
+  var ch = parseInt(parts[1]) || 1080;
+  var canvas = document.createElement('canvas');
+  canvas.width = cw; canvas.height = ch;
+  var ctx = canvas.getContext('2d');
+
+  // Draw background
+  await drawImg(ctx, bgUrl, 0, 0, cw, ch);
+
+  // Draw mockup
+  if (hasMockup) {
+    var mp = overlayState.mockup;
+    var mSize = mp.size / 100;
+    var mW = Math.round(cw * mSize);
+    var mH = mW; // will be adjusted by aspect ratio
+    // Load to get aspect ratio
+    var mImg = await loadImgEl(mp.dataUrl);
+    var ar = mImg.naturalWidth / mImg.naturalHeight;
+    if (ar > 1) { mH = Math.round(mW / ar); } else { mW = Math.round(mH * ar); }
+    var mPos = calcPos(mp.pos, cw, ch, mW, mH, 20);
+    ctx.drawImage(mImg, mPos.x, mPos.y, mW, mH);
+  }
+
+  // Draw logo
+  if (hasLogo) {
+    var lp = overlayState.logo;
+    var lSize = lp.size / 100;
+    var lW = Math.round(cw * lSize);
+    var lImg = await loadImgEl(lp.dataUrl);
+    var lar = lImg.naturalWidth / lImg.naturalHeight;
+    var lH = Math.round(lW / lar);
+    var lPos = calcPos(lp.pos, cw, ch, lW, lH, 20);
+    ctx.drawImage(lImg, lPos.x, lPos.y, lW, lH);
+  }
+
+  return new Promise(function(resolve) {
+    canvas.toBlob(function(blob) {
+      resolve(URL.createObjectURL(blob));
+    }, 'image/png');
+  });
+}
+
+function calcPos(pos, cw, ch, elW, elH, pad) {
+  var x, y;
+  var parts = pos.split('-');
+  var vert = parts[0], horiz = parts[1];
+  if (horiz === 'left')   x = pad;
+  else if (horiz === 'right')  x = cw - elW - pad;
+  else x = Math.round((cw - elW) / 2); // center
+  if (vert === 'top')    y = pad;
+  else if (vert === 'bottom') y = ch - elH - pad;
+  else y = Math.round((ch - elH) / 2); // center
+  return { x: x, y: y };
+}
+
+function drawImg(ctx, url, x, y, w, h) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() { ctx.drawImage(img, x, y, w, h); resolve(); };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function loadImgEl(url) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() { resolve(img); };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 function dlBlob(url, name) {
   // Download without navigation using fetch+blob
   fetch(url).then(function(r){return r.blob();}).then(function(blob){
@@ -596,6 +776,27 @@ function bindAll() {
   _$('avIn').onkeydown    = function(e){if(e.key==='Enter')addAvatar();};
   _$('toneIn').oninput    = function(){if(active){active.memory.tone=this.value;save();}};
   _$('refIn').onkeydown   = function(e){if(e.key==='Enter')addTag('refs','refIn');};
+  // Mockup + logo overlay bindings
+  _$('mockupZone').onclick = function(){_$('mockupInput').click();};
+  _$('overlayLogoZone').onclick = function(){_$('overlayLogoInput').click();};
+  _$('mockupInput').onchange = function(){ loadOverlayEl('mockup', this.files[0]); };
+  _$('overlayLogoInput').onchange = function(){ loadOverlayEl('logo', this.files[0]); };
+  setupDrop('mockupZone', function(f){ loadOverlayEl('mockup', f[0]); });
+  setupDrop('overlayLogoZone', function(f){ loadOverlayEl('logo', f[0]); });
+  document.querySelectorAll('[data-mpos]').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('[data-mpos]').forEach(function(x){x.classList.remove('on');});
+      this.classList.add('on'); overlayState.mockup.pos=this.dataset.mpos;
+    };
+  });
+  document.querySelectorAll('[data-lpos]').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('[data-lpos]').forEach(function(x){x.classList.remove('on');});
+      this.classList.add('on'); overlayState.logo.pos=this.dataset.lpos;
+    };
+  });
+  _$('mockupSize').oninput = function(){ overlayState.mockup.size=parseInt(this.value); _$('mockupSizeLbl').textContent=this.value+'%'; };
+  _$('logoOverlaySize').oninput = function(){ overlayState.logo.size=parseInt(this.value); _$('logoOverlaySizeLbl').textContent=this.value+'%'; };
   _$('brandZone').onclick = function(){_$('fileInput').click();};
   _$('fileInput').onchange = function(){handleBrandUpload(this.files);};
   setupDrop('brandZone', handleBrandUpload);
@@ -889,7 +1090,7 @@ function updateAvatarSel() {
   el.innerHTML='<div class="fmt-lbl" style="margin-bottom:6px">Avatar HeyGen</div><div style="font-size:11px;color:var(--mut)" id="avLoadTxt">'+( keys.hey?'Cargando avatares...':'Configurá API key de HeyGen para ver avatares')+'</div>';
   if(!keys.hey) return;
   // Fetch real avatars from user's HeyGen account
-  fetch('https://api.heygen.com/v2/avatars',{headers:{'X-Api-Key':keys.hey}})
+  fetch('/api/heygen?path=/v2/avatars',{headers:{'X-Api-Key':keys.hey}})
     .then(function(r){return r.json();})
     .then(function(d){
       var avs=(d.data&&d.data.avatars)||[];
@@ -978,6 +1179,15 @@ async function genImagen(prompt,keys) {
   var ctx=snapCtx();
   var cr={id:Date.now().toString(),type:'imagen',title:prompt.substring(0,55),format:selFmt,concepto:concepto,headline:headline,subhead:subhead,cta:cta,ideogramPrompt:ideoPr,imgUrl:imgUrl,brief:raw,salesFocus:ctx.salesFocus,activeRefs:ctx.activeRefs,originalPrompt:prompt,createdAt:Date.now()};
   saveCr(cr);
+  // Composite mockup + logo onto the generated image if present
+  if (imgUrl && (overlayState.mockup.dataUrl || overlayState.logo.dataUrl)) {
+    oa.innerHTML = '<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Componiendo imagen con mockup y logo...</span></div>';
+    try {
+      var composited = await compositeImage(imgUrl);
+      cr.compositedUrl = composited;
+      cr.imgUrl = composited; // Use composited version as main image
+    } catch(ce) { console.warn('Composite failed:', ce); }
+  }
   renderImageOutput(cr, oa);
 }
 function renderImageOutput(cr, container) {
@@ -1266,6 +1476,17 @@ async function genCarrusel(prompt, keys) {
   }
   var ctx=snapCtx();
   var cr={id:Date.now().toString(),type:'carrusel',title:prompt.substring(0,55),format:selFmt,slides:slides,narrativa:narrativa,salesFocus:ctx.salesFocus,activeRefs:ctx.activeRefs,originalPrompt:prompt,createdAt:Date.now()};
+  // Composite mockup + logo on each slide if overlay elements present
+  if (overlayState.mockup.dataUrl || overlayState.logo.dataUrl) {
+    oa.innerHTML = '<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Componiendo slides con mockup y logo...</span></div>';
+    for (var si = 0; si < cr.slides.length; si++) {
+      if (cr.slides[si].imgUrl) {
+        try {
+          cr.slides[si].imgUrl = await compositeImage(cr.slides[si].imgUrl);
+        } catch(ce) { console.warn('Slide composite failed:', ce); }
+      }
+    }
+  }
   saveCr(cr);
   renderCarruselOutput(cr, oa);
 }
@@ -1417,7 +1638,7 @@ async function checkHeyGenStatus(cid, videoId) {
   var msg = document.getElementById('heygenStatusMsg_'+cid);
   if (btn) { btn.textContent = '⏳ Verificando...'; btn.disabled = true; }
   try {
-    var r = await fetch('https://api.heygen.com/v1/video_status.get?video_id='+videoId, {
+    var r = await fetch('/api/heygen?path=/v1/video_status.get%3Fvideo_id='+videoId, {
       headers: { 'X-Api-Key': keys.hey }
     });
     var d = await r.json();
@@ -1456,7 +1677,7 @@ async function checkAndShowVideo(cid, videoId) {
   var keys=getKeys(); if(!keys.hey){showToast('Configurá API key de HeyGen',true);return;}
   showToast('Verificando...');
   try{
-    var r=await fetch('https://api.heygen.com/v1/video_status.get?video_id='+videoId,{headers:{'X-Api-Key':keys.hey}});
+    var r=await fetch('/api/heygen?path=/v1/video_status.get%3Fvideo_id='+videoId,{headers:{'X-Api-Key':keys.hey}});
     var d=await r.json();
     if(d.data&&d.data.status==='completed'&&d.data.video_url){
       cr4.videoUrl=d.data.video_url; cr4.thumbnailUrl=d.data.thumbnail_url; save();
@@ -1477,7 +1698,7 @@ async function sendToHeyGen(cid){
   showToast('Conectando con HeyGen...');
   try{
     // Fetch available avatars from user's account
-    var avResp = await fetch('https://api.heygen.com/v2/avatars',{headers:{'X-Api-Key':keys.hey}});
+    var avResp = await fetch('/api/heygen?path=/v2/avatars',{headers:{'X-Api-Key':keys.hey}});
     var avData = await avResp.json();
     var avatars = (avData.data && avData.data.avatars) || [];
     // Pick selected avatar or first available
@@ -1495,14 +1716,14 @@ async function sendToHeyGen(cid){
     }
     var avatarId = chosenAvatar ? chosenAvatar.avatar_id : 'default';
     // Get voices from account too
-    var voResp = await fetch('https://api.heygen.com/v2/voices',{headers:{'X-Api-Key':keys.hey}});
+    var voResp = await fetch('/api/heygen?path=/v2/voices',{headers:{'X-Api-Key':keys.hey}});
     var voData = await voResp.json();
     var voices = (voData.data && voData.data.voices) || [];
     // Prefer Spanish voice, fallback to first available
     var voice = voices.find(function(v){return v.language&&(v.language.indexOf('es')===0||v.language.indexOf('Spanish')>=0);}) || voices[0];
     var voiceId = voice ? voice.voice_id : '2d5b0e6cf36f460aa7fc47e3eee4ba54';
     showToast('Usando avatar: '+(chosenAvatar?chosenAvatar.avatar_name||avatarId:avatarId));
-    var r=await fetch('https://api.heygen.com/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:avatarId,avatar_style:'normal'},voice:{type:'text',input_text:script.substring(0,1500),voice_id:voiceId},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920}})});
+    var r=await fetch('/api/heygen?path=/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:avatarId,avatar_style:'normal'},voice:{type:'text',input_text:script.substring(0,1500),voice_id:voiceId},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920}})});
     var d=await r.json();
     if(d.data&&d.data.video_id){
       var vid=d.data.video_id;
