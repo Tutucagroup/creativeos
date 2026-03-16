@@ -1358,8 +1358,92 @@ async function genVideo(prompt, keys) {
   saveCr(cr);
   var cid=cr.id;
   var scHtml=scenes.map(function(s){return '<li class="scene"><div class="scene-num">'+s.num+'</div><div><div style="font-size:9px;color:var(--mut);margin-bottom:2px">'+s.tiempo+'</div><div style="font-size:12px;line-height:1.5">'+s.guion+'</div><div style="font-size:10px;color:var(--pur);margin-top:2px;font-style:italic">'+s.visual+'</div></div></li>';}).join('');
-  oa.innerHTML='<div class="out-card"><div class="out-hdr"><span class="out-ico">🎬</span><div><div class="out-title">'+(titulo||'Video')+' · '+dur+'s'+(selAv?' · '+selAv:'')+'</div><div class="out-meta">'+active.name+'</div></div><div class="out-acts"><button class="btn" onclick="copyScript(\''+cid+'\')">📋 Guión</button>'+(getKeys().hey?'<button class="btn acc" onclick="sendToHeyGen(\''+cid+'\')">🤖 HeyGen</button>':'')+'</div></div><div style="padding:14px"><ul class="scene-list" style="margin-bottom:14px">'+scHtml+'</ul><div class="brief-stitle" style="margin-bottom:6px">Guión — editable</div><textarea style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px;color:var(--txt);font-family:var(--fb);font-size:12px;min-height:140px;outline:none;resize:vertical;line-height:1.7" id="se_'+cid+'" oninput="updScript(\''+cid+'\',this.value)">'+gc+'</textarea></div></div>';
+  oa.innerHTML='<div class="out-card"><div class="out-hdr"><span class="out-ico">🎬</span><div><div class="out-title">'+(titulo||'Video')+' · '+dur+'s'+(selAv?' · '+selAv:'')+'</div><div class="out-meta">'+active.name+'</div></div><div class="out-acts"><button class="btn" onclick="copyScript(\''+cid+'\')">📋 Guión</button>'+(getKeys().hey?'<button class="btn acc" onclick="sendToHeyGen(\''+cid+'\')">🤖 HeyGen</button>':'')+'</div></div><div style="padding:14px"><ul class="scene-list" style="margin-bottom:14px">'+scHtml+'</ul><div class="brief-stitle" style="margin-bottom:6px">Guión — editable</div><textarea style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px;color:var(--txt);font-family:var(--fb);font-size:12px;min-height:140px;outline:none;resize:vertical;line-height:1.7" id="se_'+cid+'" oninput="updScript(\''+cid+'\',this.value)">'+gc+'</textarea>'+
+    '<div id="heygenStatus_'+cid+'" style="margin-top:10px"></div>'+
+    '</div></div>';
+  // If this creative already has a video_id, show status immediately
+  if(cr.heygenVideoId){
+    var statusDiv2=document.getElementById('heygenStatus_'+cr.id);
+    if(statusDiv2) renderHeyGenStatus(cr.id, cr.heygenVideoId, statusDiv2);
+  }
 }
+
+// ── HEYGEN VIDEO STATUS ───────────────────────────────────────────
+async function renderHeyGenStatus(cid, videoId, container) {
+  var keys = getKeys();
+  if (!keys.hey) return;
+  container.innerHTML =
+    '<div style="background:var(--pur2);border:1px solid var(--pur);border-radius:10px;padding:12px 14px">' +
+    '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">' +
+    '<span style="font-size:16px">🤖</span>' +
+    '<div><div style="font-size:12px;font-weight:700;color:var(--pur)">Video en HeyGen</div>' +
+    '<div style="font-size:10px;color:var(--mut)">ID: '+videoId+'</div></div>' +
+    '<button id="checkBtn_'+cid+'" onclick="checkHeyGenStatus(this.dataset.cid,this.dataset.vid)" data-cid="'+cid+'" data-vid="'+videoId+'" style="margin-left:auto;padding:5px 12px;background:var(--pur);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">🔄 Verificar estado</button>' +
+    '</div>' +
+    '<div id="heygenStatusMsg_'+cid+'" style="font-size:12px;color:var(--mut)">Procesando... Los videos tardan 5-15 minutos. Hacé click en Verificar estado para actualizar.</div>' +
+    '</div>';
+  // Auto-check after a moment
+  setTimeout(function(){ checkHeyGenStatus(cid, videoId); }, 2000);
+}
+
+async function checkHeyGenStatus(cid, videoId) {
+  var keys = getKeys();
+  if (!keys.hey) return;
+  var btn = document.getElementById('checkBtn_'+cid);
+  var msg = document.getElementById('heygenStatusMsg_'+cid);
+  if (btn) { btn.textContent = '⏳ Verificando...'; btn.disabled = true; }
+  try {
+    var r = await fetch('https://api.heygen.com/v1/video_status.get?video_id='+videoId, {
+      headers: { 'X-Api-Key': keys.hey }
+    });
+    var d = await r.json();
+    var status = d.data && d.data.status;
+    var videoUrl = d.data && d.data.video_url;
+    var thumbnailUrl = d.data && d.data.thumbnail_url;
+    if (msg) {
+      if (status === 'completed' && videoUrl) {
+        msg.innerHTML =
+          '<div style="color:var(--suc);font-weight:600;margin-bottom:8px">✅ Video listo</div>' +
+          (thumbnailUrl ? '<img src="'+thumbnailUrl+'" style="width:100%;border-radius:8px;margin-bottom:8px;max-height:180px;object-fit:cover">' : '') +
+          '<div style="display:flex;gap:7px">' +
+          '<a href="'+videoUrl+'" target="_blank" style="flex:1;padding:8px;background:var(--suc);color:#000;border-radius:7px;text-align:center;font-weight:700;font-size:12px;text-decoration:none">▶ Ver video</a>' +
+          '<a href="'+videoUrl+'" download="video-'+cid+'.mp4" style="flex:1;padding:8px;background:var(--bg3);border:1px solid var(--b2);color:var(--txt);border-radius:7px;text-align:center;font-weight:700;font-size:12px;text-decoration:none">⬇ Descargar MP4</a>' +
+          '</div>';
+        // Save URL on creative
+        var cr3=(active&&active.creatives||[]).find(function(x){return x.id===cid;});
+        if(cr3&&videoUrl){cr3.videoUrl=videoUrl;cr3.thumbnailUrl=thumbnailUrl;save();}
+      } else if (status === 'processing' || status === 'pending' || status === 'waiting') {
+        msg.innerHTML = '<div style="color:var(--war)">⏳ Procesando... Volvé a verificar en unos minutos.</div>';
+      } else if (status === 'failed') {
+        msg.innerHTML = '<div style="color:var(--dan)">❌ El video falló en HeyGen. Intentá generar de nuevo.</div>';
+      } else {
+        msg.innerHTML = '<div style="color:var(--mut)">Estado: '+(status||'desconocido')+' · <a href="https://app.heygen.com/videos" target="_blank" style="color:var(--pur)">Ver en HeyGen →</a></div>';
+      }
+    }
+  } catch(e) {
+    if (msg) msg.innerHTML = '<div style="color:var(--dan)">Error verificando: '+e.message+'</div><div style="margin-top:4px"><a href="https://app.heygen.com/videos" target="_blank" style="color:var(--pur);font-size:11px">Ver tus videos en HeyGen →</a></div>';
+  }
+  if (btn) { btn.textContent = '🔄 Verificar estado'; btn.disabled = false; }
+}
+
+
+async function checkAndShowVideo(cid, videoId) {
+  var cr4=(active&&active.creatives||[]).find(function(x){return x.id===cid;}); if(!cr4) return;
+  var keys=getKeys(); if(!keys.hey){showToast('Configurá API key de HeyGen',true);return;}
+  showToast('Verificando...');
+  try{
+    var r=await fetch('https://api.heygen.com/v1/video_status.get?video_id='+videoId,{headers:{'X-Api-Key':keys.hey}});
+    var d=await r.json();
+    if(d.data&&d.data.status==='completed'&&d.data.video_url){
+      cr4.videoUrl=d.data.video_url; cr4.thumbnailUrl=d.data.thumbnail_url; save();
+      showToast('Video listo ✅');
+      closeM('mCr'); openCr(cid);
+    } else {
+      showToast('Todavía procesando... Volvé en unos minutos',false);
+    }
+  }catch(e){showToast('Error: '+e.message,true);}
+}
+
 function updScript(cid,val){var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(c){c.guionCompleto=val;save();}}
 function copyScript(cid){var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(c)navigator.clipboard.writeText(c.guionCompleto||'').then(function(){showToast('Guión copiado ✓');});}
 async function sendToHeyGen(cid){
@@ -1369,8 +1453,16 @@ async function sendToHeyGen(cid){
   try{
     var r=await fetch('https://api.heygen.com/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:'Angela-inblackskirt-20220820',avatar_style:'normal'},voice:{type:'text',input_text:script,voice_id:'1bd001e7e50f421d891986aad5158bc8'},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920}})});
     var d=await r.json();
-    if(d.data&&d.data.video_id) showToast('Video enviado a HeyGen · ID: '+d.data.video_id);
-    else showToast('Respuesta HeyGen: '+JSON.stringify(d),true);
+    if(d.data&&d.data.video_id){
+      var vid=d.data.video_id;
+      // Save video_id on the creative
+      var cr2=(active&&active.creatives||[]).find(function(x){return x.id===cid;});
+      if(cr2){cr2.heygenVideoId=vid;save();}
+      showToast('Video enviado a HeyGen · Listo en ~10 min');
+      // Show status panel
+      var statusDiv=document.getElementById('heygenStatus_'+cid);
+      if(statusDiv) renderHeyGenStatus(cid, vid, statusDiv);
+    } else showToast('Respuesta HeyGen: '+JSON.stringify(d),true);
   }catch(e){showToast('Error HeyGen: '+e.message,true);}
 }
 
@@ -1497,11 +1589,32 @@ function openCr(id) {
       '<div style="font-size:11px;color:var(--mut);margin-top:9px;line-height:1.5">'+(c.narrativa||'')+'</div>'+
       sfHtml+refsHtml;
   } else if(c.type==='video'){
-    mc.innerHTML='<textarea style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px;color:var(--txt);font-family:var(--fb);font-size:12px;min-height:180px;outline:none;resize:vertical;line-height:1.7" oninput="updScript(\''+c.id+'\',this.value)">'+( c.guionCompleto||'')+'</textarea>'+sfHtml+refsHtml;
+    var vPanel='';
+    if(c.videoUrl){
+      vPanel='<div style="margin-bottom:10px;background:var(--bg3);border-radius:9px;padding:10px">'+
+        (c.thumbnailUrl?'<img src="'+c.thumbnailUrl+'" style="width:100%;border-radius:7px;margin-bottom:8px;max-height:160px;object-fit:cover">':'')+
+        '<div style="display:flex;gap:7px">'+
+        '<a href="'+c.videoUrl+'" target="_blank" style="flex:1;padding:8px;background:var(--suc);color:#000;border-radius:7px;text-align:center;font-weight:700;font-size:12px;text-decoration:none">▶ Ver video</a>'+
+        '<a href="'+c.videoUrl+'" download style="flex:1;padding:8px;background:var(--bg2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;text-align:center;font-weight:700;font-size:12px;text-decoration:none">⬇ Descargar MP4</a>'+
+        '</div></div>';
+    } else if(c.heygenVideoId){
+      vPanel='<div style="margin-bottom:10px;background:var(--pur2);border:1px solid var(--pur);border-radius:9px;padding:10px;display:flex;align-items:center;gap:9px">'+
+        '<span>🤖</span><div style="flex:1;font-size:11px;color:var(--pur)">En HeyGen · ID: '+c.heygenVideoId+'</div>'+
+        '<button onclick="checkAndShowVideo(this.dataset.cid,this.dataset.vid)" data-cid="'+c.id+'" data-vid="'+c.heygenVideoId+'" style="padding:5px 11px;background:var(--pur);color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">🔄 ¿Está listo?</button>'+
+        '</div>';
+    } else {
+      vPanel='<div style="margin-bottom:10px;background:var(--bg3);border-radius:9px;padding:10px;text-align:center">'+
+        '<div style="font-size:12px;color:var(--mut);margin-bottom:8px">Video no enviado a HeyGen todavía</div>'+
+        '<button id="goGenBtn" style="padding:6px 14px;background:var(--pur);color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">✦ Ir a Generar para enviarlo</button>'+
+        '</div>';
+    }
+    mc.innerHTML=vPanel+'<textarea id="vidScriptTA" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px;color:var(--txt);font-family:var(--fb);font-size:12px;min-height:140px;outline:none;resize:vertical;line-height:1.7">'+(c.guionCompleto||'')+'</textarea>'+sfHtml+refsHtml;
+  var vta=document.getElementById('vidScriptTA'); var vcid=c.id; if(vta) vta.oninput=function(){updScript(vcid,this.value);};
   } else {
     mc.innerHTML='<div style="font-size:12px;line-height:1.7;white-space:pre-wrap">'+(c.raw||'')+'</div>'+sfHtml+refsHtml;
   }
   openM('mCr');
+  var ggb=document.getElementById('goGenBtn'); if(ggb) ggb.onclick=function(){closeM('mCr');showTab('generar');};
 }
 function copyCr(){var c=(active&&active.creatives||[]).find(function(x){return x.id===viewCrId;});if(c)navigator.clipboard.writeText(c.guionCompleto||c.brief||c.raw||'').then(function(){showToast('Copiado ✓');});}
 
