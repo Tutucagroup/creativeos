@@ -884,11 +884,28 @@ function setFmt(el) { document.querySelectorAll('.fmt-btn').forEach(function(b){
 function setDur(el) { document.querySelectorAll('.dur-btn').forEach(function(b){b.classList.remove('on');}); el.classList.add('on'); selDur=el.dataset.dur; }
 function updateAvatarSel() {
   if(selType!=='video') return;
-  var avs=(active&&active.memory&&active.memory.avatars)||[];
   var el=_$('avatarSel'); if(!el) return;
-  if(!avs.length){el.innerHTML='<div style="font-size:11px;color:var(--mut);margin-bottom:10px">Agregá avatares en Memoria de marca</div>';return;}
-  el.innerHTML='<div class="fmt-lbl">Avatar</div><div class="fmt-row">'+avs.map(function(a,i){return '<button class="fmt-btn'+(i===0?' on':'')+'" data-av="'+a+'">'+a+'</button>';}).join('')+'</div>';
-  el.querySelectorAll('[data-av]').forEach(function(b){b.onclick=function(){el.querySelectorAll('[data-av]').forEach(function(x){x.classList.remove('on');}); this.classList.add('on');};});
+  // HeyGen built-in avatars (always available)
+  var builtIn = [
+    {id:'josh_lite3_20230714',  name:'Josh',  desc:'Hombre, casual'},
+    {id:'anna_costume1_cameraA',name:'Anna',  desc:'Mujer, profesional'},
+    {id:'Wayne_20240711',       name:'Wayne', desc:'Hombre, formal'},
+    {id:'Daisy-inskirt-20220818',name:'Daisy',desc:'Mujer, casual'},
+  ];
+  var customAvs=(active&&active.memory&&active.memory.avatars)||[];
+  el.innerHTML='<div class="fmt-lbl" style="margin-bottom:6px">Avatar HeyGen</div>'+
+    '<div class="fmt-row" style="margin-bottom:10px">'+
+    builtIn.map(function(a,i){
+      return '<button class="fmt-btn'+(i===0?' on':'')+'" data-av="'+a.name+'" data-avid="'+a.id+'" title="'+a.desc+'">'+a.name+'</button>';
+    }).join('')+
+    (customAvs.length ? customAvs.map(function(a){return '<button class="fmt-btn" data-av="'+a+'" data-avid="" title="Custom">'+a+'</button>';}).join('') : '')+
+    '</div>';
+  el.querySelectorAll('[data-av]').forEach(function(b){
+    b.onclick=function(){
+      el.querySelectorAll('[data-av]').forEach(function(x){x.classList.remove('on');});
+      this.classList.add('on');
+    };
+  });
 }
 
 // ────────────────────────────────────────────────
@@ -1451,7 +1468,13 @@ async function sendToHeyGen(cid){
   var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(!c) return;
   var seEl=_$('se_'+cid),script=seEl?seEl.value:c.guionCompleto;
   try{
-    var r=await fetch('https://api.heygen.com/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:'Angela-inblackskirt-20220820',avatar_style:'normal'},voice:{type:'text',input_text:script,voice_id:'1bd001e7e50f421d891986aad5158bc8'},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920}})});
+    // Use HeyGen V2 API with current avatar IDs
+    var avatarId = 'josh_lite3_20230714'; // Default: Josh (widely available)
+    var voiceId = '2d5b0e6cf36f460aa7fc47e3eee4ba54';   // Josh voice
+    // Try to use selected avatar if configured
+    var selAvEl = document.querySelector('[data-av].on');
+    if (selAvEl && selAvEl.dataset.avid) avatarId = selAvEl.dataset.avid;
+    var r=await fetch('https://api.heygen.com/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:avatarId,avatar_style:'normal'},voice:{type:'text',input_text:script.substring(0,1500),voice_id:voiceId},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920}})});
     var d=await r.json();
     if(d.data&&d.data.video_id){
       var vid=d.data.video_id;
