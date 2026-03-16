@@ -885,27 +885,34 @@ function setDur(el) { document.querySelectorAll('.dur-btn').forEach(function(b){
 function updateAvatarSel() {
   if(selType!=='video') return;
   var el=_$('avatarSel'); if(!el) return;
-  // HeyGen built-in avatars (always available)
-  var builtIn = [
-    {id:'josh_lite3_20230714',  name:'Josh',  desc:'Hombre, casual'},
-    {id:'anna_costume1_cameraA',name:'Anna',  desc:'Mujer, profesional'},
-    {id:'Wayne_20240711',       name:'Wayne', desc:'Hombre, formal'},
-    {id:'Daisy-inskirt-20220818',name:'Daisy',desc:'Mujer, casual'},
-  ];
-  var customAvs=(active&&active.memory&&active.memory.avatars)||[];
-  el.innerHTML='<div class="fmt-lbl" style="margin-bottom:6px">Avatar HeyGen</div>'+
-    '<div class="fmt-row" style="margin-bottom:10px">'+
-    builtIn.map(function(a,i){
-      return '<button class="fmt-btn'+(i===0?' on':'')+'" data-av="'+a.name+'" data-avid="'+a.id+'" title="'+a.desc+'">'+a.name+'</button>';
-    }).join('')+
-    (customAvs.length ? customAvs.map(function(a){return '<button class="fmt-btn" data-av="'+a+'" data-avid="" title="Custom">'+a+'</button>';}).join('') : '')+
-    '</div>';
-  el.querySelectorAll('[data-av]').forEach(function(b){
-    b.onclick=function(){
-      el.querySelectorAll('[data-av]').forEach(function(x){x.classList.remove('on');});
-      this.classList.add('on');
-    };
-  });
+  var keys=getKeys();
+  el.innerHTML='<div class="fmt-lbl" style="margin-bottom:6px">Avatar HeyGen</div><div style="font-size:11px;color:var(--mut)" id="avLoadTxt">'+( keys.hey?'Cargando avatares...':'Configurá API key de HeyGen para ver avatares')+'</div>';
+  if(!keys.hey) return;
+  // Fetch real avatars from user's HeyGen account
+  fetch('https://api.heygen.com/v2/avatars',{headers:{'X-Api-Key':keys.hey}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var avs=(d.data&&d.data.avatars)||[];
+      if(!avs.length){
+        _$('avLoadTxt').textContent='Sin avatares en tu cuenta HeyGen';
+        return;
+      }
+      el.innerHTML='<div class="fmt-lbl" style="margin-bottom:6px">Avatar HeyGen ('+avs.length+' disponibles)</div>'+
+        '<div class="fmt-row" style="flex-wrap:wrap;margin-bottom:10px">'+
+        avs.slice(0,8).map(function(a,i){
+          return '<button class="fmt-btn'+(i===0?' on':'')+'" data-av="'+a.avatar_name+'" data-avid="'+a.avatar_id+'">'+a.avatar_name+'</button>';
+        }).join('')+
+        '</div>';
+      el.querySelectorAll('[data-av]').forEach(function(b){
+        b.onclick=function(){
+          el.querySelectorAll('[data-av]').forEach(function(x){x.classList.remove('on');});
+          this.classList.add('on');
+        };
+      });
+    })
+    .catch(function(e){
+      var t=_$('avLoadTxt'); if(t) t.textContent='Error cargando avatares: '+e.message;
+    });
 }
 
 // ────────────────────────────────────────────────
@@ -1467,13 +1474,34 @@ async function sendToHeyGen(cid){
   var keys=getKeys();if(!keys.hey){alert('Configurá API key de HeyGen');openAPIConfig();return;}
   var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;});if(!c) return;
   var seEl=_$('se_'+cid),script=seEl?seEl.value:c.guionCompleto;
+  showToast('Conectando con HeyGen...');
   try{
-    // Use HeyGen V2 API with current avatar IDs
-    var avatarId = 'josh_lite3_20230714'; // Default: Josh (widely available)
-    var voiceId = '2d5b0e6cf36f460aa7fc47e3eee4ba54';   // Josh voice
-    // Try to use selected avatar if configured
+    // Fetch available avatars from user's account
+    var avResp = await fetch('https://api.heygen.com/v2/avatars',{headers:{'X-Api-Key':keys.hey}});
+    var avData = await avResp.json();
+    var avatars = (avData.data && avData.data.avatars) || [];
+    // Pick selected avatar or first available
     var selAvEl = document.querySelector('[data-av].on');
-    if (selAvEl && selAvEl.dataset.avid) avatarId = selAvEl.dataset.avid;
+    var selAvId = selAvEl && selAvEl.dataset.avid;
+    var chosenAvatar = null;
+    if(selAvId && avatars.length) {
+      chosenAvatar = avatars.find(function(a){return a.avatar_id===selAvId;}) || avatars[0];
+    } else if(avatars.length) {
+      chosenAvatar = avatars[0];
+    }
+    if(!chosenAvatar && !avatars.length) {
+      // No avatars found - try with a safe default voice-only approach
+      chosenAvatar = {avatar_id:'default', avatar_name:'Default'};
+    }
+    var avatarId = chosenAvatar ? chosenAvatar.avatar_id : 'default';
+    // Get voices from account too
+    var voResp = await fetch('https://api.heygen.com/v2/voices',{headers:{'X-Api-Key':keys.hey}});
+    var voData = await voResp.json();
+    var voices = (voData.data && voData.data.voices) || [];
+    // Prefer Spanish voice, fallback to first available
+    var voice = voices.find(function(v){return v.language&&(v.language.indexOf('es')===0||v.language.indexOf('Spanish')>=0);}) || voices[0];
+    var voiceId = voice ? voice.voice_id : '2d5b0e6cf36f460aa7fc47e3eee4ba54';
+    showToast('Usando avatar: '+(chosenAvatar?chosenAvatar.avatar_name||avatarId:avatarId));
     var r=await fetch('https://api.heygen.com/v2/video/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':keys.hey},body:JSON.stringify({video_inputs:[{character:{type:'avatar',avatar_id:avatarId,avatar_style:'normal'},voice:{type:'text',input_text:script.substring(0,1500),voice_id:voiceId},background:{type:'color',value:'#111118'}}],dimension:{width:1080,height:1920}})});
     var d=await r.json();
     if(d.data&&d.data.video_id){
