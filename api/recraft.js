@@ -21,7 +21,8 @@ export default async function handler(req) {
  
     const body = await req.text();
  
-    const resp = await fetch('https://external.api.recraft.ai/v1/images/generate', {
+    // Correct endpoint: /v1/images/generations (with 's')
+    const resp = await fetch('https://external.api.recraft.ai/v1/images/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,6 +32,7 @@ export default async function handler(req) {
     });
  
     const responseText = await resp.text();
+ 
     let parsed;
     try {
       parsed = JSON.parse(responseText);
@@ -51,5 +53,6 @@ export default async function handler(req) {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
   }
+}
 }
  
