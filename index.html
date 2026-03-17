@@ -1165,8 +1165,24 @@ async function claudeCall(sys,user,keys,maxT) {
   var d=await r.json(); if(d.error) throw new Error(d.error.message);
   return d.content.map(function(b){return b.text||'';}).join('');
 }
-// Upload a base64 dataUrl to imgbb and return a public http URL
-// Extract base64 string and mimeType from a dataUrl
+// Resize a dataUrl to max px on its longest side — keeps base64 payload small (~50KB)
+function resizeDataUrl(dataUrl, maxPx) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      var scale = Math.min(1, maxPx / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width  = Math.round(w * scale);
+      c.height = Math.round(h * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
 function parseDataUrl(dataUrl) {
   var m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
   if (!m) return null;
@@ -1174,10 +1190,10 @@ function parseDataUrl(dataUrl) {
 }
 
 async function ideogramCall(prompt, aspect, keys) {
-  var ar = getActiveRefs();
+  var ar   = getActiveRefs();
   var lang = getLang().replace(/['"]/g,'');
 
-  // Only send PRODUCT refs to Ideogram — logos go to Canvas compositor
+  // Only PRODUCT refs go to Ideogram — logos go to Canvas compositor
   var productRefs = ar.filter(function(r){ return r.assetType === 'product'; });
 
   var body = {
@@ -1188,18 +1204,19 @@ async function ideogramCall(prompt, aspect, keys) {
     image_references: []
   };
 
-  // Build image_references: send base64 directly (proxy handles multipart)
-  // or http URL if it's already hosted
   if (productRefs.length > 0) {
-    var ref = productRefs[0]; // Ideogram supports one image_reference at a time
+    var ref     = productRefs[0];
     var dataUrl = ref.dataUrl || '';
+
     if (dataUrl.startsWith('data:')) {
-      var parsed = parseDataUrl(dataUrl);
+      // Resize to 512px max before sending — avoids "Request Entity Too Large" on edge function
+      var resized = await resizeDataUrl(dataUrl, 512);
+      var parsed  = parseDataUrl(resized);
       if (parsed) {
         body.image_references.push({
-          base64: parsed.base64,
-          mimeType: parsed.mimeType,
-          weight: 80  // High influence: respect the product look
+          base64:   parsed.base64,
+          mimeType: 'image/jpeg',
+          weight:   80
         });
       }
     } else if (dataUrl.startsWith('http')) {
@@ -1208,9 +1225,9 @@ async function ideogramCall(prompt, aspect, keys) {
   }
 
   var r = await fetch('/api/ideogram', {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json', 'Api-Key': keys.ide },
-    body: JSON.stringify(body)
+    body:    JSON.stringify(body)
   });
   var d = await r.json();
   if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
