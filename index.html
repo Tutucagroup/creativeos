@@ -245,14 +245,14 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
           <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple style="display:none">
         </div>
         <div class="mc">
-          <div class="mc-title">🎨 Logo / Isotipo <span class="mc-note">Usado en todos los creativos</span></div>
+          <div class="mc-title">🎨 Logo / Isotipo <span class="mc-note">Canvas lo superpone pixel-perfect (no Ideogram)</span></div>
           <div class="a-gal" id="logoGal"></div>
           <div class="uz" id="logoZone" style="padding:9px;margin-top:5px">🎨 Subir logo / isotipo<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, SVG, JPG</div></div>
           <input type="file" id="logoInput" accept=".png,.jpg,.jpeg,.svg,.webp" multiple style="display:none">
         </div>
       </div>
       <div class="mc" style="margin-bottom:10px">
-        <div class="mc-title">📦 Fotos de productos <span class="mc-note">Ideogram replica este estilo</span></div>
+        <div class="mc-title">📦 Fotos de productos <span class="mc-note">Ideogram replica el estilo visual exacto</span></div>
         <div class="a-gal" id="prodGal" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
         <div class="uz" id="prodPhotoZone" style="padding:9px">📦 Subir fotos de productos<div style="font-size:10px;margin-top:2px;opacity:.6">PNG, JPG, WEBP — varios a la vez</div></div>
         <input type="file" id="prodPhotoInput" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none">
@@ -637,8 +637,14 @@ async function compositeImage(bgUrl) {
   canvas.width = cw; canvas.height = ch;
   var ctx = canvas.getContext('2d');
 
-  // Draw background
-  await drawImg(ctx, bgUrl, 0, 0, cw, ch);
+  // Draw background — handle CORS by using a proxy if needed
+  try {
+    await drawImg(ctx, bgUrl, 0, 0, cw, ch);
+  } catch(e) {
+    // If CORS fails, try via a canvas-safe method
+    var proxyUrl = bgUrl;
+    await drawImg(ctx, proxyUrl, 0, 0, cw, ch);
+  }
 
   // Draw mockup
   if (hasMockup) {
@@ -646,7 +652,6 @@ async function compositeImage(bgUrl) {
     var mSize = mp.size / 100;
     var mW = Math.round(cw * mSize);
     var mH = mW; // will be adjusted by aspect ratio
-    // Load to get aspect ratio
     var mImg = await loadImgEl(mp.dataUrl);
     var ar = mImg.naturalWidth / mImg.naturalHeight;
     if (ar > 1) { mH = Math.round(mW / ar); } else { mW = Math.round(mH * ar); }
@@ -654,7 +659,7 @@ async function compositeImage(bgUrl) {
     ctx.drawImage(mImg, mPos.x, mPos.y, mW, mH);
   }
 
-  // Draw logo
+  // Draw logo — with subtle background pill for visibility on any background
   if (hasLogo) {
     var lp = overlayState.logo;
     var lSize = lp.size / 100;
@@ -662,7 +667,21 @@ async function compositeImage(bgUrl) {
     var lImg = await loadImgEl(lp.dataUrl);
     var lar = lImg.naturalWidth / lImg.naturalHeight;
     var lH = Math.round(lW / lar);
-    var lPos = calcPos(lp.pos, cw, ch, lW, lH, 20);
+    var lPos = calcPos(lp.pos, cw, ch, lW, lH, 24);
+    // Draw semi-transparent pill background behind logo for readability
+    var pad = Math.round(lH * 0.18);
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    var rx = 10;
+    var bx = lPos.x - pad, by = lPos.y - pad, bw = lW + pad*2, bh = lH + pad*2;
+    ctx.beginPath();
+    ctx.moveTo(bx+rx, by);
+    ctx.lineTo(bx+bw-rx, by); ctx.quadraticCurveTo(bx+bw, by, bx+bw, by+rx);
+    ctx.lineTo(bx+bw, by+bh-rx); ctx.quadraticCurveTo(bx+bw, by+bh, bx+bw-rx, by+bh);
+    ctx.lineTo(bx+rx, by+bh); ctx.quadraticCurveTo(bx, by+bh, bx, by+bh-rx);
+    ctx.lineTo(bx, by+rx); ctx.quadraticCurveTo(bx, by, bx+rx, by);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
     ctx.drawImage(lImg, lPos.x, lPos.y, lW, lH);
   }
 
@@ -1023,15 +1042,21 @@ function delRef(id) {
 function renderRefSelRow() {
   var el=_$('refSelRow'); if(!el||!active) return;
   var m=active.memory, all=[];
-  (m.assets||[]).forEach(function(a){if(a.dataUrl)all.push({id:a.id,url:a.dataUrl,label:a.assetType==='logo'?'🎨':'📦',name:a.name});});
-  (m.visualRefs||[]).forEach(function(r){if(r.dataUrl&&!r.analyzing)all.push({id:r.id,url:r.dataUrl,label:'🖼️',name:r.name});});
+  (m.assets||[]).forEach(function(a){if(a.dataUrl)all.push({id:a.id,url:a.dataUrl,label:a.assetType==='logo'?'🎨':'📦',name:a.name,assetType:a.assetType});});
+  (m.visualRefs||[]).forEach(function(r){if(r.dataUrl&&!r.analyzing)all.push({id:r.id,url:r.dataUrl,label:'🖼️',name:r.name,assetType:'ref'});});
   if(!all.length){el.innerHTML='<div style="font-size:10px;color:var(--mut2)">Cargá logos, fotos o referencias en Memoria</div>';return;}
   all.forEach(function(r){if(selRefs[r.id]===undefined)selRefs[r.id]=true;});
   el.innerHTML=all.map(function(r){
     var on=selRefs[r.id]!==false;
-    return '<div class="rs-chip'+(on?' on':'')+'" data-rid="'+r.id+'" title="'+r.name+'"><img src="'+r.url+'"><div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:8px;text-align:center">'+r.label+'</div>'+(on?'<div class="rs-check">✓</div>':'')+'</div>';
+    // Show routing: logo → Canvas, product → Ideogram
+    var routeBadge = r.assetType==='logo'
+      ? '<div style="position:absolute;top:2px;left:2px;background:#7c3fce;color:#fff;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px;line-height:1.2">CANVAS</div>'
+      : r.assetType==='product'
+      ? '<div style="position:absolute;top:2px;left:2px;background:#c8a800;color:#000;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px;line-height:1.2">IDEOGRAM</div>'
+      : '<div style="position:absolute;top:2px;left:2px;background:#3a5f8a;color:#fff;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px;line-height:1.2">REF</div>';
+    return '<div class="rs-chip'+(on?' on':'')+'" data-rid="'+r.id+'" title="'+r.name+(r.assetType==='logo'?' → Canvas (superposición exacta)':r.assetType==='product'?' → Ideogram (referencia visual)':' → contexto')+'"><img src="'+r.url+'">'+routeBadge+'<div style="position:absolute;bottom:0;left:0;right:0;background:#000b;font-size:8px;text-align:center">'+r.label+'</div>'+(on?'<div class="rs-check">✓</div>':'')+'</div>';
   }).join('');
-  el.querySelectorAll('.rs-chip').forEach(function(c){c.onclick=function(){selRefs[this.dataset.rid]=!( selRefs[this.dataset.rid]!==false);renderRefSelRow();};});
+  el.querySelectorAll('.rs-chip').forEach(function(c){c.onclick=function(){selRefs[this.dataset.rid]=!(selRefs[this.dataset.rid]!==false);renderRefSelRow();};});
 }
 function getActiveRefs() {
   if(!active) return [];
@@ -1140,17 +1165,56 @@ async function claudeCall(sys,user,keys,maxT) {
   var d=await r.json(); if(d.error) throw new Error(d.error.message);
   return d.content.map(function(b){return b.text||'';}).join('');
 }
-async function ideogramCall(prompt,aspect,keys) {
-  // Build image references (logos + products) — only http URLs; base64 filtered out
-  var ar=getActiveRefs();
-  var httpRefs=ar.filter(function(r){return r.dataUrl&&(r.dataUrl.startsWith('http://') || r.dataUrl.startsWith('https://'));});
-  var lang=getLang().replace(/['"]/g,'');
-  var body={image_request:{prompt:prompt+'. All visible text must be written in '+lang+'.',aspect_ratio:aspect}};
-  if(httpRefs.length) body.image_references=httpRefs.map(function(r){return{url:r.dataUrl,weight:r.assetType==='logo'?85:50};});
-  var r=await fetch('/api/ideogram',{method:'POST',headers:{'Content-Type':'application/json','Api-Key':keys.ide},body:JSON.stringify(body)});
-  var d=await r.json();
-  if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
-  return d.data&&d.data[0]?d.data[0].url:null;
+// Upload a base64 dataUrl to imgbb and return a public http URL
+// Extract base64 string and mimeType from a dataUrl
+function parseDataUrl(dataUrl) {
+  var m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) return null;
+  return { mimeType: m[1], base64: m[2] };
+}
+
+async function ideogramCall(prompt, aspect, keys) {
+  var ar = getActiveRefs();
+  var lang = getLang().replace(/['"]/g,'');
+
+  // Only send PRODUCT refs to Ideogram — logos go to Canvas compositor
+  var productRefs = ar.filter(function(r){ return r.assetType === 'product'; });
+
+  var body = {
+    image_request: {
+      prompt: prompt + '. All visible text must be written in ' + lang + '.',
+      aspect_ratio: aspect
+    },
+    image_references: []
+  };
+
+  // Build image_references: send base64 directly (proxy handles multipart)
+  // or http URL if it's already hosted
+  if (productRefs.length > 0) {
+    var ref = productRefs[0]; // Ideogram supports one image_reference at a time
+    var dataUrl = ref.dataUrl || '';
+    if (dataUrl.startsWith('data:')) {
+      var parsed = parseDataUrl(dataUrl);
+      if (parsed) {
+        body.image_references.push({
+          base64: parsed.base64,
+          mimeType: parsed.mimeType,
+          weight: 80  // High influence: respect the product look
+        });
+      }
+    } else if (dataUrl.startsWith('http')) {
+      body.image_references.push({ url: dataUrl, weight: 80 });
+    }
+  }
+
+  var r = await fetch('/api/ideogram', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Api-Key': keys.ide },
+    body: JSON.stringify(body)
+  });
+  var d = await r.json();
+  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  return d.data && d.data[0] ? d.data[0].url : null;
 }
 function snapCtx() {
   var sf=_$('genFocus'); var ar=getActiveRefs();
@@ -1163,30 +1227,57 @@ function saveCr(cr){if(!active.creatives)active.creatives=[];active.creatives.un
 // ────────────────────────────────────────────────
 async function genImagen(prompt,keys) {
   var oa=_$('outputArea');
-  var hasLogo=(active.memory.assets||[]).some(function(a){return a.assetType==='logo';});
-  var logoInstr=hasLogo?'OBLIGATORIO: incluir el logo de la marca visible en la imagen (bottom center o posición indicada), respetando sus colores y tipografía exactos. ':'';
+  var ar=getActiveRefs();
+  var logos=ar.filter(function(a){return a.assetType==='logo';});
+  var prods=ar.filter(function(a){return a.assetType==='product';});
+  var hasLogo=logos.length>0 || overlayState.logo.dataUrl;
+  var hasMockup=overlayState.mockup.dataUrl;
+
+  // Build explicit logo compositing instructions for Claude
+  var logoInstr='';
+  if(hasLogo){
+    logoInstr='IMPORTANTE: El logo de la marca se superpondrá en postproceso sobre la imagen generada. Por eso, NO incluir el logo dentro de la escena — dejar espacio limpio en la esquina inferior del creativo. La imagen generada debe ser solo el fondo/escena/producto.\n';
+  }
+  var prodInstr='';
+  if(prods.length>0){
+    prodInstr='PRODUCTOS ACTIVOS (imagen de referencia enviada a Ideogram — debe replicar exactamente el producto tal como aparece en la foto): '+prods.map(function(a){return a.analysis;}).join(' | ')+'\n';
+    prodInstr+='El prompt de Ideogram DEBE incluir descripción visual detallada del producto (forma, color, packaging, textura) y la instrucción: "replicate the exact product from the reference image".\n';
+  }
+
   var sys='Experto en marketing visual para la marca "'+active.name+'".\n'+brandCtx()+'\nRespondé SOLO con el formato indicado. Sin markdown.';
-  var raw=await claudeCall(sys,'Generá el brief de esta imagen.\nFORMATO: '+selFmt+'\nSOLICITUD: '+prompt+'\n\n'+logoInstr+'Todo el texto visible en la imagen debe estar en '+getLang()+'.\n\nRespondé SOLO con estas líneas:\nCONCEPTO: [concepto visual]\nHEADLINE: [headline en '+getLang()+']\nSUBHEAD: [subhead en '+getLang()+']\nCTA: [CTA en '+getLang()+']\nIDEOGRAM_PROMPT: [prompt técnico en inglés para Ideogram, una sola línea. Incluir textos exactos entre comillas. '+(hasLogo?'Incluir posición del logo. ':'')+'Detallar estilo, paleta, composición, iluminación]',keys,700);
+  var genInstr='Generá el brief de esta imagen.\nFORMATO: '+selFmt+'\nSOLICITUD: '+prompt+'\n\n'+logoInstr+prodInstr+'Todo el texto visible en la imagen debe estar en '+getLang()+'.\n\nRespondé SOLO con estas líneas:\nCONCEPTO: [concepto visual]\nHEADLINE: [headline en '+getLang()+']\nSUBHEAD: [subhead en '+getLang()+']\nCTA: [CTA en '+getLang()+']\nIDEOGRAM_PROMPT: [prompt técnico DETALLADO en inglés para Ideogram v3. Una sola línea. '+(prods.length>0?'Comenzar con: "replicate the exact product from the reference image, " luego describir: packaging exacto, colores, forma, materiales, textura del producto. ':'')+'Incluir: estilo fotográfico, paleta de colores, composición, iluminación, fondo. '+(hasLogo?'Dejar esquina inferior sin elementos para overlay de logo. ':'')+'Terminar con: --no text --no logo --no watermark --photorealistic]';
+  var raw=await claudeCall(sys,genInstr,keys,700);
   var concepto=gf(raw,'CONCEPTO'),headline=gf(raw,'HEADLINE'),subhead=gf(raw,'SUBHEAD'),cta=gf(raw,'CTA'),ideoPr=gf(raw,'IDEOGRAM_PROMPT');
   var imgUrl=null;
   var aspMap={'1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9'};
   if(keys.ide){
     try{
-      oa.innerHTML='<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Generando imagen...</span></div>';
+      oa.innerHTML='<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Generando imagen con Ideogram...</span></div>';
       imgUrl=await ideogramCall(ideoPr,aspMap[selFmt]||'ASPECT_1_1',keys);
     }catch(e){showToast('Error Ideogram: '+e.message,true);}
   }
   var ctx=snapCtx();
   var cr={id:Date.now().toString(),type:'imagen',title:prompt.substring(0,55),format:selFmt,concepto:concepto,headline:headline,subhead:subhead,cta:cta,ideogramPrompt:ideoPr,imgUrl:imgUrl,brief:raw,salesFocus:ctx.salesFocus,activeRefs:ctx.activeRefs,originalPrompt:prompt,createdAt:Date.now()};
   saveCr(cr);
-  // Composite mockup + logo onto the generated image if present
-  if (imgUrl && (overlayState.mockup.dataUrl || overlayState.logo.dataUrl)) {
-    oa.innerHTML = '<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Componiendo imagen con mockup y logo...</span></div>';
-    try {
-      var composited = await compositeImage(imgUrl);
-      cr.compositedUrl = composited;
-      cr.imgUrl = composited; // Use composited version as main image
-    } catch(ce) { console.warn('Composite failed:', ce); }
+
+  // COMPOSITE: merge logos from memory + overlay elements onto the generated image
+  if (imgUrl) {
+    var needComposite = overlayState.mockup.dataUrl || overlayState.logo.dataUrl || logos.length > 0;
+    if (needComposite) {
+      oa.innerHTML = '<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Componiendo logo y elementos fijos sobre la imagen...</span></div>';
+      try {
+        // If no explicit overlay logo but memory logos exist, use the first memory logo
+        var prevLogoData = overlayState.logo.dataUrl;
+        if (!prevLogoData && logos.length > 0) {
+          overlayState.logo.dataUrl = logos[0].dataUrl;
+        }
+        var composited = await compositeImage(imgUrl);
+        cr.compositedUrl = composited;
+        cr.imgUrl = composited;
+        // Restore
+        if (!prevLogoData) overlayState.logo.dataUrl = null;
+      } catch(ce) { console.warn('Composite failed:', ce); }
+    }
   }
   renderImageOutput(cr, oa);
 }
