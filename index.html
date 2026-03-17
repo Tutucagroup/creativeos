@@ -632,7 +632,8 @@ async function fetchAsBlob(url) {
     var blob = await resp.blob();
     return URL.createObjectURL(blob);
   } catch(e) {
-    return url; // fallback: use original (may fail in canvas, but worth trying)
+    console.warn('[fetchAsBlob] failed for', url, e);
+    return url;
   }
 }
 
@@ -648,38 +649,40 @@ async function compositeImage(bgUrl) {
   canvas.width = cw; canvas.height = ch;
   var ctx = canvas.getContext('2d');
 
-  // Fetch background as local blob to bypass CORS
-  var safeBgUrl = await fetchAsBlob(bgUrl);
-  await drawImg(ctx, safeBgUrl, 0, 0, cw, ch);
+  // Always fetch bg as local blob first to avoid canvas taint from cross-origin images
+  var safeBg = await fetchAsBlob(bgUrl);
+  await drawImg(ctx, safeBg, 0, 0, cw, ch);
 
-  // Draw mockup
+  // Draw mockup — preserve aspect ratio from naturalWidth/Height
   if (hasMockup) {
-    var mp   = overlayState.mockup;
-    var mImg = await loadImgEl(mp.dataUrl);
-    var mSize = mp.size / 100;
-    var mW = Math.round(cw * mSize);
-    var ar = mImg.naturalWidth / mImg.naturalHeight;
-    var mH = ar > 1 ? Math.round(mW / ar) : Math.round(mW / ar);
-    mW = Math.round(mH * ar); // recalc width from height keeps aspect ratio correct
+    var mp      = overlayState.mockup;
+    var mImg    = await loadImgEl(mp.dataUrl);
+    var mRatio  = mImg.naturalWidth / mImg.naturalHeight;
+    var mMaxW   = Math.round(cw * (mp.size / 100));
+    var mMaxH   = Math.round(ch * (mp.size / 100));
+    // Fit within the size% box preserving aspect ratio
+    var mW, mH;
+    if (mRatio >= 1) { mW = mMaxW; mH = Math.round(mW / mRatio); }
+    else             { mH = mMaxH; mW = Math.round(mH * mRatio); }
     var mPos = calcPos(mp.pos, cw, ch, mW, mH, 20);
     ctx.drawImage(mImg, mPos.x, mPos.y, mW, mH);
+    console.log('[Composite] mockup drawn', mW, 'x', mH, 'at', mPos);
   }
 
-  // Draw logo
+  // Draw logo — preserve aspect ratio
   if (hasLogo) {
-    var lp   = overlayState.logo;
-    var lImg = await loadImgEl(lp.dataUrl);
-    var lSize = lp.size / 100;
-    var lW = Math.round(cw * lSize);
-    var lar = lImg.naturalWidth / lImg.naturalHeight;
-    var lH = Math.round(lW / lar);
-    var lPos = calcPos(lp.pos, cw, ch, lW, lH, 24);
-    // Subtle pill background for logo readability
-    var pad = Math.round(lH * 0.18);
-    var rx = 10;
-    var bx = lPos.x-pad, by = lPos.y-pad, bw = lW+pad*2, bh = lH+pad*2;
+    var lp     = overlayState.logo;
+    var lImg   = await loadImgEl(lp.dataUrl);
+    var lRatio = lImg.naturalWidth / lImg.naturalHeight;
+    var lMaxW  = Math.round(cw * (lp.size / 100));
+    var lW     = lMaxW;
+    var lH     = Math.round(lW / lRatio);
+    var lPos   = calcPos(lp.pos, cw, ch, lW, lH, 24);
+    // Subtle dark pill behind logo for readability on any background
+    var pad = Math.round(lH * 0.2);
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    var rx=8, bx=lPos.x-pad, by=lPos.y-pad, bw=lW+pad*2, bh=lH+pad*2;
     ctx.beginPath();
     ctx.moveTo(bx+rx,by); ctx.lineTo(bx+bw-rx,by); ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+rx);
     ctx.lineTo(bx+bw,by+bh-rx); ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-rx,by+bh);
@@ -688,10 +691,18 @@ async function compositeImage(bgUrl) {
     ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.drawImage(lImg, lPos.x, lPos.y, lW, lH);
+    console.log('[Composite] logo drawn', lW, 'x', lH, 'at', lPos);
   }
 
-  return new Promise(function(resolve) {
-    canvas.toBlob(function(blob) { resolve(URL.createObjectURL(blob)); }, 'image/png');
+  return new Promise(function(resolve, reject) {
+    try {
+      canvas.toBlob(function(blob) {
+        if (blob) resolve(URL.createObjectURL(blob));
+        else reject(new Error('toBlob returned null'));
+      }, 'image/png');
+    } catch(e) {
+      reject(e);
+    }
   });
 }
 
@@ -711,6 +722,7 @@ function calcPos(pos, cw, ch, elW, elH, pad) {
 function drawImg(ctx, url, x, y, w, h) {
   return new Promise(function(resolve, reject) {
     var img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = function() { ctx.drawImage(img, x, y, w, h); resolve(); };
     img.onerror = reject;
     img.src = url;
@@ -720,8 +732,15 @@ function drawImg(ctx, url, x, y, w, h) {
 function loadImgEl(url) {
   return new Promise(function(resolve, reject) {
     var img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = function() { resolve(img); };
-    img.onerror = reject;
+    img.onerror = function() {
+      // If crossOrigin fails (e.g. data: URLs), retry without it
+      var img2 = new Image();
+      img2.onload = function() { resolve(img2); };
+      img2.onerror = reject;
+      img2.src = url;
+    };
     img.src = url;
   });
 }
@@ -1320,19 +1339,33 @@ async function genImagen(prompt,keys) {
   saveCr(cr);
 
   // ── CANVAS COMPOSITE ─────────────────────────────────────────────────
-  // Siempre componer: mockup (si hay) + logo (si hay) sobre la imagen generada
   if(imgUrl){
     var needComposite = overlayState.mockup.dataUrl || overlayState.logo.dataUrl || logos.length>0;
     if(needComposite){
       oa.innerHTML='<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">'+(modoA?'Componiendo producto + logo sobre el fondo...':'Componiendo logo sobre la imagen...')+'</span></div>';
       try{
+        // Ensure logo from memory is loaded into overlayState if not already set via panel
         var prevLogoData=overlayState.logo.dataUrl;
         if(!prevLogoData && logos.length>0) overlayState.logo.dataUrl=logos[0].dataUrl;
+
+        // Debug: log what we're compositing
+        console.log('[Composite] mockup:', !!overlayState.mockup.dataUrl, 'logo:', !!overlayState.logo.dataUrl, 'bgUrl:', imgUrl.substring(0,60));
+
         var composited=await compositeImage(imgUrl);
-        cr.compositedUrl=composited;
-        cr.imgUrl=composited;
+
+        // Validate: composited should be a blob: URL
+        if(composited && composited.startsWith('blob:')) {
+          cr.compositedUrl=composited;
+          cr.imgUrl=composited;
+          console.log('[Composite] SUCCESS — blob URL generated');
+        } else {
+          console.warn('[Composite] Result was not a blob URL:', composited);
+        }
         if(!prevLogoData) overlayState.logo.dataUrl=null;
-      }catch(ce){console.warn('Composite failed:',ce);}
+      }catch(ce){
+        showToast('Error al componer imagen: '+ce.message, true);
+        console.error('[Composite] FAILED:', ce);
+      }
     }
   }
   renderImageOutput(cr,oa);
