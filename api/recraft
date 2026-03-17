@@ -1,0 +1,80 @@
+export const config = { runtime: 'edge' };
+
+// Size map: from our internal format to Recraft's WxH format
+const sizeMap = {
+  '1080x1080': '1024x1024',
+  '1080x1920': '1024x1820',
+  '1080x1350': '1024x1280',
+  '1920x1080': '1820x1024',
+  // Recraft also accepts ratio strings
+  'ASPECT_1_1':  '1024x1024',
+  'ASPECT_9_16': '1024x1820',
+  'ASPECT_4_5':  '1024x1280',
+  'ASPECT_16_9': '1820x1024',
+};
+
+export default async function handler(req) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
+  }
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: { message: 'Authorization header missing' } }), {
+        status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    const body = await req.json();
+    const { prompt, size, style, negative_prompt } = body;
+
+    const recraftBody = {
+      prompt: prompt || '',
+      model: 'recraftv4',
+      size: sizeMap[size] || '1024x1024',
+      style: style || 'realistic_image',
+      response_format: 'url',
+    };
+
+    if (negative_prompt) recraftBody.negative_prompt = negative_prompt;
+
+    const resp = await fetch('https://external.api.recraft.ai/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+      },
+      body: JSON.stringify(recraftBody),
+    });
+
+    const responseText = await resp.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch(e) {
+      return new Response(JSON.stringify({ error: { message: 'Recraft returned non-JSON: ' + responseText.substring(0, 300) } }), {
+        status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // Normalize response: return { data: [{ url }] } like Ideogram did
+    const url = parsed?.data?.[0]?.url;
+    return new Response(JSON.stringify({ data: [{ url: url }], raw: parsed }), {
+      status: resp.status,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+
+  } catch(err) {
+    return new Response(JSON.stringify({ error: { message: 'Proxy error: ' + err.message } }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  }
+}
