@@ -1062,19 +1062,59 @@ async function fabricar() {
   $('fabProgress').classList.remove('hidden'); $('fabProgress').style.display='block';
   $('fabResults').innerHTML='';
   $('btnFabricar').disabled=true;
-  // Generate plan first with Claude
-  var anguloCtx=angulo?'ÁNGULO DE VENTA: '+angulo.titulo+'\nHook: '+angulo.hook+'\nCopy base: '+angulo.copy_base+'\nCTA: '+angulo.cta:'';
+  // Generate plan with Claude — build it item by item without a separate plan step
+  var anguloCtx=angulo?'ÁNGULO DE VENTA: '+angulo.titulo+' | Hook: '+angulo.hook+' | CTA: '+angulo.cta:'';
   var selProds=getSelectedProds();
-  var prodNote=selProds.length?'\nPRODUCTOS SELECCIONADOS PARA ESTA TANDA: '+selProds.join(', ')+'\n — Cada creativo debe estar centrado en UNO de estos productos. Variá cuál producto usás en cada creativo.':'';
-  var planPrompt='Generá un plan de '+total+' creativos variados para la marca.\n'+brandCtx(anguloCtx+prodNote+(extra?'\n'+extra:''))+'\n\nDebe incluir variedad de: enfoques, estilos visuales, mensajes.\nTipos disponibles: '+tipos.map(function(t){return t.type+(t.fmt?' '+t.fmt:'');}).join(', ')+'\n\nRespondé SOLO con JSON array ('+total+' items, sin markdown):\n[{"type":"imagen|carrusel|copy|video","fmt":"1080x1080|1080x1920|1080x1080|30s","titulo":"","descripcion":"","enfoque":"","headline":"","subhead":"","cta":""}]';
+  var prodNote=selProds.length?' Productos a usar: '+selProds.join(', ')+'.':'';
+  var ctx=brandCtx(anguloCtx+prodNote+(extra?'\n'+extra:''));
+
+  // Build plan directly without asking Claude for JSON
+  // Distribute types evenly across total
   var planArr=[];
+  var tiposCopy=[];
+  while(tiposCopy.length<total){ tipos.forEach(function(t){if(tiposCopy.length<total)tiposCopy.push(t);}); if(!tipos.length)break; }
+  // Get titles/hooks from Claude in one call
+  updateFabProgress(0,total,'Planificando creativos con Claude...');
   try{
-    var pr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:3000,system:'Experto en producción de contenido publicitario. '+brandCtx(),messages:[{role:'user',content:planPrompt}]})});
+    var planSys='Sos un experto en marketing. '+ctx;
+    var planUser='Generá '+total+' ideas de creativos variadas. Para cada uno dá un título creativo y un enfoque distinto.\n\nRESPONDÉ SOLO con este JSON array ('+total+' items, sin texto extra, sin markdown):\n[{"titulo":"","headline":"","subhead":"","cta":"","enfoque":""}]';
+    var pr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:2000,system:planSys,messages:[{role:'user',content:planUser}]})});
     var pd=await pr.json(); if(pd.error) throw new Error(pd.error.message);
     var ptxt=pd.content.map(function(b){return b.text||'';}).join('');
-    var jm2=ptxt.match(/\[[\s\S]*\]/); if(jm2) planArr=JSON.parse(jm2[0]);
-  }catch(e){showToast('Error generando plan: '+e.message,true);$('btnFabricar').disabled=false;return;}
-  // Execute plan
+    console.log('Plan response:', ptxt.substring(0,500));
+    // Extract JSON array - try multiple approaches
+    var parsed=null;
+    // Try: find [ ... ] 
+    var m1=ptxt.match(/\[[\s\S]*\]/);
+    if(m1){try{parsed=JSON.parse(m1[0]);}catch(e){console.warn('Parse attempt 1 failed:',e.message);}}
+    // If failed, try to extract manually line by line
+    if(!parsed||!parsed.length){
+      // Build plan from the text response using gf
+      parsed=[];
+      var lines=ptxt.split('\n');
+      var cur={};
+      lines.forEach(function(l){
+        var t=l.replace(/^["\s{},]+|["\s{},]+$/g,'');
+        if(t.indexOf('titulo')>=0||t.indexOf('título')>=0) cur.titulo=t.split(':').slice(1).join(':').replace(/[",]/g,'').trim();
+        if(t.indexOf('headline')>=0) cur.headline=t.split(':').slice(1).join(':').replace(/[",]/g,'').trim();
+        if(t.indexOf('cta')>=0) cur.cta=t.split(':').slice(1).join(':').replace(/[",]/g,'').trim();
+        if(Object.keys(cur).length>=2&&cur.titulo){parsed.push(cur);cur={};}
+      });
+    }
+    if(!parsed||!parsed.length){
+      // Last resort: generate sequential dummy plans
+      for(var pi=0;pi<total;pi++) parsed.push({titulo:'Creativo '+(pi+1),headline:'',subhead:'',cta:'',enfoque:anguloCtx});
+    }
+    // Merge with tipo info
+    planArr=parsed.slice(0,total).map(function(p,i){
+      var t=tiposCopy[i]||tipos[0]||{type:'imagen',fmt:'1080x1080'};
+      return {type:t.type,fmt:t.fmt,titulo:p.titulo||'Creativo '+(i+1),headline:p.headline||'',subhead:p.subhead||'',cta:p.cta||'',enfoque:p.enfoque||anguloCtx};
+    });
+    console.log('Final planArr:', planArr.length, 'items, types:', planArr.map(function(p){return p.type;}).join(','));
+    updateFabProgress(0,planArr.length,'Plan listo · Generando creativos...');
+  }catch(e){showToast('Error planificando: '+e.message,true);$('btnFabricar').disabled=false;$('fabProgress').classList.add('hidden');return;}
+
+    // Execute plan
   var results=[];
   var tanda={id:Date.now().toString(),angulo:angulo?angulo.titulo:'Libre',items:[],createdAt:Date.now()};
   for(var i=0;i<planArr.length;i++){
