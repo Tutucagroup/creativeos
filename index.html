@@ -1160,29 +1160,31 @@ function renderFabResults(items) {
 // RECRAFT API
 // ══════════════════════════════════════════════
 async function recraftCall(prompt, width, height, keys) {
-  // Recraft v3 valid sizes
+  // Endpoint correcto: /v1/images/generations (con 's')
+  // Size format: "1024x1024" como string en campo 'size'
   var fmt=(width||'1080')+'x'+(height||'1080');
   var sizeMap={
-    '1080x1080':{width:1024,height:1024},
-    '1080x1920':{width:1024,height:1820},
-    '1080x1350':{width:1024,height:1365},
-    '1920x1080':{width:1820,height:1024}
+    '1080x1080':'1024x1024',
+    '1080x1920':'1024x1820',
+    '1080x1350':'1024x1365',
+    '1920x1080':'1820x1024'
   };
-  var sz=sizeMap[fmt]||{width:1024,height:1024};
+  var size=sizeMap[fmt]||'1024x1024';
   var body={
     prompt:prompt+'. All text in image must be written in '+getLang()+'.',
-    width:sz.width,
-    height:sz.height,
+    model:'recraftv3',
     style:'realistic_image',
-    model:'recraftv3'
+    size:size
   };
+  console.log('Recraft request body:', JSON.stringify(body));
   var r=await fetch('/api/recraft',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+keys.rec},body:JSON.stringify(body)});
   var txt=await r.text();
-  console.log('Recraft raw:', txt.substring(0,400));
-  var d; try{d=JSON.parse(txt);}catch(e){throw new Error('Recraft no-JSON: '+txt.substring(0,100));}
-  if(d.error) throw new Error(typeof d.error==='string'?d.error:(d.error.message||JSON.stringify(d.error).substring(0,150)));
+  console.log('Recraft raw response:', txt.substring(0,500));
+  if(!txt||!txt.trim()) throw new Error('Recraft: respuesta vacía. Verificá tu key en app.recraft.ai/profile/api');
+  var d; try{d=JSON.parse(txt);}catch(e){throw new Error('Recraft no-JSON: '+txt.substring(0,150));}
+  if(d.error){throw new Error('Recraft: '+(d.error.message||d.error.detail||JSON.stringify(d.error).substring(0,200)));}
   var url=(d.data&&d.data[0]&&d.data[0].url)||(d.image&&d.image.url)||null;
-  if(!url) throw new Error('Sin URL en respuesta: '+JSON.stringify(d).substring(0,200));
+  if(!url) throw new Error('Recraft sin URL: '+JSON.stringify(d).substring(0,200));
   return url;
 }
 
