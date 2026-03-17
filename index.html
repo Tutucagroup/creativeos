@@ -624,12 +624,23 @@ function clearOverlayEl(type) {
 }
 
 // Composite: draw bg image + mockup + logo onto canvas and return blob URL
+// Fetch an external URL as a local blob URL to bypass Canvas CORS restrictions
+async function fetchAsBlob(url) {
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+  try {
+    var resp = await fetch(url);
+    var blob = await resp.blob();
+    return URL.createObjectURL(blob);
+  } catch(e) {
+    return url; // fallback: use original (may fail in canvas, but worth trying)
+  }
+}
+
 async function compositeImage(bgUrl) {
   var hasMockup = overlayState.mockup.dataUrl;
   var hasLogo   = overlayState.logo.dataUrl;
-  if (!hasMockup && !hasLogo) return bgUrl; // Nothing to composite
+  if (!hasMockup && !hasLogo) return bgUrl;
 
-  // Determine canvas size from selFmt
   var parts = selFmt.split('x');
   var cw = parseInt(parts[0]) || 1080;
   var ch = parseInt(parts[1]) || 1080;
@@ -637,58 +648,50 @@ async function compositeImage(bgUrl) {
   canvas.width = cw; canvas.height = ch;
   var ctx = canvas.getContext('2d');
 
-  // Draw background — handle CORS by using a proxy if needed
-  try {
-    await drawImg(ctx, bgUrl, 0, 0, cw, ch);
-  } catch(e) {
-    // If CORS fails, try via a canvas-safe method
-    var proxyUrl = bgUrl;
-    await drawImg(ctx, proxyUrl, 0, 0, cw, ch);
-  }
+  // Fetch background as local blob to bypass CORS
+  var safeBgUrl = await fetchAsBlob(bgUrl);
+  await drawImg(ctx, safeBgUrl, 0, 0, cw, ch);
 
   // Draw mockup
   if (hasMockup) {
-    var mp = overlayState.mockup;
+    var mp   = overlayState.mockup;
+    var mImg = await loadImgEl(mp.dataUrl);
     var mSize = mp.size / 100;
     var mW = Math.round(cw * mSize);
-    var mH = mW; // will be adjusted by aspect ratio
-    var mImg = await loadImgEl(mp.dataUrl);
     var ar = mImg.naturalWidth / mImg.naturalHeight;
-    if (ar > 1) { mH = Math.round(mW / ar); } else { mW = Math.round(mH * ar); }
+    var mH = ar > 1 ? Math.round(mW / ar) : Math.round(mW / ar);
+    mW = Math.round(mH * ar); // recalc width from height keeps aspect ratio correct
     var mPos = calcPos(mp.pos, cw, ch, mW, mH, 20);
     ctx.drawImage(mImg, mPos.x, mPos.y, mW, mH);
   }
 
-  // Draw logo — with subtle background pill for visibility on any background
+  // Draw logo
   if (hasLogo) {
-    var lp = overlayState.logo;
+    var lp   = overlayState.logo;
+    var lImg = await loadImgEl(lp.dataUrl);
     var lSize = lp.size / 100;
     var lW = Math.round(cw * lSize);
-    var lImg = await loadImgEl(lp.dataUrl);
     var lar = lImg.naturalWidth / lImg.naturalHeight;
     var lH = Math.round(lW / lar);
     var lPos = calcPos(lp.pos, cw, ch, lW, lH, 24);
-    // Draw semi-transparent pill background behind logo for readability
+    // Subtle pill background for logo readability
     var pad = Math.round(lH * 0.18);
+    var rx = 10;
+    var bx = lPos.x-pad, by = lPos.y-pad, bw = lW+pad*2, bh = lH+pad*2;
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    var rx = 10;
-    var bx = lPos.x - pad, by = lPos.y - pad, bw = lW + pad*2, bh = lH + pad*2;
     ctx.beginPath();
-    ctx.moveTo(bx+rx, by);
-    ctx.lineTo(bx+bw-rx, by); ctx.quadraticCurveTo(bx+bw, by, bx+bw, by+rx);
-    ctx.lineTo(bx+bw, by+bh-rx); ctx.quadraticCurveTo(bx+bw, by+bh, bx+bw-rx, by+bh);
-    ctx.lineTo(bx+rx, by+bh); ctx.quadraticCurveTo(bx, by+bh, bx, by+bh-rx);
-    ctx.lineTo(bx, by+rx); ctx.quadraticCurveTo(bx, by, bx+rx, by);
+    ctx.moveTo(bx+rx,by); ctx.lineTo(bx+bw-rx,by); ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+rx);
+    ctx.lineTo(bx+bw,by+bh-rx); ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-rx,by+bh);
+    ctx.lineTo(bx+rx,by+bh); ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-rx);
+    ctx.lineTo(bx,by+rx); ctx.quadraticCurveTo(bx,by,bx+rx,by);
     ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.drawImage(lImg, lPos.x, lPos.y, lW, lH);
   }
 
   return new Promise(function(resolve) {
-    canvas.toBlob(function(blob) {
-      resolve(URL.createObjectURL(blob));
-    }, 'image/png');
+    canvas.toBlob(function(blob) { resolve(URL.createObjectURL(blob)); }, 'image/png');
   });
 }
 
