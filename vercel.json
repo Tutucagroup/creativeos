@@ -1,14 +1,16 @@
 {
   "rewrites": [
-    { "source": "/api/ideogram", "destination": "/api/ideogram.js" }
+    { "source": "/api/ideogram", "destination": "/api/ideogram.js" },
+    { "source": "/api/recraft",  "destination": "/api/recraft.js"  },
+    { "source": "/api/heygen",   "destination": "/api/heygen.js"   }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Api-Key, x-api-key, anthropic-version, X-Api-Key" }
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, Api-Key, X-Api-Key, anthropic-version, x-api-key" }
       ]
     }
   ]
