@@ -369,9 +369,15 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
           <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="chkVid" style="accent-color:var(--acc)"> HeyGen 30s</label>
         </div>
       </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Productos a usar en esta tanda</label>
+        <div id="fabProdSelector" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:28px">
+          <div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit para seleccionarlos</div>
+        </div>
+      </div>
       <div class="field" style="margin-bottom:0">
         <label>Instrucción adicional (opcional)</label>
-        <textarea class="ta" id="fabExtra" style="min-height:56px" placeholder="Ej: Enfocarse en el producto Ashwagandha, usar colores tierra, urgencia por lanzamiento..."></textarea>
+        <textarea class="ta" id="fabExtra" style="min-height:56px" placeholder="Ej: Usar colores tierra, urgencia por lanzamiento, tono emocional..."></textarea>
       </div>
     </div>
     <!-- LOGO/MOCKUP OVERLAY -->
@@ -907,6 +913,11 @@ function brandCtx(extra) {
   var mockups=(b.assets||[]).filter(function(a){return a.type==='mockup';});
   if(mockups.length) parts.push('MOCKUP DEL PRODUCTO: imagen exacta que se superpondrá sobre el fondo generado — el prompt visual NO debe incluir el producto (será superpuesto)');
   if(extra) parts.push(extra);
+  // Selected products for this generation
+  var selProds=(typeof getSelectedProds==='function')?getSelectedProds():[];
+  if(selProds.length&&selProds.length<(b.products||[]).length){
+    parts.push('PRODUCTOS A USAR EN ESTA TANDA (usar SOLO estos): '+selProds.join(', '));
+  }
   return parts.join('\n');
 }
 
@@ -975,6 +986,31 @@ function loadFabAngulos() {
     var opt=document.createElement('option'); opt.value=String(i); opt.textContent=(i+1)+'. '+a.titulo;
     sel.appendChild(opt);
   });
+  // Render product selector
+  renderFabProdSelector();
+}
+function renderFabProdSelector() {
+  var el=$('fabProdSelector'); if(!el) return;
+  var prods=(active&&active.branding&&active.branding.products)||[];
+  if(!prods.length){el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit para seleccionarlos</div>';return;}
+  // Initialize selection: all selected by default
+  if(!window._fabProds) window._fabProds={};
+  prods.forEach(function(p,i){ if(window._fabProds[i]===undefined) window._fabProds[i]=true; });
+  el.innerHTML=prods.map(function(p,i){
+    var on=window._fabProds[i]!==false;
+    return '<button class="fmt-btn'+(on?' on':'')+'" data-pi="'+i+'" style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+p+'">'+p+'</button>';
+  }).join('');
+  el.querySelectorAll('[data-pi]').forEach(function(b){
+    b.onclick=function(){
+      var i=parseInt(this.dataset.pi);
+      window._fabProds[i]=!( window._fabProds[i]!==false);
+      this.classList.toggle('on',window._fabProds[i]!==false);
+    };
+  });
+}
+function getSelectedProds() {
+  var prods=(active&&active.branding&&active.branding.products)||[];
+  return prods.filter(function(p,i){ return window._fabProds&&window._fabProds[i]!==false; });
 }
 function loadFabUIFromBranding() {
   // Pre-load logo from branding kit if not already set
@@ -1027,7 +1063,9 @@ async function fabricar() {
   $('btnFabricar').disabled=true;
   // Generate plan first with Claude
   var anguloCtx=angulo?'ÁNGULO DE VENTA: '+angulo.titulo+'\nHook: '+angulo.hook+'\nCopy base: '+angulo.copy_base+'\nCTA: '+angulo.cta:'';
-  var planPrompt='Generá un plan de '+total+' creativos variados para la marca.\n'+brandCtx(anguloCtx+(extra?'\n'+extra:''))+'\n\nDebe incluir variedad de: enfoques, estilos visuales, mensajes.\nTipos disponibles: '+tipos.map(function(t){return t.type+(t.fmt?' '+t.fmt:'');}).join(', ')+'\n\nRespondé SOLO con JSON array ('+total+' items, sin markdown):\n[{"type":"imagen|carrusel|copy|video","fmt":"1080x1080|1080x1920|1080x1080|30s","titulo":"","descripcion":"","enfoque":"","headline":"","subhead":"","cta":""}]';
+  var selProds=getSelectedProds();
+  var prodNote=selProds.length?'\nPRODUCTOS SELECCIONADOS PARA ESTA TANDA: '+selProds.join(', ')+'\n — Cada creativo debe estar centrado en UNO de estos productos. Variá cuál producto usás en cada creativo.':'';
+  var planPrompt='Generá un plan de '+total+' creativos variados para la marca.\n'+brandCtx(anguloCtx+prodNote+(extra?'\n'+extra:''))+'\n\nDebe incluir variedad de: enfoques, estilos visuales, mensajes.\nTipos disponibles: '+tipos.map(function(t){return t.type+(t.fmt?' '+t.fmt:'');}).join(', ')+'\n\nRespondé SOLO con JSON array ('+total+' items, sin markdown):\n[{"type":"imagen|carrusel|copy|video","fmt":"1080x1080|1080x1920|1080x1080|30s","titulo":"","descripcion":"","enfoque":"","headline":"","subhead":"","cta":""}]';
   var planArr=[];
   try{
     var pr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:3000,system:'Experto en producción de contenido publicitario. '+brandCtx(),messages:[{role:'user',content:planPrompt}]})});
@@ -1076,17 +1114,20 @@ function renderFabResults(items) {
 // RECRAFT API
 // ══════════════════════════════════════════════
 async function recraftCall(prompt, width, height, keys) {
-  // Map sizes
   var sizeMap={'1080x1080':'1024x1024','1080x1920':'1024x1792','1080x1350':'1024x1365','1920x1080':'1792x1024'};
   var fmt=width+'x'+height;
   var size=sizeMap[fmt]||'1024x1024';
   var sp=size.split('x');
   var w=parseInt(sp[0]),h=parseInt(sp[1]);
-  var body={prompt:prompt+' All visible text must be written in '+getLang()+'.',width:w,height:h,style:'realistic_image',response_format:'url'};
+  var body={prompt:prompt+'. All visible text must be in '+getLang()+' language.',width:w,height:h,style:'realistic_image'};
   var r=await fetch('/api/recraft',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+keys.rec},body:JSON.stringify(body)});
   var d=await r.json();
-  if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
-  return d.data&&d.data[0]?d.data[0].url:null;
+  console.log('Recraft response:', JSON.stringify(d).substring(0,300));
+  if(d.error) throw new Error(typeof d.error==='string'?d.error:(d.error.message||JSON.stringify(d.error)));
+  // Recraft returns { data: [{ url: "..." }] }
+  var url = (d.data&&d.data[0]&&d.data[0].url) || (d.image&&d.image.url) || null;
+  if(!url) throw new Error('Recraft no devolvió imagen: '+JSON.stringify(d).substring(0,200));
+  return url;
 }
 
 // ══════════════════════════════════════════════
