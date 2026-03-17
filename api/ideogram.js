@@ -30,69 +30,66 @@ export default async function handler(req) {
       'ASPECT_16_9': '16x9'
     };
 
-    // Find the first product reference (base64 takes priority over http url)
-    const productRef = imageRefs.find(r => r.base64) || imageRefs.find(r => r.url && r.url.startsWith('http'));
+    const v3Body = {
+      prompt: imageRequest.prompt || '',
+      aspect_ratio: aspectMap[imageRequest.aspect_ratio] || '1x1',
+      magic_prompt: 'OFF',
+      style: 'AUTO',
+      rendering_speed: 'DEFAULT'
+    };
 
-    let resp;
+    // Step 1: if we have a base64 product ref, upload it to Ideogram first to get a URL
+    const base64Ref = imageRefs.find(r => r.base64);
+    const httpRef   = imageRefs.find(r => r.url && r.url.startsWith('http'));
 
-    if (productRef && productRef.base64) {
-      // BASE64 PATH: use multipart/form-data with generate-with-image endpoint
-      const mimeType = productRef.mimeType || 'image/jpeg';
-      const binaryStr = atob(productRef.base64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
+    if (base64Ref) {
+      // Upload image to Ideogram's own upload endpoint → get back a URL
+      const mimeType  = base64Ref.mimeType || 'image/jpeg';
+      const binaryStr = atob(base64Ref.base64);
+      const bytes     = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
       const blob = new Blob([bytes], { type: mimeType });
-      const influenceStrength = Math.min(1, Math.max(0, (productRef.weight || 75) / 100));
 
-      const form = new FormData();
-      form.append('image_request', JSON.stringify({
-        prompt: imageRequest.prompt || '',
-        aspect_ratio: aspectMap[imageRequest.aspect_ratio] || '1x1',
-        magic_prompt: 'OFF',
-        style: 'AUTO',
-        rendering_speed: 'DEFAULT',
-        image_reference: { influence_strength: influenceStrength }
-      }));
-      form.append('image_reference_file', blob, 'product.jpg');
+      const uploadForm = new FormData();
+      uploadForm.append('image', blob, 'product.jpg');
 
-      resp = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate-with-image', {
+      const uploadResp = await fetch('https://api.ideogram.ai/upload', {
         method: 'POST',
         headers: { 'Api-Key': apiKey },
-        body: form,
+        body: uploadForm,
       });
 
-    } else {
-      // HTTP URL PATH: standard JSON request
-      const v3Body = {
-        prompt: imageRequest.prompt || '',
-        aspect_ratio: aspectMap[imageRequest.aspect_ratio] || '1x1',
-        magic_prompt: 'OFF',
-        style: 'AUTO',
-        rendering_speed: 'DEFAULT'
-      };
-
-      if (productRef) {
-        v3Body.image_reference = {
-          url: productRef.url,
-          influence_strength: Math.min(1, Math.max(0, (productRef.weight || 75) / 100))
-        };
+      if (uploadResp.ok) {
+        const uploadData = await uploadResp.json();
+        const uploadedUrl = uploadData?.url || uploadData?.data?.url;
+        if (uploadedUrl) {
+          v3Body.image_reference = {
+            url: uploadedUrl,
+            influence_strength: Math.min(1, Math.max(0, (base64Ref.weight || 75) / 100))
+          };
+        }
       }
+      // If upload fails, continue without image_reference (just prompt)
 
-      resp = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Api-Key': apiKey },
-        body: JSON.stringify(v3Body),
-      });
+    } else if (httpRef) {
+      v3Body.image_reference = {
+        url: httpRef.url,
+        influence_strength: Math.min(1, Math.max(0, (httpRef.weight || 75) / 100))
+      };
     }
+
+    const resp = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Api-Key': apiKey },
+      body: JSON.stringify(v3Body),
+    });
 
     const responseText = await resp.text();
     let parsed;
     try {
       parsed = JSON.parse(responseText);
     } catch(e) {
-      return new Response(JSON.stringify({ error: { message: 'Ideogram returned non-JSON: ' + responseText.substring(0, 200) } }), {
+      return new Response(JSON.stringify({ error: { message: 'Ideogram error: ' + responseText.substring(0, 300) } }), {
         status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
