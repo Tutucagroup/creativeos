@@ -338,7 +338,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
       <div class="mc" style="margin-bottom:12px">
         <div class="mc-title" style="display:flex;align-items:center;justify-content:space-between">
           <span>🎯 Elementos fijos en la imagen</span>
-          <span class="mc-note">Se superponen exactos sobre el fondo generado por IA</span>
+          <span class="mc-note">Con mockup → Ideogram genera solo el fondo · Sin mockup → Ideogram intenta replicar el producto</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
           <div>
@@ -1247,56 +1247,92 @@ async function genImagen(prompt,keys) {
   var ar=getActiveRefs();
   var logos=ar.filter(function(a){return a.assetType==='logo';});
   var prods=ar.filter(function(a){return a.assetType==='product';});
-  var hasLogo=logos.length>0 || overlayState.logo.dataUrl;
-  var hasMockup=overlayState.mockup.dataUrl;
+  var hasLogo   = logos.length>0 || overlayState.logo.dataUrl;
+  var hasMockup = overlayState.mockup.dataUrl; // PNG transparente cargado en Elementos Fijos
 
-  // Build explicit logo compositing instructions for Claude
-  var logoInstr='';
-  if(hasLogo){
-    logoInstr='IMPORTANTE: El logo de la marca se superpondrá en postproceso sobre la imagen generada. Por eso, NO incluir el logo dentro de la escena — dejar espacio limpio en la esquina inferior del creativo. La imagen generada debe ser solo el fondo/escena/producto.\n';
-  }
-  var prodInstr='';
-  if(prods.length>0){
-    prodInstr='PRODUCTOS ACTIVOS (imagen de referencia enviada a Ideogram — debe replicar exactamente el producto tal como aparece en la foto): '+prods.map(function(a){return a.analysis;}).join(' | ')+'\n';
-    prodInstr+='El prompt de Ideogram DEBE incluir descripción visual detallada del producto (forma, color, packaging, textura) y la instrucción: "replicate the exact product from the reference image".\n';
+  // ── MODO A: hay mockup en Elementos Fijos ─────────────────────────────
+  // Ideogram genera SOLO el fondo/escena. El producto real se pega en Canvas.
+  // ── MODO B: no hay mockup ─────────────────────────────────────────────
+  // Ideogram recibe la foto del producto como image_reference visual.
+  var modoA = !!hasMockup;
+
+  // Instrucciones para Claude según el modo
+  var logoInstr = hasLogo
+    ? 'LOGO: se superpondrá en postproceso con Canvas — NO incluir ningún logo en la escena.\n'
+    : '';
+
+  var prodInstr = '';
+  if (modoA) {
+    // Modo A: decirle a Ideogram que genere SOLO el fondo sin producto
+    prodInstr = 'MODO FONDO: el producto real se superpondrá en postproceso sobre el fondo generado. '
+      + 'La imagen de Ideogram debe ser SOLO el fondo/ambiente/escena — NO incluir ningún frasco, envase, producto ni objeto central. '
+      + 'Generar un fondo que complemente al producto: '+(prods.length>0?prods.map(function(a){return a.analysis;}).join(' | '):'estilo de la marca')+'.\n';
+  } else if (prods.length>0) {
+    // Modo B: Ideogram intenta incorporar el producto (referencia visual enviada)
+    prodInstr = 'PRODUCTO (imagen de referencia enviada a Ideogram): '+prods.map(function(a){return a.analysis;}).join(' | ')+'\n'
+      + 'El prompt debe describir el producto con máximo detalle visual para que Ideogram lo replique.\n';
   }
 
-  var sys='Experto en marketing visual para la marca "'+active.name+'".\n'+brandCtx()+'\nRespondé SOLO con el formato indicado. Sin markdown.';
-  var genInstr='Generá el brief de esta imagen.\nFORMATO: '+selFmt+'\nSOLICITUD: '+prompt+'\n\n'+logoInstr+prodInstr+'Todo el texto visible en la imagen debe estar en '+getLang()+'.\n\nRespondé SOLO con estas líneas:\nCONCEPTO: [concepto visual]\nHEADLINE: [headline en '+getLang()+']\nSUBHEAD: [subhead en '+getLang()+']\nCTA: [CTA en '+getLang()+']\nIDEOGRAM_PROMPT: [prompt técnico DETALLADO en inglés para Ideogram v3. Una sola línea. '+(prods.length>0?'Comenzar con: "replicate the exact product from the reference image, " luego describir: packaging exacto, colores, forma, materiales, textura del producto. ':'')+'Incluir: estilo fotográfico, paleta de colores, composición, iluminación, fondo. '+(hasLogo?'Dejar esquina inferior sin elementos para overlay de logo. ':'')+'Terminar con: --no text --no logo --no watermark --photorealistic]';
+  var sys = 'Experto en marketing visual para la marca "'+active.name+'".\n'+brandCtx()+'\nRespondé SOLO con el formato indicado. Sin markdown.';
+
+  var ideogramInstr = modoA
+    // Modo A: prompt de FONDO puro
+    ? 'Generar un fondo/ambiente fotográfico para compositing. '
+      + 'El fondo debe ser una escena de entorno sin ningún objeto central, sin frascos, sin productos. '
+      + 'Solo fondo: '+(prods.length>0?'estilo visual que complementa al producto de la marca — ':'')
+      + 'incluir: tipo de entorno, paleta, iluminación, texturas, atmósfera. '
+      + (hasLogo?'Dejar esquina inferior con zona limpia para logo. ':'')
+      + 'Terminar con: --no product --no bottle --no object --no text --no logo --photorealistic'
+    // Modo B: prompt CON producto
+    : (prods.length>0?'Comenzar con: "replicate the exact product from the reference image, " luego describir packaging, colores, forma, materiales. ':'')
+      + 'Incluir: estilo fotográfico, paleta, composición, iluminación, fondo. '
+      + (hasLogo?'Dejar esquina inferior limpia para logo. ':'')
+      + 'Terminar con: --no text --no logo --no watermark --photorealistic';
+
+  var genInstr = 'Generá el brief de esta imagen.\nFORMATO: '+selFmt+'\nSOLICITUD: '+prompt+'\n\n'
+    + logoInstr+prodInstr
+    + 'Todo el texto visible debe estar en '+getLang()+'.\n\n'
+    + 'Respondé SOLO con estas líneas:\n'
+    + 'CONCEPTO: [concepto visual]\n'
+    + 'HEADLINE: [headline en '+getLang()+']\n'
+    + 'SUBHEAD: [subhead en '+getLang()+']\n'
+    + 'CTA: [CTA en '+getLang()+']\n'
+    + 'IDEOGRAM_PROMPT: [prompt técnico en inglés para Ideogram v3, una sola línea. '+ideogramInstr+']';
+
   var raw=await claudeCall(sys,genInstr,keys,700);
   var concepto=gf(raw,'CONCEPTO'),headline=gf(raw,'HEADLINE'),subhead=gf(raw,'SUBHEAD'),cta=gf(raw,'CTA'),ideoPr=gf(raw,'IDEOGRAM_PROMPT');
   var imgUrl=null;
   var aspMap={'1080x1080':'ASPECT_1_1','1080x1920':'ASPECT_9_16','1080x1350':'ASPECT_4_5','1920x1080':'ASPECT_16_9'};
+
   if(keys.ide){
     try{
-      oa.innerHTML='<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Generando imagen con Ideogram...</span></div>';
+      var modeLabel = modoA ? 'Generando fondo para compositing...' : 'Generando imagen con producto...';
+      oa.innerHTML='<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">'+modeLabel+'</span></div>';
       imgUrl=await ideogramCall(ideoPr,aspMap[selFmt]||'ASPECT_1_1',keys);
     }catch(e){showToast('Error Ideogram: '+e.message,true);}
   }
+
   var ctx=snapCtx();
-  var cr={id:Date.now().toString(),type:'imagen',title:prompt.substring(0,55),format:selFmt,concepto:concepto,headline:headline,subhead:subhead,cta:cta,ideogramPrompt:ideoPr,imgUrl:imgUrl,brief:raw,salesFocus:ctx.salesFocus,activeRefs:ctx.activeRefs,originalPrompt:prompt,createdAt:Date.now()};
+  var cr={id:Date.now().toString(),type:'imagen',title:prompt.substring(0,55),format:selFmt,concepto:concepto,headline:headline,subhead:subhead,cta:cta,ideogramPrompt:ideoPr,imgUrl:imgUrl,brief:raw,salesFocus:ctx.salesFocus,activeRefs:ctx.activeRefs,originalPrompt:prompt,modoA:modoA,createdAt:Date.now()};
   saveCr(cr);
 
-  // COMPOSITE: merge logos from memory + overlay elements onto the generated image
-  if (imgUrl) {
-    var needComposite = overlayState.mockup.dataUrl || overlayState.logo.dataUrl || logos.length > 0;
-    if (needComposite) {
-      oa.innerHTML = '<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">Componiendo logo y elementos fijos sobre la imagen...</span></div>';
-      try {
-        // If no explicit overlay logo but memory logos exist, use the first memory logo
-        var prevLogoData = overlayState.logo.dataUrl;
-        if (!prevLogoData && logos.length > 0) {
-          overlayState.logo.dataUrl = logos[0].dataUrl;
-        }
-        var composited = await compositeImage(imgUrl);
-        cr.compositedUrl = composited;
-        cr.imgUrl = composited;
-        // Restore
-        if (!prevLogoData) overlayState.logo.dataUrl = null;
-      } catch(ce) { console.warn('Composite failed:', ce); }
+  // ── CANVAS COMPOSITE ─────────────────────────────────────────────────
+  // Siempre componer: mockup (si hay) + logo (si hay) sobre la imagen generada
+  if(imgUrl){
+    var needComposite = overlayState.mockup.dataUrl || overlayState.logo.dataUrl || logos.length>0;
+    if(needComposite){
+      oa.innerHTML='<div style="display:flex;align-items:center;gap:11px;padding:18px;background:var(--card);border:1px solid var(--b);border-radius:var(--r)"><div class="spinner"></div><span style="font-size:12px;color:var(--mut)">'+(modoA?'Componiendo producto + logo sobre el fondo...':'Componiendo logo sobre la imagen...')+'</span></div>';
+      try{
+        var prevLogoData=overlayState.logo.dataUrl;
+        if(!prevLogoData && logos.length>0) overlayState.logo.dataUrl=logos[0].dataUrl;
+        var composited=await compositeImage(imgUrl);
+        cr.compositedUrl=composited;
+        cr.imgUrl=composited;
+        if(!prevLogoData) overlayState.logo.dataUrl=null;
+      }catch(ce){console.warn('Composite failed:',ce);}
     }
   }
-  renderImageOutput(cr, oa);
+  renderImageOutput(cr,oa);
 }
 function renderImageOutput(cr, container) {
   var oa=container||_$('outputArea');
