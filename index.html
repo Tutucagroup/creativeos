@@ -382,55 +382,70 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
     </div>
     <!-- LOGO/MOCKUP OVERLAY -->
     <div class="card" style="margin-bottom:14px">
-      <div class="sec-title" style="margin-bottom:10px"><div class="sec-dot"></div>Elementos fijos (superpuestos exactos)</div>
-      <div class="grid2">
+      <div class="sec-title" style="margin-bottom:4px"><div class="sec-dot"></div>Referencias para Recraft</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:12px">Recraft usa estas imágenes como referencia visual — respeta la persona, producto y logo exactos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+
         <div>
-          <div style="font-size:11px;color:var(--mut);margin-bottom:7px">Logo para superponer</div>
-          <div id="fabLogoPreview" style="display:none;margin-bottom:7px;position:relative">
-            <img id="fabLogoImg" style="max-height:80px;object-fit:contain;border-radius:7px;background:var(--bg3);width:100%">
-            <button onclick="clearFabEl('logo')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:10px;cursor:pointer">×</button>
+          <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">👤 Persona / Avatar</div>
+          <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:7px">Recraft adapta la persona al contexto del ad manteniendo su identidad</div>
+          <div id="fabPersonaPreview" style="display:none;position:relative;margin-bottom:7px">
+            <img id="fabPersonaImg" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--acc)">
+            <button onclick="clearFabEl('persona')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:11px;cursor:pointer;font-weight:700">×</button>
           </div>
-          <div class="uz" id="fabLogoZone" style="padding:9px">🎨 Logo exacto (PNG transparente)<div style="font-size:10px;opacity:.6;margin-top:2px">Se usa el de Branding Kit si no subís uno</div></div>
-          <input type="file" id="fabLogoInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
-          <div style="margin-top:7px;display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:var(--mut)">Pos:</span>
-            <select id="fabLogoPos" style="background:var(--bg3);border:1px solid var(--b2);border-radius:5px;padding:3px 7px;color:var(--txt);font-size:11px;outline:none;flex:1">
-              <option value="bottom-center">Abajo centro</option>
-              <option value="bottom-right">Abajo derecha</option>
-              <option value="top-left">Arriba izquierda</option>
-              <option value="top-right">Arriba derecha</option>
-            </select>
-            <span style="font-size:10px;color:var(--mut)">Tam:</span>
-            <input type="range" id="fabLogoSize" min="8" max="35" value="18" style="width:70px;accent-color:var(--acc)">
-            <span id="fabLogoSizeLbl" style="font-size:10px;color:var(--acc);min-width:24px">18%</span>
+          <div class="uz" id="fabPersonaZone" style="padding:10px;text-align:center">
+            <div style="font-size:22px;margin-bottom:3px">👤</div>
+            <div style="font-size:10px">Subir foto de persona</div>
+          </div>
+          <input type="file" id="fabPersonaInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
+          <div style="margin-top:6px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;color:var(--mut)">Intensidad:</span>
+            <input type="range" id="fabPersonaStrength" min="0.3" max="0.9" step="0.05" value="0.65" style="flex:1;accent-color:var(--acc)">
+            <span id="fabPersonaStrengthLbl" style="font-size:10px;color:var(--acc);min-width:24px">65%</span>
           </div>
         </div>
+
         <div>
-          <div style="font-size:11px;color:var(--mut);margin-bottom:7px">Mockup del producto</div>
-          <div id="fabMockupPreview" style="display:none;margin-bottom:7px;position:relative">
-            <img id="fabMockupImg" style="max-height:80px;object-fit:contain;border-radius:7px;background:var(--bg3);width:100%">
-            <button onclick="clearFabEl('mockup')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:10px;cursor:pointer">×</button>
+          <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">📦 Producto / Mockup</div>
+          <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:7px">Recraft integra el producto en la escena respetando sus colores y forma</div>
+          <div id="fabMockupPreview" style="display:none;position:relative;margin-bottom:7px">
+            <img id="fabMockupImg" style="width:100%;height:90px;object-fit:contain;border-radius:8px;background:var(--bg3);border:2px solid var(--acc)">
+            <button onclick="clearFabEl('mockup')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:11px;cursor:pointer;font-weight:700">×</button>
           </div>
-          <div class="uz" id="fabMockupZone" style="padding:9px">📦 Mockup exacto (PNG transparente)<div style="font-size:10px;opacity:.6;margin-top:2px">Se superpone exacto sin modificaciones</div></div>
+          <div class="uz" id="fabMockupZone" style="padding:10px;text-align:center">
+            <div style="font-size:22px;margin-bottom:3px">📦</div>
+            <div style="font-size:10px">Subir mockup del producto</div>
+          </div>
           <input type="file" id="fabMockupInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
-          <div style="margin-top:7px;display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:var(--mut)">Pos:</span>
-            <select id="fabMockupPos" style="background:var(--bg3);border:1px solid var(--b2);border-radius:5px;padding:3px 7px;color:var(--txt);font-size:11px;outline:none;flex:1">
-              <option value="center-center">Centro</option>
-              <option value="center-bottom">Abajo centro</option>
-              <option value="right-center">Derecha</option>
-              <option value="left-center">Izquierda</option>
-            </select>
-            <span style="font-size:10px;color:var(--mut)">Tam:</span>
-            <input type="range" id="fabMockupSize" min="15" max="75" value="45" style="width:70px;accent-color:var(--acc)">
-            <span id="fabMockupSizeLbl" style="font-size:10px;color:var(--acc);min-width:24px">45%</span>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;color:var(--mut)">Intensidad:</span>
+            <input type="range" id="fabMockupStrength" min="0.3" max="0.9" step="0.05" value="0.7" style="flex:1;accent-color:var(--acc)">
+            <span id="fabMockupStrengthLbl" style="font-size:10px;color:var(--acc);min-width:24px">70%</span>
           </div>
         </div>
+
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--pur);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🎨 Logo / Isotipo</div>
+          <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:7px">Recraft incluye el logo en la composición como referencia de estilo de marca</div>
+          <div id="fabLogoPreview" style="display:none;position:relative;margin-bottom:7px">
+            <img id="fabLogoImg" style="width:100%;height:90px;object-fit:contain;border-radius:8px;background:var(--bg3);border:2px solid var(--pur)">
+            <button onclick="clearFabEl('logo')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:11px;cursor:pointer;font-weight:700">×</button>
+          </div>
+          <div class="uz" id="fabLogoZone" style="padding:10px;text-align:center">
+            <div style="font-size:22px;margin-bottom:3px">🎨</div>
+            <div style="font-size:10px">Subir logo / isotipo</div>
+            <div style="font-size:9px;opacity:.6;margin-top:2px">PNG transparente ideal</div>
+          </div>
+          <input type="file" id="fabLogoInput" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none">
+          <div style="margin-top:6px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;color:var(--mut)">Intensidad:</span>
+            <input type="range" id="fabLogoStrength" min="0.3" max="0.8" step="0.05" value="0.55" style="flex:1;accent-color:var(--pur)">
+            <span id="fabLogoStrengthLbl" style="font-size:10px;color:var(--pur);min-width:24px">55%</span>
+          </div>
+        </div>
+
       </div>
     </div>
-      <!-- PERSONAS -->
-      <div class="card" style="margin-bottom:14px">
-<!-- GENERAR -->
     <div style="display:flex;justify-content:center;margin-bottom:20px">
       <button class="btn acc" id="btnFabricar" style="padding:13px 32px;font-size:14px;font-family:var(--fh)">🏭 Fabricar tanda de creativos</button>
     </div>
@@ -573,7 +588,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
 // ══════════════════════════════════════════════
 var projects = [], active = null, crFilter = 'all', viewCrId = null;
 var fabCant = 15;
-var fabOverlay = { logo: { dataUrl:null, pos:'bottom-center', size:18 }, mockup: { dataUrl:null, pos:'center-center', size:45 }, persona: { dataUrl:null } };
+var fabOverlay = { logo:{dataUrl:null,strength:0.55}, mockup:{dataUrl:null,strength:0.70}, persona:{dataUrl:null,strength:0.65} };
 var SKEY = 'creativeos_v3';
 
 // ══════════════════════════════════════════════
@@ -723,12 +738,15 @@ function bindAll() {
   setupDrop('fabLogoZone', function(f){ loadFabOverlay('logo',f[0]); });
   setupDrop('fabMockupZone', function(f){ loadFabOverlay('mockup',f[0]); });
   setupDrop('fabPersonaZone', function(f){ loadFabOverlay('persona',f[0]); });
-  $('fabLogoSize').oninput = function(){ fabOverlay.logo.size=parseInt(this.value); $('fabLogoSizeLbl').textContent=this.value+'%'; };
-  $('fabMockupSize').oninput = function(){ fabOverlay.mockup.size=parseInt(this.value); $('fabMockupSizeLbl').textContent=this.value+'%'; };
-  $('fabLogoPos').onchange = function(){ fabOverlay.logo.pos=this.value; };
-  $('fabMockupPos').onchange = function(){ fabOverlay.mockup.pos=this.value; };
+  // Strength sliders
+  if($('fabPersonaStrength')) $('fabPersonaStrength').oninput=function(){fabOverlay.persona.strength=parseFloat(this.value);$('fabPersonaStrengthLbl').textContent=Math.round(this.value*100)+'%';};
+  if($('fabMockupStrength'))  $('fabMockupStrength').oninput=function(){fabOverlay.mockup.strength=parseFloat(this.value);$('fabMockupStrengthLbl').textContent=Math.round(this.value*100)+'%';};
+  if($('fabLogoStrength'))    $('fabLogoStrength').oninput=function(){fabOverlay.logo.strength=parseFloat(this.value);$('fabLogoStrengthLbl').textContent=Math.round(this.value*100)+'%';};
+  // Persona upload
+  if($('fabPersonaZone')){ $('fabPersonaZone').onclick=function(){$('fabPersonaInput').click();}; $('fabPersonaInput').onchange=function(){loadFabOverlay('persona',this.files[0]);}; setupDrop('fabPersonaZone',function(f){loadFabOverlay('persona',f[0]);}); }
   // Quantity slider
-  if($('cantSlider')) $('cantSlider').oninput=function(){fabCant=parseInt(this.value);$('cantLbl').textContent=this.value;};
+  var _sl=$('cantSlider');
+  if(_sl){ _sl.oninput=function(){fabCant=parseInt(this.value);var l=$('cantLbl');if(l)l.textContent=this.value;}; }
   // Creativos filter
   $('crFilters').addEventListener('click',function(e){
     var b=e.target.closest('[data-f]'); if(!b) return;
@@ -1029,22 +1047,20 @@ function getSelectedProds() {
   return prods.filter(function(p,i){ return window._fabProds&&window._fabProds[i]!==false; });
 }
 function loadFabUIFromBranding() {
-  // Pre-load logo from branding kit if not already set
-  if(!fabOverlay.logo.dataUrl && active) {
-    var logos=(active.branding.assets||[]).filter(function(a){return a.type==='logo';});
-    if(logos.length) {
-      fabOverlay.logo.dataUrl=logos[0].dataUrl;
-      $('fabLogoImg').src=logos[0].dataUrl;
-      $('fabLogoPreview').style.display='block';
-      $('fabLogoZone').style.display='none';
-    }
-    var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
-    if(mockups.length) {
-      fabOverlay.mockup.dataUrl=mockups[0].dataUrl;
-      $('fabMockupImg').src=mockups[0].dataUrl;
-      $('fabMockupPreview').style.display='block';
-      $('fabMockupZone').style.display='none';
-    }
+  if(!active) return;
+  var logos=(active.branding.assets||[]).filter(function(a){return a.type==='logo';});
+  if(logos.length && logos[0].dataUrl && !fabOverlay.logo.dataUrl) {
+    fabOverlay.logo.dataUrl=logos[0].dataUrl;
+    var li=$('fabLogoImg');    if(li){li.src=logos[0].dataUrl;}
+    var lp=$('fabLogoPreview');if(lp) lp.style.display='block';
+    var lz=$('fabLogoZone');   if(lz) lz.style.display='none';
+  }
+  var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+  if(mockups.length && mockups[0].dataUrl && !fabOverlay.mockup.dataUrl) {
+    fabOverlay.mockup.dataUrl=mockups[0].dataUrl;
+    var mi=$('fabMockupImg');    if(mi){mi.src=mockups[0].dataUrl;}
+    var mp=$('fabMockupPreview');if(mp) mp.style.display='block';
+    var mz=$('fabMockupZone');   if(mz) mz.style.display='none';
   }
 }
 async function loadFabOverlay(type, file) {
@@ -1236,9 +1252,9 @@ function loadImg(url){return new Promise(function(res,rej){var img=new Image();i
 // FAB GENERATORS
 // ══════════════════════════════════════════════
 async function fabGenImagen(plan, keys, extra) {
-  var hasMockup  = !!(fabOverlay.mockup && fabOverlay.mockup.dataUrl);
-  var hasLogo    = !!(fabOverlay.logo && fabOverlay.logo.dataUrl);
   var hasPersona = !!(fabOverlay.persona && fabOverlay.persona.dataUrl);
+  var hasMockup  = !!(fabOverlay.mockup  && fabOverlay.mockup.dataUrl);
+  var hasLogo    = !!(fabOverlay.logo    && fabOverlay.logo.dataUrl);
   var b = (active && active.branding) || {};
   var selProds = getSelectedProds();
   var prodStr = selProds.length
@@ -1248,27 +1264,34 @@ async function fabGenImagen(plan, keys, extra) {
   var logoAnal = (b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;})
                  .map(function(a){return a.analysis;}).join(' ');
 
+  // Claude builds a sharp Recraft prompt using sales angle + brand context
+  var refNote = [];
+  if(hasPersona) refNote.push('Use the reference image as the person/avatar in the ad. Adapt pose, expression and context to match the ad message while preserving their identity.');
+  if(hasMockup)  refNote.push('The reference image is the exact product. Feature it naturally in the scene.');
+  if(hasLogo)    refNote.push('The reference image contains the brand logo. Include it prominently in the composition.');
+  if(!hasLogo && logoAnal) refNote.push('Brand logo: '+logoAnal+'. Include it in the image.');
+
   var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
-  var sceneNote = hasMockup
-    ? 'Generate ONLY the background/environment — product will be composited on top. NO product in image.'
-    : 'Feature product: '+prodStr+'. Professional commercial photography.';
-  if(logoAnal && !hasLogo) sceneNote += ' Include brand logo: '+logoAnal+'.';
+  var pr  = 'Write a detailed Recraft image generation prompt for this Meta Ad.\n'
+    +'BRAND: '+active.name+'\n'
+    +'PRODUCT: '+(prodStr||active.name+' product')+'\n'
+    +'AD TITLE: '+plan.titulo+'\n'
+    +'SALES ANGLE: '+plan.enfoque+'\n'
+    +(palette?'BRAND PALETTE: '+palette+'\n':'')
+    +(b.tone?'TONE: '+b.tone.substring(0,80)+'\n':'')
+    +(refNote.length?'REFERENCE IMAGES:\n'+refNote.map(function(r){return '- '+r;}).join('\n')+'\n':'')
+    +'\nReply ONLY with these lines:\n'
+    +'RECRAFT_PROMPT: [Detailed English prompt. Specify scene, composition, lighting, mood. '
+    +'Use brand palette '+( palette||'neutral')+'. '
+    +(refNote.length?'The reference image(s) will be passed to Recraft as style/content reference. ':'')+'All text in '+getLang()+']\n'
+    +'HEADLINE: ['+getLang()+' — compelling hook, max 8 words]\n'
+    +'SUBHEAD: ['+getLang()+' — benefit, max 12 words]\n'
+    +'CTA: ['+getLang()+' — action button, 2-4 words]';
 
-  var pr = 'Meta Ads visual for '+active.name+'. PRODUCT:'+prodStr
-    +' ANGLE:'+plan.enfoque
-    +(palette?' PALETTE:'+palette:'')
-    +(b.tone?' TONE:'+b.tone.substring(0,80):'')
-    +' NOTE:'+sceneNote
-    +' Reply ONLY:\nRECRAFT_PROMPT:[English Recraft prompt, commercial ad, '
-    +active.name+', '+(palette||'neutral tones')+', professional lighting, '+sceneNote+']\n'
-    +'HEADLINE:['+getLang()+' hook max 8 words]\n'
-    +'SUBHEAD:['+getLang()+' benefit max 12 words]\n'
-    +'CTA:['+getLang()+' action 2-4 words]';
-
-  var raw = await claudeCall(sys, pr, keys, 450);
-  var ideoPr = gf(raw,'RECRAFT_PROMPT') || gf(raw,'PROMPT') ||
-    ('Professional '+active.name+' Meta Ads, '+(prodStr||active.name)+', '
-    +(palette||'neutral tones')+', studio photography, clean composition');
+  var raw = await claudeCall(sys, pr, keys, 500);
+  var ideoPr = gf(raw,'RECRAFT_PROMPT') ||
+    ('Professional Meta Ads photo for '+active.name+', '+prodStr+', '
+    +(palette?palette+', ':'')+plan.enfoque+', commercial photography, '+getLang()+' text');
 
   var fmt = plan.fmt || '1080x1080';
   var sp  = fmt.split('x');
@@ -1276,28 +1299,35 @@ async function fabGenImagen(plan, keys, extra) {
 
   if(keys.rec){
     try{
-      if(hasPersona){
-        // Use Recraft image-to-image: persona photo as base, prompt adapts it for the ad
-        imgUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr, sp[0], sp[1], keys);
+      // Priority: persona > mockup > logo > none
+      // All passed as reference image to Recraft i2i
+      var refImg = hasPersona ? fabOverlay.persona.dataUrl
+                 : hasMockup  ? fabOverlay.mockup.dataUrl
+                 : hasLogo    ? fabOverlay.logo.dataUrl
+                 : null;
+      var strength = hasPersona ? (fabOverlay.persona.strength||0.65)
+                   : hasMockup  ? (fabOverlay.mockup.strength||0.70)
+                   : hasLogo    ? (fabOverlay.logo.strength||0.55)
+                   : 0.70;
+
+      if(refImg){
+        // i2i: Recraft uses reference image as visual base
+        imgUrl = await recraftI2I(refImg, ideoPr, sp[0], sp[1], keys, strength);
+        // If persona AND (mockup or logo): do a second pass with next reference
+        if(imgUrl && hasPersona && (hasMockup || hasLogo)){
+          var ref2 = hasMockup ? fabOverlay.mockup.dataUrl : fabOverlay.logo.dataUrl;
+          var str2 = hasMockup ? ((fabOverlay.mockup&&fabOverlay.mockup.strength)||0.70) : 0.55;
+          try{ imgUrl = await recraftI2I(ref2, ideoPr+' '+plan.enfoque, sp[0], sp[1], keys, str2); }
+          catch(e2){ console.warn('Second i2i pass failed, keeping first:', e2.message); }
+        }
       } else {
-        // Standard text-to-image
         imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys);
       }
     } catch(e){
       console.error('Recraft error:', e.message);
       showToast('Recraft: '+e.message.substring(0,80), true);
-      // Fallback to text-to-image
-      if(hasPersona){
-        try{ imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys); }
-        catch(e2){ console.error('Fallback also failed:', e2.message); }
-      }
+      try{ imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys); } catch(e2){}
     }
-  }
-
-  // Composite logo and/or mockup on top
-  if(imgUrl && (hasLogo || hasMockup)){
-    try{ imgUrl = await compositeImage(imgUrl, fmt); }
-    catch(e){ console.warn('Composite failed:', e.message); }
   }
 
   return {
@@ -1311,31 +1341,31 @@ async function fabGenImagen(plan, keys, extra) {
   };
 }
 
-// Recraft image-to-image via multipart form
-async function recraftI2I(imageDataUrl, prompt, width, height, keys) {
+// Recraft image-to-image: reference image as multipart
+async function recraftI2I(imageDataUrl, prompt, width, height, keys, strength) {
   var fmt = (width||'1080')+'x'+(height||'1080');
   var sizeMap = {'1080x1080':'1024x1024','1080x1920':'1024x1820','1080x1350':'1024x1365','1920x1080':'1820x1024'};
   var size = sizeMap[fmt] || '1024x1024';
+  var str  = String(Math.min(0.95, Math.max(0.3, strength||0.70)));
 
-  // Convert dataUrl to Blob
-  var parts = imageDataUrl.split(',');
-  var mime  = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+  var parts  = imageDataUrl.split(',');
+  var mime   = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
   var binary = atob(parts[1]);
   var bytes  = new Uint8Array(binary.length);
   for(var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-  var blob = new Blob([bytes], {type: mime});
+  var blob = new Blob([bytes], {type:mime});
 
   var form = new FormData();
-  form.append('image', blob, 'persona.jpg');
-  form.append('prompt', prompt+'. All visible text in '+getLang()+'.');
+  form.append('image', blob, 'reference.jpg');
+  form.append('prompt', prompt);
   form.append('model', 'recraftv3');
   form.append('style', 'realistic_image');
-  form.append('strength', '0.65'); // 0=keep original, 1=full recraft
+  form.append('strength', str);
 
   var r = await fetch('/api/recraft', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer '+keys.rec },
-    body: form  // multipart/form-data, browser sets Content-Type automatically
+    body: form
   });
   var txt = await r.text();
   console.log('Recraft i2i response:', txt.substring(0,300));
@@ -1346,37 +1376,6 @@ async function recraftI2I(imageDataUrl, prompt, width, height, keys) {
   return url;
 }
 
-async function fabGenCarrusel(plan, keys, extra) {
-  var b=active&&active.branding||{};
-  var selProds=getSelectedProds();
-  var prodStr=selProds.length?selProds[Math.floor(Math.random()*selProds.length)]:(b.products&&b.products[0]||'');
-  var brandColors=(b.colors&&b.colors.slice(0,2).join(', '))||'brand colors';
-  var sys='Expert social media content creator for '+active.name+'.\n'+brandCtx(extra);
-  var raw=await claudeCall(sys,'Create a 4-slide carousel for Meta/Instagram.\nBRAND: '+active.name+'\nPRODUCT: '+(prodStr||'brand product')+'\nTITLE: '+plan.titulo+'\nANGLE: '+plan.enfoque+'\nLANGUAGE: '+getLang()+' (ALL visible text must be in this language)\nBRAND COLORS: '+brandColors+'\n\nNOTE: Product mockup will be composited on slides — generate background scenes only.\n\nExact format:\nSLIDE1_HEADLINE: [hook in '+getLang()+']\nSLIDE1_BODY: [support max 8 words in '+getLang()+']\nSLIDE1_COLOR: [hex background]\nSLIDE1_PROMPT: [English prompt for Recraft — professional ad background scene, brand palette '+brandColors+', NO product visible, studio/lifestyle setting]\n\nSLIDE2_HEADLINE:\nSLIDE2_BODY:\nSLIDE2_COLOR:\nSLIDE2_PROMPT:\n\nSLIDE3_HEADLINE:\nSLIDE3_BODY:\nSLIDE3_COLOR:\nSLIDE3_PROMPT:\n\nSLIDE4_HEADLINE:\nSLIDE4_BODY:\nSLIDE4_COLOR:\nSLIDE4_PROMPT:\n\nNARRATIVA: [narrative arc]',keys,1000);
-  var slides=[1,2,3,4].map(function(i){return{headline:gf(raw,'SLIDE'+i+'_HEADLINE'),body:gf(raw,'SLIDE'+i+'_BODY'),color:gf(raw,'SLIDE'+i+'_COLOR')||'#111118',recraftPr:gf(raw,'SLIDE'+i+'_PROMPT'),imgUrl:null};});
-  var fmt=plan.fmt||'1080x1080'; var sp=fmt.split('x');
-  if(keys.rec){
-    for(var i=0;i<slides.length;i++){
-      try{
-        var url=await recraftCall(slides[i].recraftPr,sp[0],sp[1],keys);
-        if(url&&(fabOverlay.logo.dataUrl||fabOverlay.mockup.dataUrl)) url=await compositeImage(url,fmt);
-        slides[i].imgUrl=url;
-      }catch(e){console.warn('Slide error:',e.message);}
-    }
-  }
-  return{id:Date.now().toString()+'_'+Math.random().toString(36).slice(2),type:'carrusel',title:plan.titulo,format:fmt,slides:slides,narrativa:gf(raw,'NARRATIVA'),angulo:plan.enfoque,createdAt:Date.now()};
-}
-async function fabGenCopy(plan, keys, extra) {
-  var sys='Experto en copywriting Meta Ads.\n'+brandCtx(extra);
-  var raw=await claudeCall(sys,'3 variaciones de copy Meta Ads.\nÁNGULO: '+plan.enfoque+'\nHEADLINE BASE: '+plan.headline+'\n\nFormato EXACTO:\nVAR1_HEADLINE:\nVAR1_TEXTO:\nVAR1_CTA:\n\nVAR2_HEADLINE:\nVAR2_TEXTO:\nVAR2_CTA:\n\nVAR3_HEADLINE:\nVAR3_TEXTO:\nVAR3_CTA:',keys,700);
-  var vars=[1,2,3].map(function(i){return{headline:gf(raw,'VAR'+i+'_HEADLINE'),texto:gf(raw,'VAR'+i+'_TEXTO'),cta:gf(raw,'VAR'+i+'_CTA')};});
-  return{id:Date.now().toString()+'_'+Math.random().toString(36).slice(2),type:'copy',title:plan.titulo,variants:vars,raw:raw,angulo:plan.enfoque,createdAt:Date.now()};
-}
-async function fabGenVideo(plan, keys, extra) {
-  var sys='Experto en guiones de video publicitario.\n'+brandCtx(extra);
-  var raw=await claudeCall(sys,'Guión de 30s.\nÁNGULO: '+plan.enfoque+'\n\nTITULO:\nGUION_COMPLETO: [guión listo para HeyGen]',keys,600);
-  return{id:Date.now().toString()+'_'+Math.random().toString(36).slice(2),type:'video',title:gf(raw,'TITULO')||plan.titulo,format:'30s',guionCompleto:raw.match(/GUION_COMPLETO:\s*([\s\S]+)/)?raw.match(/GUION_COMPLETO:\s*([\s\S]+)/)[1].trim():'',angulo:plan.enfoque,createdAt:Date.now()};
-}
 
 // ══════════════════════════════════════════════
 // VARIATION
