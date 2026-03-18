@@ -1248,32 +1248,44 @@ async function fabGenImagen(plan, keys, extra) {
   var hasLogo    = !!(fabOverlay.logo    && fabOverlay.logo.dataUrl);
   var b = (active && active.branding) || {};
   var selProds = getSelectedProds();
-  var prodStr = selProds.length ? selProds.join(' + ') : ((b.products&&b.products[0])||'');
+  var prodStr  = selProds.length ? selProds.join(' + ') : ((b.products&&b.products[0])||'');
   var singleProd = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
-  var palette = (b.colors && b.colors.slice(0,4).join(', ')) || '';
+  var palette  = (b.colors && b.colors.slice(0,4).join(', ')) || '';
   var logoAnal = (b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;}).map(function(a){return a.analysis;}).join(' ');
-  var mockupAnal = (b.assets||[]).filter(function(a){return a.type==='mockup'&&a.analysis;}).map(function(a){return a.analysis;}).join(' ');
 
-  // FLOW:
-  // 1. Recraft generates the scene (with persona i2i if available)
-  // 2. Canvas composites product mockup EXACTLY on top (100% faithful)
-  // 3. Canvas composites logo EXACTLY on top (100% faithful)
-
+  // Build prompt — Claude writes a prompt that tells Recraft how to integrate each reference
   var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
 
-  // Build prompt telling Recraft what scene to generate
-  var sceneDesc = hasMockup
-    ? 'Generate a background scene only — the product will be composited on top. No product in the generated image. Scene should complement: '+( mockupAnal||prodStr)+'.'
-    : 'Feature the product '+prodStr+' prominently in the scene. Commercial product photography.';
-  if(hasPersona) sceneDesc += ' Include a person naturally interacting with or benefiting from the product. The reference image shows the exact person to use — keep their identity, adapt their pose and expression to the ad message.';
-  if(!hasLogo && logoAnal) sceneDesc += ' Include brand logo: '+logoAnal+'.';
+  var integrationNotes = [];
+  if(hasMockup)  integrationNotes.push('The product reference image shows the exact product bottle/packaging. Integrate it naturally into the scene with correct lighting and shadows matching the environment. Keep the label, colors and shape accurate.');
+  if(hasLogo)    integrationNotes.push('The logo reference image shows the brand logo/isotipo. Include it in the composition naturally — adapt background/transparency as needed so it fits the visual style. Keep the logotype accurate.');
+  if(hasPersona) integrationNotes.push('The persona reference image shows the exact person to feature. Keep their identity, adapt pose, expression and clothing context to match the ad message and environment.');
+  if(!hasLogo && logoAnal) integrationNotes.push('Brand logo: '+logoAnal+'. Include it in the image.');
 
-  var pr = 'Write a Recraft image generation prompt.\n'+'BRAND: '+active.name+'\n'+'PRODUCT(S): '+prodStr+'\n'+'AD TITLE: '+plan.titulo+'\n'+'SALES ANGLE: '+plan.enfoque+'\n'+(palette?'BRAND PALETTE: '+palette+'\n':'')+(b.tone?'TONE: '+b.tone.substring(0,80)+'\n':'')+'SCENE: '+sceneDesc+'\n'+'\nReply ONLY:\n'+'RECRAFT_PROMPT: [English prompt. Specify scene, lighting, mood, brand colors '+(palette||'neutral')+'. '+(hasMockup?'No product in image — background only. ':'')+(hasPersona?'Person from reference image adapted to ad. ':'')+' All text in '+getLang()+']\n'+'HEADLINE: ['+getLang()+' max 8 words]\n'+'SUBHEAD: ['+getLang()+' max 12 words]\n'+'CTA: ['+getLang()+' 2-4 words]';
+  var pr = 'Write a Recraft image generation prompt for a Meta Ad.\n'
+    +'BRAND: '+active.name+'\n'
+    +'PRODUCT(S): '+prodStr+'\n'
+    +'AD TITLE: '+plan.titulo+'\n'
+    +'SALES ANGLE: '+plan.enfoque+'\n'
+    +(palette?'BRAND PALETTE: '+palette+'\n':'')
+    +(b.tone?'TONE: '+b.tone.substring(0,80)+'\n':'')
+    +(integrationNotes.length?'HOW TO USE REFERENCE IMAGES:\n'+integrationNotes.map(function(n){return '- '+n;}).join('\n')+'\n':'')
+    +'\nThe prompt must describe:\n'
+    +'- The scene/environment and composition\n'
+    +'- How the product appears naturally in the scene (lighting, shadows, placement)\n'
+    +(hasLogo?'- How the logo appears (integrated into scene, not just stamped on top)\n':'')
+    +(hasPersona?'- The person interacting with the product naturally\n':'')
+    +'- Exact brand colors: '+(palette||'natural tones')+'\n'
+    +'- All text in '+getLang()+'\n'
+    +'\nReply ONLY with:\n'
+    +'RECRAFT_PROMPT: [Detailed English prompt. Make the product, logo and person feel like they BELONG in the scene — same lighting, same style, integrated naturally]\n'
+    +'HEADLINE: ['+getLang()+' max 8 words]\n'
+    +'SUBHEAD: ['+getLang()+' max 12 words]\n'
+    +'CTA: ['+getLang()+' 2-4 words]';
 
-  var raw = await claudeCall(sys, pr, keys, 500);
+  var raw    = await claudeCall(sys, pr, keys, 500);
   var ideoPr = gf(raw,'RECRAFT_PROMPT') ||
-    ('Professional Meta Ads background for '+active.name+', '+(palette||'neutral tones')+', '
-    +plan.enfoque+', commercial photography'+(hasMockup?', no product in image':''));
+    ('Professional Meta Ads photo for '+active.name+', featuring '+prodStr+', '+(palette||'natural tones')+', '+plan.enfoque+', commercial photography, product integrated with scene lighting');
 
   var fmt = plan.fmt || '1080x1080';
   var sp  = fmt.split('x');
@@ -1281,24 +1293,66 @@ async function fabGenImagen(plan, keys, extra) {
 
   if(keys.rec){
     try{
+      // STRATEGY:
+      // 1. If persona: i2i with persona (strength 0.5 — adapt to ad context)
+      // 2. If mockup: i2i on result with mockup (strength 0.25 — keep product accurate, adapt lighting)
+      // 3. If logo only: i2i with logo (strength 0.2 — keep logo, integrate naturally)
+      // 4. Fallback: text-to-image
+
       if(hasPersona){
-        // i2i with persona: Recraft adapts the person to the ad context
-        imgUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr, sp[0], sp[1], keys, 0.45);
+        imgUrl = await recraftI2I(
+          fabOverlay.persona.dataUrl,
+          ideoPr,
+          sp[0], sp[1], keys, 0.50
+        );
+      } else if(hasMockup){
+        imgUrl = await recraftI2I(
+          fabOverlay.mockup.dataUrl,
+          ideoPr,
+          sp[0], sp[1], keys, 0.25
+        );
+      } else if(hasLogo){
+        imgUrl = await recraftI2I(
+          fabOverlay.logo.dataUrl,
+          ideoPr,
+          sp[0], sp[1], keys, 0.20
+        );
       } else {
-        // Pure text-to-image
         imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys);
       }
+
+      // If we have persona AND mockup: do second pass with mockup to integrate product
+      if(imgUrl && hasPersona && hasMockup){
+        try{
+          imgUrl = await recraftI2I(
+            fabOverlay.mockup.dataUrl,
+            ideoPr+' The product '+prodStr+' should appear naturally in the scene with matching lighting.',
+            sp[0], sp[1], keys, 0.25
+          );
+        } catch(e2){ console.warn('Mockup second pass failed:', e2.message); }
+      }
+
+      // If we have logo AND (persona or mockup): final pass with logo to integrate brand mark
+      if(imgUrl && hasLogo && (hasPersona || hasMockup)){
+        try{
+          imgUrl = await recraftI2I(
+            fabOverlay.logo.dataUrl,
+            ideoPr+' The brand logo mykora should appear cleanly integrated in the composition.',
+            sp[0], sp[1], keys, 0.20
+          );
+        } catch(e3){ console.warn('Logo pass failed:', e3.message); }
+      }
+
     } catch(e){
-      console.error('Recraft:', e.message);
+      console.error('Recraft error:', e.message);
       showToast('Recraft: '+e.message.substring(0,80), true);
       try{ imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys); } catch(e2){}
     }
   }
 
-  // EXACT COMPOSITE: product mockup and logo placed pixel-perfect on top
-  if(imgUrl && (hasMockup || hasLogo)){
-    try{ imgUrl = await compositeExact(imgUrl, fmt, hasMockup, hasLogo); }
-    catch(e){ console.error('compositeExact FAILED:', e.message, e); showToast('Composite error: '+e.message.substring(0,60), true); }
+  // Fallback canvas composite only if Recraft i2i failed for mockup/logo
+  if(imgUrl && !hasPersona && !hasMockup && !hasLogo){
+    // pure t2i, no composite needed
   }
 
   return {
@@ -1312,7 +1366,7 @@ async function fabGenImagen(plan, keys, extra) {
   };
 }
 
-// Composite product mockup and/or logo EXACTLY on top of generated image
+
 async function compositeExact(bgUrl, fmt, includeMockup, includeLogo) {
   var parts = (fmt||'1080x1080').split('x');
   var cw = parseInt(parts[0])||1080, ch = parseInt(parts[1])||1080;
