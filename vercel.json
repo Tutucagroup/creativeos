@@ -1,8 +1,9 @@
 {
   "rewrites": [
-    { "source": "/api/ideogram", "destination": "/api/ideogram.js" },
-    { "source": "/api/recraft",  "destination": "/api/recraft.js"  },
-    { "source": "/api/heygen",   "destination": "/api/heygen.js"   }
+    { "source": "/api/ideogram",    "destination": "/api/ideogram.js"    },
+    { "source": "/api/recraft",     "destination": "/api/recraft.js"     },
+    { "source": "/api/recraft-i2i", "destination": "/api/recraft-i2i.js" },
+    { "source": "/api/heygen",      "destination": "/api/heygen.js"      }
   ],
   "headers": [
     {
