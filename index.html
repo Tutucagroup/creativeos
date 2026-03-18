@@ -373,6 +373,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         <label>Productos a usar en esta tanda</label>
         <div id="fabProdSelector" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:28px">
           <div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit para seleccionarlos</div>
+      <div style="font-size:9px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-top:10px;margin-bottom:4px">Mockup a usar</div>
+      <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;min-height:28px"></div>
         </div>
       </div>
       <div class="field" style="margin-bottom:0">
@@ -1010,9 +1012,43 @@ function loadFabAngulos() {
     var opt=document.createElement('option'); opt.value=String(i); opt.textContent=(i+1)+'. '+a.titulo;
     sel.appendChild(opt);
   });
-  // Render product selector
+  // Render selectors
   renderFabProdSelector();
+  renderFabMockupSelector();
 }
+function renderFabMockupSelector() {
+  var el=$('fabMockupSelector'); if(!el||!active) return;
+  var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+  if(!mockups.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá mockups en Branding Kit</div>';
+    return;
+  }
+  // Initialize: first mockup selected by default
+  if(!window._fabMockupIdx && window._fabMockupIdx!==0) window._fabMockupIdx=0;
+  el.innerHTML=mockups.map(function(m,i){
+    var on=(window._fabMockupIdx===i);
+    return '<button class="fmt-btn'+(on?' on':'')+'" data-mi="'+i+'" style="font-size:10px;display:flex;align-items:center;gap:5px">'
+      +(m.dataUrl?'<img src="'+m.dataUrl+'" style="width:20px;height:20px;object-fit:contain;border-radius:3px">':'')
+      +(m.name?m.name.replace(/\.[^.]+$/,'').substring(0,15):'Mockup '+(i+1))
+      +'</button>';
+  }).join('');
+  el.querySelectorAll('[data-mi]').forEach(function(b){
+    b.onclick=function(){
+      window._fabMockupIdx=parseInt(this.dataset.mi);
+      el.querySelectorAll('[data-mi]').forEach(function(x){x.classList.remove('on');});
+      this.classList.add('on');
+      // Update fabOverlay.mockup with selected mockup
+      var selected=mockups[window._fabMockupIdx];
+      if(selected){
+        fabOverlay.mockup.dataUrl=selected.dataUrl;
+        var mp=$('fabMockupImg');if(mp)mp.src=selected.dataUrl;
+        var pp=$('fabMockupPreview');if(pp)pp.style.display='block';
+        var pz=$('fabMockupZone');if(pz)pz.style.display='none';
+      }
+    };
+  });
+}
+
 function renderFabProdSelector() {
   var el=$('fabProdSelector'); if(!el) return;
   var prods=(active&&active.branding&&active.branding.products)||[];
@@ -1311,44 +1347,48 @@ async function fabGenImagen(plan, keys, extra) {
 // FLUX Kontext pipeline: integrates product, logo and persona naturally
 async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLogo, hasPersona, prodStr, angle) {
   var w = parseInt(width)||1080, h = parseInt(height)||1080;
-  // FLUX Kontext accepts image_url - we need to upload dataUrls to fal first
   var imgUrl = null;
 
-  // Step 1: Start with product mockup (most important reference)
+  // Step 1: Product mockup — pass base64 directly, FLUX integrates it naturally
   if(hasMockup){
-    var mockupUrl = await falUpload(fabOverlay.mockup.dataUrl, keys.fal);
-    var mockupPrompt = prompt+'. Keep the product bottle, label, colors and design exactly as shown in the reference image. Only change the background/environment and lighting.';
-    imgUrl = await falKontext(mockupUrl, mockupPrompt.substring(0,400), w, h, keys.fal);
+    var mockupB64 = fabOverlay.mockup.dataUrl; // base64 data URI — fal accepts directly
+    var mockupPrompt = prompt + '. The reference image shows the exact product to feature. Keep the product label, colors and design exactly as shown. Integrate it naturally into the scene with matching lighting and shadows.';
+    imgUrl = await falKontext(mockupB64, mockupPrompt.substring(0,400), w, h);
     showToast('Producto integrado ✓');
   }
 
-  // Step 2: Integrate logo naturally
+  // Step 2: Logo — edit the result to add brand logo naturally
   if(hasLogo){
-    // Get logo description from branding analysis for prompt
-    var logoAnal=(active&&active.branding&&active.branding.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;}).map(function(a){return a.analysis;}).join(' ');
-    var logoDesc = logoAnal || 'mykora brand logo';
-    // Upload logo as reference
-    var logoUrl = await falUpload(fabOverlay.logo.dataUrl, keys.fal);
-    // Pass the result image to edit, reference logo in prompt
-    var baseForLogo = imgUrl || logoUrl;
-    var logoPrompt = prompt+'. Add the brand logo ('+logoDesc+') to the bottom-left corner of the image. The logo should blend naturally with the scene lighting and style.';
-    imgUrl = await falKontext(baseForLogo, logoPrompt.substring(0,400), w, h, keys.fal);
+    var logoB64 = fabOverlay.logo.dataUrl;
+    var logoAnal = (active&&active.branding&&active.branding.assets||[])
+      .filter(function(a){return a.type==='logo'&&a.analysis;})
+      .map(function(a){return a.analysis;}).join(' ') || 'brand logo';
+    var baseForLogo = imgUrl || logoB64;
+    var logoPrompt = prompt + '. Add the brand logo ('+logoAnal.substring(0,80)+') to the bottom-left corner. Blend it naturally with the scene.';
+    imgUrl = await falKontext(baseForLogo, logoPrompt.substring(0,400), w, h);
     showToast('Logo integrado ✓');
   }
 
-  // Step 3: Integrate persona
+  // Step 3: Persona — keep identity, adapt to ad context
   if(hasPersona){
-    var personaUrl = await falUpload(fabOverlay.persona.dataUrl, keys.fal);
-    var personaPrompt = prompt+'. Keep the person from the reference image — same face and identity. Adapt their pose, expression and clothing context to match the ad angle: '+angle+'.';
-    imgUrl = await falKontext(imgUrl||personaUrl, personaPrompt.substring(0,400), w, h, keys.fal);
+    var personaB64 = fabOverlay.persona.dataUrl;
+    var baseForPersona = imgUrl || personaB64;
+    var personaPrompt = prompt + '. Keep the exact person from the reference image — same face and identity. Adapt their pose and expression to match this ad: ' + angle + '.';
+    imgUrl = await falKontext(baseForPersona, personaPrompt.substring(0,400), w, h);
     showToast('Persona integrada ✓');
   }
 
-  if(!imgUrl) throw new Error('No se pudo generar la imagen con Fal.ai');
+  if(!imgUrl) throw new Error('Fal.ai: no se generó imagen');
   return imgUrl;
 }
 
-// Upload dataUrl to fal.ai storage, get back a URL
+// Upload not needed — fal accepts base64 directly
+async function falUpload(dataUrl, falKey) {
+  // Just return the dataUrl — fal.ai accepts base64 data URIs natively
+  return dataUrl;
+}
+
+
 async function falUpload(dataUrl, falKey) {
   var parts  = dataUrl.split(',');
   var mime   = (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
@@ -1370,11 +1410,11 @@ async function falUpload(dataUrl, falKey) {
   return d.url;
 }
 
-// Call FLUX Kontext with an image URL reference
-async function falKontext(imageUrl, prompt, width, height, falKey) {
+// Call FLUX Kontext with image reference (base64 or URL)
+async function falKontext(imageRef, prompt, width, height, falKey) {
   var body = JSON.stringify({
     prompt: prompt,
-    image_url: imageUrl,
+    image_url: imageRef,  // fal accepts base64 data URI or https URL
     num_inference_steps: 28,
     guidance_scale: 3.5,
     num_images: 1,
