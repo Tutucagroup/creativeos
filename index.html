@@ -599,12 +599,28 @@ function save() {
 function load() {
   var srcs=[];
   if(window._pc) srcs.push(window._pc);
+  // Read all storage keys - collect ALL versions
   ['creativeos_v3','creativeos_v5','creativeos_v4','creativeos_v2','creativeos'].forEach(function(k){
     try{var v=localStorage.getItem(k);if(v)srcs.push(v);}catch(e){}
     try{var v2=sessionStorage.getItem(k);if(v2)srcs.push(v2);}catch(e){}
   });
-  var best=null,bestN=-1;
-  srcs.forEach(function(s){try{var p=JSON.parse(s);if(!Array.isArray(p))return;var n=p.reduce(function(a,pr){return a+(pr.creatives?pr.creatives.length:0);},0);if(n>bestN){best=p;bestN=n;}}catch(e){}});
+  // Deduplicate by value
+  srcs=srcs.filter(function(s,i){return srcs.indexOf(s)===i;});
+  var best=null,bestScore=-1;
+  srcs.forEach(function(s){
+    try{
+      var p=JSON.parse(s); if(!Array.isArray(p)) return;
+      // Score = creatives*2 + assets*10 + products*5 (prioritize branding data)
+      var score=p.reduce(function(a,pr){
+        var c=(pr.creatives?pr.creatives.length:0)*2;
+        var assets=pr.branding?(pr.branding.assets||[]).length*10:0;
+        var prods=pr.branding?(pr.branding.products||[]).length*5:0;
+        var angs=pr.branding?(pr.branding.angulos||[]).length*3:0;
+        return a+c+assets+prods+angs;
+      },0);
+      if(score>bestScore){best=p;bestScore=score;}
+    }catch(e){}
+  });
   projects=best||[];
   if(projects.length){try{localStorage.setItem(SKEY,JSON.stringify(projects));}catch(e){}}
 }
