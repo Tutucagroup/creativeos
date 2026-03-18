@@ -1026,19 +1026,25 @@ function loadFabAngulos() {
 function renderFabProdSelector() {
   var el=$('fabProdSelector'); if(!el) return;
   var prods=(active&&active.branding&&active.branding.products)||[];
-  if(!prods.length){el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit para seleccionarlos</div>';return;}
-  // Initialize selection: all selected by default
+  if(!prods.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit · Ej: Ashwagandha 60ml, Reishi 30ml</div>';
+    return;
+  }
   if(!window._fabProds) window._fabProds={};
   prods.forEach(function(p,i){ if(window._fabProds[i]===undefined) window._fabProds[i]=true; });
-  el.innerHTML=prods.map(function(p,i){
-    var on=window._fabProds[i]!==false;
-    return '<button class="fmt-btn'+(on?' on':'')+'" data-pi="'+i+'" style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+p+'">'+p+'</button>';
-  }).join('');
+  el.innerHTML='<div style="font-size:10px;color:var(--mut);margin-bottom:5px">Seleccioná los productos a usar (Recraft los incluirá en la imagen):</div>'+
+    prods.map(function(p,i){
+      var on=window._fabProds[i]!==false;
+      return '<button class="fmt-btn'+(on?' on':'')+'" data-pi="'+i+'" style="font-size:11px" title="'+p+'">'+
+        (on?'✓ ':'')+p+'</button>';
+    }).join('');
   el.querySelectorAll('[data-pi]').forEach(function(b){
     b.onclick=function(){
       var i=parseInt(this.dataset.pi);
-      window._fabProds[i]=!( window._fabProds[i]!==false);
-      this.classList.toggle('on',window._fabProds[i]!==false);
+      window._fabProds[i]=!(window._fabProds[i]!==false);
+      var on=window._fabProds[i]!==false;
+      this.classList.toggle('on',on);
+      this.textContent=(on?'✓ ':'')+prods[i];
     };
   });
 }
@@ -1257,41 +1263,47 @@ async function fabGenImagen(plan, keys, extra) {
   var hasLogo    = !!(fabOverlay.logo    && fabOverlay.logo.dataUrl);
   var b = (active && active.branding) || {};
   var selProds = getSelectedProds();
-  var prodStr = selProds.length
-    ? selProds[Math.floor(Math.random()*selProds.length)]
-    : ((b.products && b.products[0]) || '');
+  // Use ALL selected products - rotate through them
+  var prodStr = selProds.length ? selProds.join(' + ') : ((b.products&&b.products[0])||'');
+  var singleProd = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
   var palette = (b.colors && b.colors.slice(0,4).join(', ')) || '';
-  var logoAnal = (b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;})
-                 .map(function(a){return a.analysis;}).join(' ');
+  var logoAnal = (b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;}).map(function(a){return a.analysis;}).join(' ');
+  var mockupAnal = (b.assets||[]).filter(function(a){return a.type==='mockup'&&a.analysis;}).map(function(a){return a.analysis;}).join(' ');
 
-  // Claude builds a sharp Recraft prompt using sales angle + brand context
-  var refNote = [];
-  if(hasPersona) refNote.push('Use the reference image as the person/avatar in the ad. Adapt pose, expression and context to match the ad message while preserving their identity.');
-  if(hasMockup)  refNote.push('The reference image is the exact product. Feature it naturally in the scene.');
-  if(hasLogo)    refNote.push('The reference image contains the brand logo. Include it prominently in the composition.');
-  if(!hasLogo && logoAnal) refNote.push('Brand logo: '+logoAnal+'. Include it in the image.');
-
+  // Build Claude prompt to generate the Recraft prompt
   var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
-  var pr  = 'Write a detailed Recraft image generation prompt for this Meta Ad.\n'
+  
+  var refInstructions = '';
+  if(hasMockup)  refInstructions += '- PRODUCT REFERENCE IMAGE: The exact product mockup. Recraft must feature this product accurately in the scene.\n';
+  if(hasPersona) refInstructions += '- PERSON REFERENCE IMAGE: The person/avatar to feature. Recraft adapts their pose and expression for the ad while keeping their identity.\n';
+  if(hasLogo)    refInstructions += '- LOGO REFERENCE IMAGE: The brand logo. Include it in the composition.\n';
+  if(!hasMockup && mockupAnal) refInstructions += '- Product description: '+mockupAnal+'\n';
+  if(!hasLogo && logoAnal)     refInstructions += '- Brand logo: '+logoAnal+'. Include it in the image.\n';
+
+  var pr = 'Write a Recraft image generation prompt for this Meta Ad.\n'
     +'BRAND: '+active.name+'\n'
-    +'PRODUCT: '+(prodStr||active.name+' product')+'\n'
+    +'PRODUCT(S) TO FEATURE: '+prodStr+'\n'
     +'AD TITLE: '+plan.titulo+'\n'
     +'SALES ANGLE: '+plan.enfoque+'\n'
     +(palette?'BRAND PALETTE: '+palette+'\n':'')
     +(b.tone?'TONE: '+b.tone.substring(0,80)+'\n':'')
-    +(refNote.length?'REFERENCE IMAGES:\n'+refNote.map(function(r){return '- '+r;}).join('\n')+'\n':'')
+    +(refInstructions?'REFERENCE IMAGES THAT WILL BE PASSED TO RECRAFT:\n'+refInstructions:'')
+    +'\nThe Recraft prompt must:\n'
+    +'- Explicitly describe the product(s) appearing in the scene\n'
+    +'- Specify exact brand colors and visual style\n'
+    +(hasPersona?'- Describe how the person interacts with the product\n':'')
+    +(hasLogo||logoAnal?'- Include the brand logo/mark in the composition\n':'')
+    +'- All visible text in '+getLang()+'\n'
     +'\nReply ONLY with these lines:\n'
-    +'RECRAFT_PROMPT: [Detailed English prompt. Specify scene, composition, lighting, mood. '
-    +'Use brand palette '+( palette||'neutral')+'. '
-    +(refNote.length?'The reference image(s) will be passed to Recraft as style/content reference. ':'')+'All text in '+getLang()+']\n'
-    +'HEADLINE: ['+getLang()+' — compelling hook, max 8 words]\n'
-    +'SUBHEAD: ['+getLang()+' — benefit, max 12 words]\n'
-    +'CTA: ['+getLang()+' — action button, 2-4 words]';
+    +'RECRAFT_PROMPT: [Detailed English prompt for Recraft. Be very specific about: the product(s), brand colors, composition, lighting, style. '+(hasMockup||hasMockup?'The product image will be provided as reference. ':'')+(hasPersona?'The person image will be provided as reference. ':'')+']\n'
+    +'HEADLINE: ['+getLang()+' - compelling hook max 8 words]\n'
+    +'SUBHEAD: ['+getLang()+' - benefit max 12 words]\n'
+    +'CTA: ['+getLang()+' - action 2-4 words]';
 
   var raw = await claudeCall(sys, pr, keys, 500);
   var ideoPr = gf(raw,'RECRAFT_PROMPT') ||
-    ('Professional Meta Ads photo for '+active.name+', '+prodStr+', '
-    +(palette?palette+', ':'')+plan.enfoque+', commercial photography, '+getLang()+' text');
+    ('Professional Meta Ads for '+active.name+', featuring '+prodStr+', '
+    +(palette?palette+' color palette, ':'')+plan.enfoque+', commercial photography, '+getLang()+' text');
 
   var fmt = plan.fmt || '1080x1080';
   var sp  = fmt.split('x');
@@ -1299,29 +1311,27 @@ async function fabGenImagen(plan, keys, extra) {
 
   if(keys.rec){
     try{
-      // Priority: persona > mockup > logo > none
-      // All passed as reference image to Recraft i2i
-      var refImg = hasPersona ? fabOverlay.persona.dataUrl
-                 : hasMockup  ? fabOverlay.mockup.dataUrl
-                 : hasLogo    ? fabOverlay.logo.dataUrl
-                 : null;
-      var strength = hasPersona ? (fabOverlay.persona.strength||0.65)
-                   : hasMockup  ? (fabOverlay.mockup.strength||0.70)
-                   : hasLogo    ? (fabOverlay.logo.strength||0.55)
-                   : 0.70;
-
-      if(refImg){
-        // i2i: Recraft uses reference image as visual base
-        imgUrl = await recraftI2I(refImg, ideoPr, sp[0], sp[1], keys, strength);
-        // If persona AND (mockup or logo): do a second pass with next reference
-        if(imgUrl && hasPersona && (hasMockup || hasLogo)){
-          var ref2 = hasMockup ? fabOverlay.mockup.dataUrl : fabOverlay.logo.dataUrl;
-          var str2 = hasMockup ? ((fabOverlay.mockup&&fabOverlay.mockup.strength)||0.70) : 0.55;
-          try{ imgUrl = await recraftI2I(ref2, ideoPr+' '+plan.enfoque, sp[0], sp[1], keys, str2); }
-          catch(e2){ console.warn('Second i2i pass failed, keeping first:', e2.message); }
-        }
+      if(hasMockup && hasPersona){
+        // Two-pass i2i: first with mockup (product), then with persona
+        // This gives Recraft both references
+        var str1 = fabOverlay.mockup.strength || 0.70;
+        var str2 = fabOverlay.persona.strength || 0.65;
+        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl, ideoPr, sp[0], sp[1], keys, str1);
+        imgUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr+'. Adapt the person naturally for this ad.', sp[0], sp[1], keys, str2);
+      } else if(hasMockup){
+        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl, ideoPr, sp[0], sp[1], keys, fabOverlay.mockup.strength||0.70);
+      } else if(hasPersona){
+        imgUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr, sp[0], sp[1], keys, fabOverlay.persona.strength||0.65);
+      } else if(hasLogo){
+        imgUrl = await recraftI2I(fabOverlay.logo.dataUrl, ideoPr, sp[0], sp[1], keys, fabOverlay.logo.strength||0.55);
       } else {
         imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys);
+      }
+      // If we have logo but didn't use it as primary reference, do a final pass
+      if(imgUrl && hasLogo && (hasMockup || hasPersona)){
+        try{
+          imgUrl = await recraftI2I(fabOverlay.logo.dataUrl, ideoPr+'. Include the brand logo prominently.', sp[0], sp[1], keys, fabOverlay.logo.strength||0.55);
+        } catch(e3){ console.warn('Logo pass failed:', e3.message); }
       }
     } catch(e){
       console.error('Recraft error:', e.message);
@@ -1337,11 +1347,11 @@ async function fabGenImagen(plan, keys, extra) {
     subhead:  gf(raw,'SUBHEAD')  || '',
     cta:      gf(raw,'CTA')      || 'Ver más',
     recraftPrompt: ideoPr, imgUrl: imgUrl, brief: raw,
-    angulo: plan.enfoque, product: prodStr, createdAt: Date.now()
+    angulo: plan.enfoque, product: singleProd, createdAt: Date.now()
   };
 }
 
-// Recraft image-to-image: reference image as multipart
+
 async function recraftI2I(imageDataUrl, prompt, width, height, keys, strength) {
   var fmt = (width||'1080')+'x'+(height||'1080');
   var sizeMap = {'1080x1080':'1024x1024','1080x1920':'1024x1820','1080x1350':'1024x1365','1920x1080':'1820x1024'};
