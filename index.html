@@ -385,7 +385,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
     <!-- LOGO/MOCKUP OVERLAY -->
     <div class="card" style="margin-bottom:14px">
       <div class="sec-title" style="margin-bottom:4px"><div class="sec-dot"></div>Referencias para Recraft</div>
-      <div style="font-size:11px;color:var(--mut);margin-bottom:12px">Recraft usa estas imágenes como referencia visual — respeta la persona, producto y logo exactos</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:12px">FLUX/Recraft usa estas imágenes como referencia visual — respeta la persona, producto y logo</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
 
         <div>
@@ -692,6 +692,7 @@ function bindAll() {
   document.querySelectorAll('.nav-item').forEach(function(i){ i.onclick=function(){ goPage(this.dataset.page); }; });
   $('btnNP').onclick = function(){ openM('mNP'); };
   $('apiBar').onclick = openAPIConfig;
+  $('projSel').onchange = function(){ selectProjById(this.value); };
   // Test recraft button - temp debug
   window.testRecraft = async function() {
     var keys=getKeys(); if(!keys.rec){alert('No hay key de Recraft');return;}
@@ -777,11 +778,14 @@ function selectProjById(id) {
   active = projects.find(function(p){return p.id===id;});
   if(!active) return;
   ensureBranding();
-  window._fabProds = {}; // Reset product selection for new project
-  renderDashboard();
-  goPage('dashboard');
+  window._fabProds = {};
+  window._fabMockups = {};
+  window._fabInspo = {};
+  $('projSel').value = id;
   $('dashTitle').textContent = active.name;
   $('dashSub').textContent = (active.client||active.rubro||'Proyecto');
+  renderDashboard();
+  goPage('dashboard');
 }
 function selectProject(id) {
   active = projects.find(function(p){return p.id===id;});
@@ -791,6 +795,14 @@ function selectProject(id) {
   $('dashTitle').textContent = active.name;
   $('dashSub').textContent = (active.client||active.rubro||'Proyecto');
   renderDashboard();
+  // Reset fab product/mockup selections for new project
+  window._fabProds = {};
+  window._fabMockups = {};
+  window._fabInspo = {};
+  // Refresh fab UI if on that page
+  if($('page-fabrica') && $('page-fabrica').style.display !== 'none') {
+    loadFabAngulos(); loadFabUIFromBranding();
+  }
 }
 function ensureBranding() {
   if(!active.branding) active.branding = {colors:[],fonts:[],products:[],assets:[],angulos:[],inspiracion:[],desc:'',tone:'',audience:'',lang:'es-AR'};
@@ -1010,21 +1022,22 @@ function usarAngulo(i) {
 // FÁBRICA CREATIVA
 // ══════════════════════════════════════════════
 function loadFabAngulos() {
-  var angs=(active&&active.branding&&active.branding.angulos)||[];
+  if(!active){ setTimeout(loadFabAngulos, 300); return; }
+  var angs=(active.branding&&active.branding.angulos)||[];
   var sel=$('fabAngulo');
   sel.innerHTML='<option value="">Sin ángulo (prompt libre)</option>';
   angs.forEach(function(a,i){
     var opt=document.createElement('option'); opt.value=String(i); opt.textContent=(i+1)+'. '+a.titulo;
     sel.appendChild(opt);
   });
-  // Render selectors
   renderFabProdSelector();
   renderFabMockupSelector();
   renderFabInspoSelector();
 }
 function renderFabMockupSelector() {
   var el=$('fabMockupSelector'); if(!el||!active) return;
-  var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+  var bAssets=(active&&active.branding&&active.branding.assets)||[];
+  var mockups=bAssets.filter(function(a){return a.type==='mockup';});
   if(!mockups.length){
     el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá mockups en Branding Kit para elegir cuáles usar</div>';
     return;
@@ -1087,7 +1100,7 @@ function renderFabProdSelector() {
   var el=$('fabProdSelector'); if(!el) return;
   var prods=(active&&active.branding&&active.branding.products)||[];
   if(!prods.length){
-    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit · Ej: Ashwagandha 60ml, Reishi 30ml</div>';
+    el.innerHTML='<div style="font-size:11px;color:var(--mut2);cursor:pointer" onclick="goPage(\'branding\')">Sin productos → ir a Branding Kit</div>';
     return;
   }
   if(!window._fabProds) window._fabProds={};
