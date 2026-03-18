@@ -597,31 +597,51 @@ function save() {
   try { sessionStorage.setItem(SKEY, d); } catch(e) {}
 }
 function load() {
+  var allProjects={}; // keyed by project name
   var srcs=[];
   if(window._pc) srcs.push(window._pc);
-  // Read all storage keys - collect ALL versions
   ['creativeos_v3','creativeos_v5','creativeos_v4','creativeos_v2','creativeos'].forEach(function(k){
-    try{var v=localStorage.getItem(k);if(v)srcs.push(v);}catch(e){}
-    try{var v2=sessionStorage.getItem(k);if(v2)srcs.push(v2);}catch(e){}
+    try{var v=localStorage.getItem(k);if(v&&srcs.indexOf(v)<0)srcs.push(v);}catch(e){}
+    try{var v2=sessionStorage.getItem(k);if(v2&&srcs.indexOf(v2)<0)srcs.push(v2);}catch(e){}
   });
-  // Deduplicate by value
-  srcs=srcs.filter(function(s,i){return srcs.indexOf(s)===i;});
-  var best=null,bestScore=-1;
+  // Collect all projects from all sources, merge by name
   srcs.forEach(function(s){
     try{
-      var p=JSON.parse(s); if(!Array.isArray(p)) return;
-      // Score = creatives*2 + assets*10 + products*5 (prioritize branding data)
-      var score=p.reduce(function(a,pr){
-        var c=(pr.creatives?pr.creatives.length:0)*2;
-        var assets=pr.branding?(pr.branding.assets||[]).length*10:0;
-        var prods=pr.branding?(pr.branding.products||[]).length*5:0;
-        var angs=pr.branding?(pr.branding.angulos||[]).length*3:0;
-        return a+c+assets+prods+angs;
-      },0);
-      if(score>bestScore){best=p;bestScore=score;}
+      var arr=JSON.parse(s); if(!Array.isArray(arr)) return;
+      arr.forEach(function(p){
+        if(!p||!p.name) return;
+        var key=p.name.toLowerCase().trim();
+        if(!allProjects[key]){
+          allProjects[key]=JSON.parse(JSON.stringify(p)); // deep copy
+        } else {
+          var existing=allProjects[key];
+          // Merge branding: take whichever has more data for each field
+          if(p.branding){
+            if(!existing.branding) existing.branding={};
+            var b=p.branding, e=existing.branding;
+            if((b.assets||[]).length>(e.assets||[]).length) e.assets=b.assets;
+            if((b.products||[]).length>(e.products||[]).length) e.products=b.products;
+            if((b.colors||[]).length>(e.colors||[]).length) e.colors=b.colors;
+            if((b.angulos||[]).length>(e.angulos||[]).length) e.angulos=b.angulos;
+            if((b.inspiracion||[]).length>(e.inspiracion||[]).length) e.inspiracion=b.inspiracion;
+            if(b.desc&&!e.desc) e.desc=b.desc;
+            if(b.tone&&!e.tone) e.tone=b.tone;
+            if(b.audience&&!e.audience) e.audience=b.audience;
+          }
+          // Merge creatives: combine all
+          if(p.creatives&&p.creatives.length){
+            var existingIds=(existing.creatives||[]).map(function(c){return c.id;});
+            (p.creatives||[]).forEach(function(c){
+              if(existingIds.indexOf(c.id)<0) existing.creatives=(existing.creatives||[]).concat([c]);
+            });
+          }
+        }
+      });
     }catch(e){}
   });
-  projects=best||[];
+  projects=Object.values(allProjects);
+  // Sort: most recently created first
+  projects.sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
   if(projects.length){try{localStorage.setItem(SKEY,JSON.stringify(projects));}catch(e){}}
 }
 function saveKeys() {
