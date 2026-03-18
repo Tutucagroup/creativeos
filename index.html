@@ -1298,7 +1298,7 @@ async function fabGenImagen(plan, keys, extra) {
   // EXACT COMPOSITE: product mockup and logo placed pixel-perfect on top
   if(imgUrl && (hasMockup || hasLogo)){
     try{ imgUrl = await compositeExact(imgUrl, fmt, hasMockup, hasLogo); }
-    catch(e){ console.warn('Composite failed:', e.message); }
+    catch(e){ console.error('compositeExact FAILED:', e.message, e); showToast('Composite error: '+e.message.substring(0,60), true); }
   }
 
   return {
@@ -1320,34 +1320,55 @@ async function compositeExact(bgUrl, fmt, includeMockup, includeLogo) {
   canvas.width = cw; canvas.height = ch;
   var ctx = canvas.getContext('2d');
 
-  // Draw Recraft background
-  await drawImg(ctx, bgUrl, 0, 0, cw, ch);
+  // Fetch Recraft background as blob to avoid CORS taint on canvas
+  var bgObjectUrl = bgUrl;
+  if(bgUrl.startsWith('http')){
+    try{
+      var resp = await fetch(bgUrl);
+      var blob = await resp.blob();
+      bgObjectUrl = URL.createObjectURL(blob);
+    } catch(e){ console.warn('fetch bg failed, using direct url:', e.message); }
+  }
 
-  // Layer 1: product mockup — centered, 55% width
+  await new Promise(function(res,rej){
+    var img = new Image();
+    img.onload = function(){ ctx.drawImage(img, 0, 0, cw, ch); res(); };
+    img.onerror = rej;
+    img.src = bgObjectUrl;
+  });
+
+  // Layer 1: product mockup — right-center, 45% width
   if(includeMockup && fabOverlay.mockup && fabOverlay.mockup.dataUrl){
+    console.log('Compositing mockup...');
     var mImg = await loadImg(fabOverlay.mockup.dataUrl);
-    var mW = Math.round(cw * 0.55);
+    var mW = Math.round(cw * 0.42);
     var mAr = mImg.naturalHeight / mImg.naturalWidth;
     var mH = Math.round(mW * mAr);
-    if(mH > ch * 0.75){ mH = Math.round(ch*0.75); mW = Math.round(mH/mAr); }
-    var mx = Math.round((cw - mW) / 2);
-    var my = Math.round((ch - mH) * 0.6); // slightly below center
+    if(mH > ch * 0.72){ mH = Math.round(ch*0.72); mW = Math.round(mH/mAr); }
+    var mx = Math.round(cw * 0.54);   // right side
+    var my = Math.round((ch - mH) / 2); // vertically centered
     ctx.drawImage(mImg, mx, my, mW, mH);
+    console.log('Mockup drawn at', mx, my, mW, mH);
   }
 
-  // Layer 2: logo — bottom-center, 20% width
+  // Layer 2: logo — bottom-left, 18% width
   if(includeLogo && fabOverlay.logo && fabOverlay.logo.dataUrl){
+    console.log('Compositing logo...');
     var lImg = await loadImg(fabOverlay.logo.dataUrl);
-    var lW = Math.round(cw * 0.20);
+    var lW = Math.round(cw * 0.18);
     var lAr = lImg.naturalHeight / lImg.naturalWidth;
     var lH = Math.round(lW * lAr);
-    var lx = Math.round((cw - lW) / 2);
+    var lx = Math.round(cw * 0.04);
     var ly = ch - lH - Math.round(ch * 0.04);
     ctx.drawImage(lImg, lx, ly, lW, lH);
+    console.log('Logo drawn at', lx, ly, lW, lH);
   }
 
-  return new Promise(function(res){
-    canvas.toBlob(function(blob){ res(URL.createObjectURL(blob)); });
+  return new Promise(function(res, rej){
+    canvas.toBlob(function(blob){
+      if(blob){ res(URL.createObjectURL(blob)); }
+      else { rej(new Error('canvas.toBlob returned null')); }
+    }, 'image/png');
   });
 }
 
