@@ -343,7 +343,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         </div>
         <div class="field">
           <label>Cantidad de creativos</label>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="cantRow">
+            <button class="fmt-btn" data-cant="5">5</button>
+            <button class="fmt-btn on" data-cant="15">15</button>
+            <button class="fmt-btn" data-cant="30">30</button>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);margin-top:2px"><span>1</span><span>15</span><span>30</span></div>
         </div>
@@ -718,6 +721,13 @@ function bindAll() {
   setupDrop('fabLogoZone', function(f){ loadFabOverlay('logo',f[0]); });
   setupDrop('fabMockupZone', function(f){ loadFabOverlay('mockup',f[0]); });
   $('fabLogoSize').oninput = function(){ fabOverlay.logo.size=parseInt(this.value); $('fabLogoSizeLbl').textContent=this.value+'%'; };
+  // Quantity buttons
+  document.querySelectorAll('[data-cant]').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('[data-cant]').forEach(function(x){x.classList.remove('on');});
+      this.classList.add('on'); fabCant=parseInt(this.dataset.cant);
+    };
+  });
   $('fabMockupSize').oninput = function(){ fabOverlay.mockup.size=parseInt(this.value); $('fabMockupSizeLbl').textContent=this.value+'%'; };
   $('fabLogoPos').onchange = function(){ fabOverlay.logo.pos=this.value; };
   $('fabMockupPos').onchange = function(){ fabOverlay.mockup.pos=this.value; };
