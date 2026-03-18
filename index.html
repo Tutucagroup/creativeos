@@ -534,6 +534,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
   <div class="field"><label>Recraft v3</label><input type="password" class="inp" id="kRec" placeholder="tu-api-key-de-recraft..."></div>
   <div class="field"><label>HeyGen</label><input type="password" class="inp" id="kHey" placeholder="sk_V2_..."></div>
   <div class="field"><label>Canva Client ID</label><input class="inp" id="kCanId" placeholder="OC-..."></div>
+  <div class="field"><label>Fal.ai Key</label><input type="password" class="inp" id="kFal" placeholder="xxxx:xxxx..."></div>
+  <div class="field"><label>Claid.ai Key <span style="color:var(--acc);font-size:10px">★ Producto en escena</span></label><input type="password" class="inp" id="kClaid" placeholder="claid_live_..."></div>
   <div class="mfooter">
     <button class="btn" onclick="closeM('mAPI')">Cancelar</button>
     <button class="btn acc" onclick="saveKeys()">Guardar keys</button>
@@ -644,9 +646,8 @@ function load() {
   if(projects.length){try{localStorage.setItem(SKEY,JSON.stringify(projects));}catch(e){}}
 }
 function saveKeys() {
-  var falEl=$('kFal'); var falVal=falEl?falEl.value.trim():'';
-  var claidEl=$('kClaid'); var claidVal=claidEl?claidEl.value.trim():'';
-  var k = { ant:$('kAnt').value.trim(), rec:$('kRec').value.trim(), hey:$('kHey').value.trim(), canId:$('kCanId').value.trim(), fal:falVal, claid:claidVal };
+  var falEl=$('kFal'), claidEl=$('kClaid');
+  var k = { ant:$('kAnt').value.trim(), rec:$('kRec').value.trim(), hey:$('kHey').value.trim(), canId:$('kCanId').value.trim(), fal:falEl?falEl.value.trim():'', claid:claidEl?claidEl.value.trim():'' };
   window._ck = k;
   try { localStorage.setItem('ceos_k3', JSON.stringify(k)); } catch(e) {}
   closeM('mAPI'); updateAPIStatus();
@@ -858,6 +859,8 @@ function openAPIConfig() {
   if(k.rec) $('kRec').value=k.rec;
   if(k.hey) $('kHey').value=k.hey;
   if(k.canId) $('kCanId').value=k.canId;
+  var falEl2=$('kFal'); if(falEl2&&k.fal) falEl2.value=k.fal;
+  var claidEl2=$('kClaid'); if(claidEl2&&k.claid) claidEl2.value=k.claid;
   var falEl=$('kFal'); if(falEl&&k.fal) falEl.value=k.fal;
   var claidEl2=$('kClaid'); if(claidEl2&&k.claid) claidEl2.value=k.claid;
   openM('mAPI');
