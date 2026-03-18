@@ -373,8 +373,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         <label>Productos a usar en esta tanda</label>
         <div id="fabProdSelector" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:28px">
           <div style="font-size:11px;color:var(--mut2)">Cargá productos en Branding Kit para seleccionarlos</div>
-      <div style="font-size:9px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-top:10px;margin-bottom:4px">Mockup a usar</div>
-      <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;min-height:28px"></div>
+
         </div>
       </div>
       <div class="field" style="margin-bottom:0">
@@ -867,6 +866,10 @@ function openAPIConfig() {
 // ══════════════════════════════════════════════
 function loadBrandingUI() {
   if(!active) return;
+  // Refresh fab selectors too when branding changes
+  if(typeof renderFabProdSelector==='function') setTimeout(function(){
+    renderFabProdSelector(); renderFabMockupSelector();
+  }, 100);
   var b=active.branding;
   $('brandDesc').value=b.desc||'';
   $('brandTone').value=b.tone||'';
@@ -1070,6 +1073,23 @@ function usarAngulo(i) {
 // ══════════════════════════════════════════════
 function loadFabAngulos() {
   if(!active){ setTimeout(loadFabAngulos, 300); return; }
+  // Force-sync active project from localStorage (in case data was added after load)
+  try{
+    var stored = localStorage.getItem(SKEY);
+    if(stored){
+      var arr = JSON.parse(stored);
+      var fresh = arr.find(function(p){return p.id===active.id;});
+      if(fresh && fresh.branding){
+        // Merge fresh branding data
+        if((fresh.branding.assets||[]).length > (active.branding.assets||[]).length)
+          active.branding.assets = fresh.branding.assets;
+        if((fresh.branding.products||[]).length > (active.branding.products||[]).length)
+          active.branding.products = fresh.branding.products;
+        if((fresh.branding.angulos||[]).length > (active.branding.angulos||[]).length)
+          active.branding.angulos = fresh.branding.angulos;
+      }
+    }
+  } catch(e){}
   var angs=(active.branding&&active.branding.angulos)||[];
   var sel=$('fabAngulo');
   sel.innerHTML='<option value="">Sin ángulo (prompt libre)</option>';
@@ -1375,6 +1395,23 @@ function calcPos(pos,cw,ch,elW,elH,pad){
   return{x:x,y:y};
 }
 function drawImg(ctx,url,x,y,w,h){return new Promise(function(res,rej){var img=new Image();img.onload=function(){ctx.drawImage(img,x,y,w,h);res();};img.onerror=rej;img.src=url;});}
+// Compress dataUrl to max dimension and quality
+function compressImage(dataUrl, maxPx, quality) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if(w <= maxPx && h <= maxPx) { resolve(dataUrl); return; }
+      var ratio = Math.min(maxPx/w, maxPx/h);
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(w*ratio); cv.height = Math.round(h*ratio);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      resolve(cv.toDataURL('image/jpeg', quality||0.85));
+    };
+    img.onerror = function(){ resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
 function loadImg(url){return new Promise(function(res,rej){var img=new Image();img.onload=function(){res(img);};img.onerror=rej;img.src=url;});}
 
 // ══════════════════════════════════════════════
@@ -1443,27 +1480,39 @@ async function fabGenImagen(plan, keys, extra) {
   if(hasMockup || hasLogo || hasPersona){
     try{
       imgUrl = await falKontextPipeline(ideoPr, sp[0], sp[1], keys, hasMockup, hasLogo, hasPersona, prodStr, plan.enfoque, selectedInspos);
-      console.log('FLUX Kontext succeeded:', imgUrl ? imgUrl.substring(0,60) : 'no URL');
+      if(imgUrl) console.log('FLUX Kontext succeeded');
     } catch(e){
-      console.error('FLUX Kontext FAILED:', e.message);
-      showToast('FLUX: '+e.message.substring(0,60)+' — usando Recraft', true);
+      console.warn('FLUX Kontext unavailable:', e.message.substring(0,60));
+      // Fall through to Recraft
     }
   }
 
-  // Fallback: Recraft (no canvas composite — Recraft generates full scene)
+  // Recraft pipeline (primary when Fal unavailable)
   if(!imgUrl && keys.rec){
     try{
-      if(hasPersona){
+      if(hasPersona && hasMockup){
+        // Two-pass: first persona, then build scene around mockup
+        var personaUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.50);
+        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl,
+          ideoPr.substring(0,900)+' Person from previous generation.', sp[0], sp[1], keys, 0.30);
+        if(!imgUrl) imgUrl = personaUrl;
+      } else if(hasPersona){
         imgUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.55);
       } else if(hasMockup){
-        // Recraft i2i with mockup at low strength — integrates product into scene
-        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.25);
+        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.30);
       } else {
         imgUrl = await recraftCall(ideoPr.substring(0,950), sp[0], sp[1], keys);
       }
-      console.log('Recraft fallback succeeded');
+      // Logo: Recraft i2i pass if loaded
+      if(imgUrl && hasLogo){
+        try{
+          var logoPr = ideoPr.substring(0,850)+' Brand logo visible in corner.';
+          imgUrl = await recraftI2I(fabOverlay.logo.dataUrl, logoPr.substring(0,950), sp[0], sp[1], keys, 0.25);
+        } catch(eL){ console.warn('Logo pass failed:', eL.message); }
+      }
     } catch(e2){
-      console.error('Recraft fallback FAILED:', e2.message);
+      console.error('Recraft FAILED:', e2.message);
+      showToast('Error generando imagen: '+e2.message.substring(0,60), true);
     }
   }
 
@@ -1485,7 +1534,7 @@ async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLog
 
   // Step 1: Product mockup — pass base64 directly, FLUX integrates it naturally
   if(hasMockup){
-    var mockupB64 = fabOverlay.mockup.dataUrl; // base64 data URI — fal accepts directly
+    var mockupB64 = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85); // compress for API limits
     var mockupPrompt = prompt + '. The reference image shows the exact product to feature. Keep the product label, colors and design exactly as shown. Integrate it naturally into the scene with matching lighting and shadows.';
     imgUrl = await falKontext(mockupB64, mockupPrompt.substring(0,400), w, h);
     showToast('Producto integrado ✓');
@@ -1493,7 +1542,7 @@ async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLog
 
   // Step 2: Logo — edit the result to add brand logo naturally
   if(hasLogo){
-    var logoB64 = fabOverlay.logo.dataUrl;
+    var logoB64 = await compressImage(fabOverlay.logo.dataUrl, 800, 0.85);
     var logoAnal = (active&&active.branding&&active.branding.assets||[])
       .filter(function(a){return a.type==='logo'&&a.analysis;})
       .map(function(a){return a.analysis;}).join(' ') || 'brand logo';
@@ -1505,7 +1554,7 @@ async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLog
 
   // Step 3: Persona — keep identity, adapt to ad context
   if(hasPersona){
-    var personaB64 = fabOverlay.persona.dataUrl;
+    var personaB64 = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
     var baseForPersona = imgUrl || personaB64;
     var personaPrompt = prompt + '. Keep the exact person from the reference image — same face and identity. Adapt their pose and expression to match this ad: ' + angle + '.';
     imgUrl = await falKontext(baseForPersona, personaPrompt.substring(0,400), w, h);
@@ -1675,8 +1724,10 @@ async function recraftI2I(imageDataUrl, prompt, width, height, keys, strength) {
   var sizeMap = {'1080x1080':'1024x1024','1080x1920':'1024x1820','1080x1350':'1024x1365','1920x1080':'1820x1024'};
   var size = sizeMap[fmt] || '1024x1024';
   var str  = String(Math.min(0.95, Math.max(0.05, strength||0.25)));
-  // Recraft v3 max prompt = 1000 chars
   prompt = prompt.substring(0, 950);
+
+  // Compress image to max 800px to avoid Vercel 4.5MB payload limit
+  imageDataUrl = await compressImage(imageDataUrl, 800, 0.85);
 
   var parts  = imageDataUrl.split(',');
   var mime   = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
