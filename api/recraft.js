@@ -19,25 +19,25 @@ export default async function handler(req) {
       });
     }
  
-    const body = await req.text();
+    // Forward the multipart/form-data directly to Recraft
+    const body = await req.arrayBuffer();
+    const contentType = req.headers.get('Content-Type') || 'multipart/form-data';
  
-    // Correct endpoint: /v1/images/generations (with 's')
-    const resp = await fetch('https://external.api.recraft.ai/v1/images/generations', {
+    const resp = await fetch('https://external.api.recraft.ai/v1/images/imageToImage', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': authHeader,
+        'Content-Type': contentType,
       },
       body: body,
     });
  
     const responseText = await resp.text();
- 
     let parsed;
     try {
       parsed = JSON.parse(responseText);
     } catch(e) {
-      return new Response(JSON.stringify({ error: { message: 'Recraft error: ' + responseText.substring(0, 300) } }), {
+      return new Response(JSON.stringify({ error: { message: 'Recraft i2i error: ' + responseText.substring(0, 300) } }), {
         status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
@@ -54,4 +54,3 @@ export default async function handler(req) {
     });
   }
 }
- 
