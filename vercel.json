@@ -1,8 +1,9 @@
 {
   "rewrites": [
-    { "source": "/api/recraft", "destination": "/api/recraft.js" },
-    { "source": "/api/fal",     "destination": "/api/fal.js" },
-    { "source": "/api/heygen",  "destination": "/api/heygen.js" },
-    { "source": "/api/ideogram","destination": "/api/ideogram.js" }
+    { "source": "/api/recraft",  "destination": "/api/recraft.js" },
+    { "source": "/api/fal",      "destination": "/api/fal.js" },
+    { "source": "/api/heygen",   "destination": "/api/heygen.js" },
+    { "source": "/api/ideogram", "destination": "/api/ideogram.js" },
+    { "source": "/api/claid",    "destination": "/api/claid.js" }
   ]
 }
