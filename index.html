@@ -344,8 +344,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         <div class="field">
           <label>Cantidad de creativos</label>
           <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-            <input type="range" id="cantSlider" min="1" max="30" value="15" style="flex:1;accent-color:var(--acc)">
-            <div style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--acc);min-width:32px" id="cantLbl">15</div>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);margin-top:2px"><span>1</span><span>15</span><span>30</span></div>
         </div>
@@ -717,17 +715,13 @@ function bindAll() {
   $('fabLogoInput').onchange = function(){ loadFabOverlay('logo',this.files[0]); };
   $('fabMockupZone').onclick = function(){ $('fabMockupInput').click(); };
   $('fabMockupInput').onchange = function(){ loadFabOverlay('mockup',this.files[0]); };
-  $('fabPersonZone').onclick = function(){ $('fabPersonInput').click(); };
-  $('fabPersonInput').onchange = function(){ loadFabOverlay('person',this.files[0]); };
   setupDrop('fabLogoZone', function(f){ loadFabOverlay('logo',f[0]); });
   setupDrop('fabMockupZone', function(f){ loadFabOverlay('mockup',f[0]); });
-  setupDrop('fabPersonZone', function(f){ loadFabOverlay('person',f[0]); });
   $('fabLogoSize').oninput = function(){ fabOverlay.logo.size=parseInt(this.value); $('fabLogoSizeLbl').textContent=this.value+'%'; };
   $('fabMockupSize').oninput = function(){ fabOverlay.mockup.size=parseInt(this.value); $('fabMockupSizeLbl').textContent=this.value+'%'; };
   $('fabLogoPos').onchange = function(){ fabOverlay.logo.pos=this.value; };
   $('fabMockupPos').onchange = function(){ fabOverlay.mockup.pos=this.value; };
   // Quantity slider
-  $('cantSlider').oninput = function(){ fabCant=parseInt(this.value); $('cantLbl').textContent=this.value; };
   // Creativos filter
   $('crFilters').addEventListener('click',function(e){
     var b=e.target.closest('[data-f]'); if(!b) return;
@@ -833,48 +827,81 @@ function removeBrandTag(key,idx) {
 }
 function renderAssetGal(assetType) {
   var galId = assetType==='logo'?'logoGal':'mockupGal';
-  var zoneId = assetType==='logo'?'logoZone':'mockupZone';
   var el=$(galId); if(!el||!active) return;
   var assets=(active.branding.assets||[]).filter(function(a){return a.type===assetType;});
-  if(!assets.length){el.innerHTML='';$(zoneId).style.display='';return;}
-  $(zoneId).style.display='none';
+  var zone=$(assetType==='logo'?'logoZone':'mockupZone');
+  if(zone) zone.style.display='';
+  if(!assets.length){el.innerHTML='';return;}
   el.innerHTML=assets.map(function(a){
-    return '<div class="acard"><img src="'+(a.dataUrl||'')+'" alt="'+a.name+'"><div class="abadge">'+(assetType==='logo'?'Logo':'Mockup')+'</div><div class="adel" onclick="delAsset(\''+a.id+'\',\''+assetType+'\')">×</div></div>';
+    var img=a.dataUrl?'<img src="'+a.dataUrl+'" alt="'+a.name+'">'
+      :'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px">'+(assetType==='logo'?'🎨':'📦')+'</div>';
+    return '<div class="acard">'+img+
+      '<div class="abadge">'+(assetType==='logo'?'Logo':'Mockup')+'</div>'+
+      '<div class="adel" data-aid="'+a.id+'" data-atype="'+assetType+'">×</div>'+
+      '</div>';
   }).join('');
+  el.querySelectorAll('.adel').forEach(function(btn){
+    btn.onclick=function(){ delAsset(this.dataset.aid, this.dataset.atype); };
+  });
 }
+
 function delAsset(id, assetType) {
   if(!active) return;
   active.branding.assets=(active.branding.assets||[]).filter(function(a){return a.id!==id;});
   save(); renderAssetGal(assetType);
-  var zoneId=assetType==='logo'?'logoZone':'mockupZone';
-  if(!(active.branding.assets||[]).filter(function(a){return a.type===assetType;}).length) $(zoneId).style.display='';
+  // Also clear from fabOverlay if it was the active one
+  if(assetType==='logo'&&fabOverlay.logo.dataUrl){
+    var remaining=(active.branding.assets||[]).filter(function(a){return a.type==='logo';});
+    if(!remaining.length){ fabOverlay.logo.dataUrl=null; var lp=$('fabLogoPreview');if(lp)lp.style.display='none'; var lz=$('fabLogoZone');if(lz)lz.style.display=''; }
+  }
+  if(assetType==='mockup'&&fabOverlay.mockup.dataUrl){
+    var rem2=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+    if(!rem2.length){ fabOverlay.mockup.dataUrl=null; var mp=$('fabMockupPreview');if(mp)mp.style.display='none'; var mz=$('fabMockupZone');if(mz)mz.style.display=''; }
+  }
+  showToast((assetType==='logo'?'Logo':'Mockup')+' eliminado');
 }
 
 // ══════════════════════════════════════════════
 // ASSET UPLOAD
 // ══════════════════════════════════════════════
 async function handleAsset(files, assetType) {
-  if(!files.length||!active) return;
-  var keys=getKeys();
+  if(!files||!files.length||!active) return;
   if(!active.branding.assets) active.branding.assets=[];
+  var keys=getKeys();
   for(var i=0;i<files.length;i++){
     var file=files[i];
     try {
+      showToast('Cargando '+file.name+'...');
       var dataUrl=await readFile(file);
-      var a={id:Date.now().toString()+'_'+i,name:file.name,type:assetType,dataUrl:dataUrl,mimeType:file.type||'image/png'};
-      // Try to analyze with Claude if API key available
-      if(keys.ant && assetType==='logo') {
-        try {
-          var b64=dataUrl.split(',')[1];
-          var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type||'image/png',data:b64}},{type:'text',text:'Analizá este logo en 2 oraciones: colores principales (con hex), tipografía si tiene, estilo gráfico.'}]}]})});
-          var d=await r.json(); if(!d.error) a.analysis=d.content.map(function(b){return b.text||'';}).join('');
-        } catch(e){}
+      // Fix mime type - SVG and some formats need correction
+      var mime=file.type||'image/png';
+      if(mime==='image/svg+xml'||file.name.endsWith('.svg')) mime='image/png'; // Recraft needs raster
+      var a={id:Date.now().toString()+'_'+i,name:file.name,type:assetType,dataUrl:dataUrl,mimeType:mime,analysis:''};
+      active.branding.assets.push(a);
+      save();
+      renderAssetGal(assetType);
+      showToast((assetType==='logo'?'🎨 Logo':'📦 Mockup')+' cargado: '+file.name+' ✓');
+      // Analyze with Claude in background (non-blocking) — only for raster images
+      if(keys.ant && mime.startsWith('image/') && mime!=='image/svg+xml'){
+        (async function(asset, fileRef, mimeType){
+          try {
+            var b64=asset.dataUrl.split(',')[1]; if(!b64) return;
+            var prompt=assetType==='logo'
+              ?'Analizá este logo en 2 oraciones: colores principales con sus hex codes, tipografía si tiene texto, estilo gráfico (minimalista, ilustrativo, etc).'
+              :'Analizá esta imagen de producto en 2 oraciones: estilo fotográfico, paleta de colores, composición y fondo.';
+            var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mimeType,data:b64}},{type:'text',text:prompt}]}]})});
+            var d=await r.json();
+            if(!d.error) { asset.analysis=d.content.map(function(b){return b.text||'';}).join(''); save(); }
+          } catch(e){ console.warn('Claude analysis failed:', e.message); }
+        })(a, file, mime);
       }
-      active.branding.assets.push(a); save(); renderAssetGal(assetType);
-      showToast((assetType==='logo'?'Logo':'Mockup')+' cargado: '+file.name);
-    } catch(err){ showToast('Error: '+err.message,true); }
+    } catch(err){
+      console.error('handleAsset error:', err);
+      showToast('Error cargando '+file.name+': '+err.message, true);
+    }
   }
-  $(assetType==='logo'?'logoInput':'mockupInput').value='';
+  var inp=$(assetType==='logo'?'logoInput':'mockupInput');
+  if(inp) inp.value='';
 }
 
 // ══════════════════════════════════════════════
@@ -1028,22 +1055,21 @@ function getSelectedProds() {
   return prods.filter(function(p,i){ return window._fabProds&&window._fabProds[i]!==false; });
 }
 function loadFabUIFromBranding() {
-  // Pre-load logo from branding kit if not already set
-  if(!fabOverlay.logo.dataUrl && active) {
-    var logos=(active.branding.assets||[]).filter(function(a){return a.type==='logo';});
-    if(logos.length) {
-      fabOverlay.logo.dataUrl=logos[0].dataUrl;
-      $('fabLogoImg').src=logos[0].dataUrl;
-      $('fabLogoPreview').style.display='block';
-      $('fabLogoZone').style.display='none';
-    }
-    var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
-    if(mockups.length) {
-      fabOverlay.mockup.dataUrl=mockups[0].dataUrl;
-      $('fabMockupImg').src=mockups[0].dataUrl;
-      $('fabMockupPreview').style.display='block';
-      $('fabMockupZone').style.display='none';
-    }
+  if(!active) return;
+  // Always sync from branding kit assets
+  var logos=(active.branding.assets||[]).filter(function(a){return a.type==='logo';});
+  if(logos.length && logos[0].dataUrl) {
+    fabOverlay.logo.dataUrl=logos[0].dataUrl;
+    var li=$('fabLogoImg'); if(li) li.src=logos[0].dataUrl;
+    var lp=$('fabLogoPreview'); if(lp) lp.style.display='block';
+    var lz=$('fabLogoZone'); if(lz) lz.style.display='none';
+  }
+  var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+  if(mockups.length && mockups[0].dataUrl) {
+    fabOverlay.mockup.dataUrl=mockups[0].dataUrl;
+    var mi=$('fabMockupImg'); if(mi) mi.src=mockups[0].dataUrl;
+    var mp=$('fabMockupPreview'); if(mp) mp.style.display='block';
+    var mz=$('fabMockupZone'); if(mz) mz.style.display='none';
   }
 }
 async function loadFabOverlay(type, file) {
@@ -1053,14 +1079,12 @@ async function loadFabOverlay(type, file) {
   fabOverlay[type].dataUrl=dataUrl;
   if(type==='logo'){$('fabLogoImg').src=dataUrl;$('fabLogoPreview').style.display='block';$('fabLogoZone').style.display='none';}
   else if(type==='mockup'){$('fabMockupImg').src=dataUrl;$('fabMockupPreview').style.display='block';$('fabMockupZone').style.display='none';}
-  else if(type==='person'){$('fabPersonImg').src=dataUrl;$('fabPersonPreview').style.display='block';$('fabPersonZone').style.display='none';}
   showToast((type==='logo'?'Logo':type==='mockup'?'Mockup del producto':'Archivo')+' cargado ✓');
 }
 function clearFabEl(type) {
   if(fabOverlay[type]) fabOverlay[type].dataUrl=null;
   if(type==='logo'){$('fabLogoPreview').style.display='none';$('fabLogoZone').style.display='';$('fabLogoInput').value='';}
   else if(type==='mockup'){$('fabMockupPreview').style.display='none';$('fabMockupZone').style.display='';$('fabMockupInput').value='';}
-  else if(type==='person'){$('fabPersonPreview').style.display='none';$('fabPersonZone').style.display='';$('fabPersonInput').value='';}
 }
 async function fabricar() {
   if(!active){showToast('Seleccioná un proyecto',true);return;}
@@ -1228,7 +1252,24 @@ function calcPos(pos,cw,ch,elW,elH,pad){
   var y=vert==='top'?pad:vert==='bottom'?ch-elH-pad:Math.round((ch-elH)/2);
   return{x:x,y:y};
 }
-function drawImg(ctx,url,x,y,w,h){return new Promise(function(res,rej){var img=new Image();img.onload=function(){ctx.drawImage(img,x,y,w,h);res();};img.onerror=rej;img.src=url;});}
+function drawImg(ctx,url,x,y,w,h){
+  return new Promise(function(res,rej){
+    var img=new Image();
+    // Try with crossOrigin first for canvas compositing
+    if(url.startsWith('http')){img.crossOrigin='anonymous';}
+    img.onload=function(){try{ctx.drawImage(img,x,y,w,h);}catch(e){console.warn('drawImg draw failed:',e);}res();};
+    img.onerror=function(){
+      // Retry without crossOrigin if it fails
+      if(img.crossOrigin){
+        var img2=new Image();
+        img2.onload=function(){try{ctx.drawImage(img2,x,y,w,h);}catch(e){}res();};
+        img2.onerror=function(){console.warn('drawImg failed completely for:',url);res();};
+        img2.src=url+'?nocors=1';
+      } else { res(); }
+    };
+    img.src=url;
+  });
+}
 function loadImg(url){return new Promise(function(res,rej){var img=new Image();img.onload=function(){res(img);};img.onerror=rej;img.src=url;});}
 
 // ══════════════════════════════════════════════
