@@ -343,11 +343,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         </div>
         <div class="field">
           <label>Cantidad de creativos</label>
-          <div style="display:flex;gap:6px;flex-wrap:wrap" id="cantRow">
-            <button class="fmt-btn" data-cant="5">5</button>
-            <button class="fmt-btn on" data-cant="15">15</button>
-            <button class="fmt-btn" data-cant="30">30</button>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+            <input type="range" id="cantSlider" min="1" max="30" value="15" style="flex:1;accent-color:var(--acc)">
+            <div style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--acc);min-width:32px" id="cantLbl">15</div>
           </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);margin-top:2px"><span>1</span><span>15</span><span>30</span></div>
         </div>
       </div>
       <div class="grid4" style="margin-bottom:14px">
@@ -428,6 +428,28 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         </div>
       </div>
     </div>
+      <!-- PERSONAS -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:10px"><div class="sec-dot"></div>Foto de persona (opcional)</div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--mut);margin-bottom:7px">Recraft usará esta foto como base para generar el ad con la persona real</div>
+            <div id="fabPersonPreview" style="display:none;margin-bottom:7px;position:relative">
+              <img id="fabPersonImg" style="max-height:100px;object-fit:contain;border-radius:7px;background:var(--bg3);width:100%">
+              <button onclick="clearFabEl('person')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:10px;cursor:pointer">×</button>
+            </div>
+            <div class="uz" id="fabPersonZone" style="padding:9px">👤 Subir foto de persona<div style="font-size:10px;opacity:.6;margin-top:2px">PNG, JPG — foto del presentador o modelo</div></div>
+            <input type="file" id="fabPersonInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
+          </div>
+          <div style="flex:1;background:var(--bg3);border-radius:9px;padding:10px;font-size:11px;color:var(--mut);line-height:1.6">
+            <div style="font-weight:600;color:var(--txt);margin-bottom:4px">¿Cómo funciona?</div>
+            Si subís una foto → Recraft genera el ad usando esa persona como base real<br>
+            Si subís mockup → Recraft genera desde la foto del producto<br>
+            Si no subís nada → genera desde texto con el contexto de la marca
+          </div>
+        </div>
+      </div>
+
     <!-- GENERAR -->
     <div style="display:flex;justify-content:center;margin-bottom:20px">
       <button class="btn acc" id="btnFabricar" style="padding:13px 32px;font-size:14px;font-family:var(--fh)">🏭 Fabricar tanda de creativos</button>
@@ -571,7 +593,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
 // ══════════════════════════════════════════════
 var projects = [], active = null, crFilter = 'all', viewCrId = null;
 var fabCant = 15;
-var fabOverlay = { logo: { dataUrl:null, pos:'bottom-center', size:18 }, mockup: { dataUrl:null, pos:'center-center', size:45 } };
+var fabOverlay = { logo: { dataUrl:null, pos:'bottom-center', size:18 }, mockup: { dataUrl:null, pos:'center-center', size:45 }, person: { dataUrl:null } };
 var SKEY = 'creativeos_v3';
 
 // ══════════════════════════════════════════════
@@ -710,19 +732,22 @@ function bindAll() {
   $('btnGenAngulos').onclick = generateAngulos;
   // Fabrica
   $('btnFabricar').onclick = fabricar;
-  document.querySelectorAll('[data-cant]').forEach(function(b){
-    b.onclick=function(){ document.querySelectorAll('[data-cant]').forEach(function(x){x.classList.remove('on');}); this.classList.add('on'); fabCant=parseInt(this.dataset.cant); };
-  });
+  // cant handled by slider
   $('fabLogoZone').onclick = function(){ $('fabLogoInput').click(); };
   $('fabLogoInput').onchange = function(){ loadFabOverlay('logo',this.files[0]); };
   $('fabMockupZone').onclick = function(){ $('fabMockupInput').click(); };
   $('fabMockupInput').onchange = function(){ loadFabOverlay('mockup',this.files[0]); };
+  $('fabPersonZone').onclick = function(){ $('fabPersonInput').click(); };
+  $('fabPersonInput').onchange = function(){ loadFabOverlay('person',this.files[0]); };
   setupDrop('fabLogoZone', function(f){ loadFabOverlay('logo',f[0]); });
   setupDrop('fabMockupZone', function(f){ loadFabOverlay('mockup',f[0]); });
+  setupDrop('fabPersonZone', function(f){ loadFabOverlay('person',f[0]); });
   $('fabLogoSize').oninput = function(){ fabOverlay.logo.size=parseInt(this.value); $('fabLogoSizeLbl').textContent=this.value+'%'; };
   $('fabMockupSize').oninput = function(){ fabOverlay.mockup.size=parseInt(this.value); $('fabMockupSizeLbl').textContent=this.value+'%'; };
   $('fabLogoPos').onchange = function(){ fabOverlay.logo.pos=this.value; };
   $('fabMockupPos').onchange = function(){ fabOverlay.mockup.pos=this.value; };
+  // Quantity slider
+  $('cantSlider').oninput = function(){ fabCant=parseInt(this.value); $('cantLbl').textContent=this.value; };
   // Creativos filter
   $('crFilters').addEventListener('click',function(e){
     var b=e.target.closest('[data-f]'); if(!b) return;
@@ -1044,15 +1069,18 @@ function loadFabUIFromBranding() {
 async function loadFabOverlay(type, file) {
   if(!file) return;
   var dataUrl=await readFile(file);
+  if(!fabOverlay[type]) fabOverlay[type]={dataUrl:null};
   fabOverlay[type].dataUrl=dataUrl;
   if(type==='logo'){$('fabLogoImg').src=dataUrl;$('fabLogoPreview').style.display='block';$('fabLogoZone').style.display='none';}
-  else{$('fabMockupImg').src=dataUrl;$('fabMockupPreview').style.display='block';$('fabMockupZone').style.display='none';}
-  showToast((type==='logo'?'Logo':'Mockup')+' cargado ✓');
+  else if(type==='mockup'){$('fabMockupImg').src=dataUrl;$('fabMockupPreview').style.display='block';$('fabMockupZone').style.display='none';}
+  else if(type==='person'){$('fabPersonImg').src=dataUrl;$('fabPersonPreview').style.display='block';$('fabPersonZone').style.display='none';}
+  showToast({logo:'Logo',mockup:'Mockup del producto',person:'Foto de persona'}[type]+' cargado ✓');
 }
 function clearFabEl(type) {
-  fabOverlay[type].dataUrl=null;
+  if(fabOverlay[type]) fabOverlay[type].dataUrl=null;
   if(type==='logo'){$('fabLogoPreview').style.display='none';$('fabLogoZone').style.display='';$('fabLogoInput').value='';}
-  else{$('fabMockupPreview').style.display='none';$('fabMockupZone').style.display='';$('fabMockupInput').value='';}
+  else if(type==='mockup'){$('fabMockupPreview').style.display='none';$('fabMockupZone').style.display='';$('fabMockupInput').value='';}
+  else if(type==='person'){$('fabPersonPreview').style.display='none';$('fabPersonZone').style.display='';$('fabPersonInput').value='';}
 }
 async function fabricar() {
   if(!active){showToast('Seleccioná un proyecto',true);return;}
@@ -1169,37 +1197,45 @@ function renderFabResults(items) {
 // RECRAFT API
 // ══════════════════════════════════════════════
 async function recraftCall(prompt, width, height, keys) {
-  // Endpoint correcto: /v1/images/generations (con 's')
-  // Size format: "1024x1024" como string en campo 'size'
+  // Standard text-to-image generation
   var fmt=(width||'1080')+'x'+(height||'1080');
-  var sizeMap={
-    '1080x1080':'1024x1024',
-    '1080x1920':'1024x1820',
-    '1080x1350':'1024x1365',
-    '1920x1080':'1820x1024'
-  };
+  var sizeMap={'1080x1080':'1024x1024','1080x1920':'1024x1820','1080x1350':'1024x1365','1920x1080':'1820x1024'};
   var size=sizeMap[fmt]||'1024x1024';
-  var body={
-    prompt:prompt+'. All text in image must be written in '+getLang()+'.',
-    model:'recraftv3',
-    style:'realistic_image',
-    size:size
-  };
-  console.log('Recraft request body:', JSON.stringify(body));
+  var body={prompt:prompt,model:'recraftv3',style:'realistic_image',size:size};
   var r=await fetch('/api/recraft',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+keys.rec},body:JSON.stringify(body)});
   var txt=await r.text();
-  console.log('Recraft raw response:', txt.substring(0,500));
-  if(!txt||!txt.trim()) throw new Error('Recraft: respuesta vacía. Verificá tu key en app.recraft.ai/profile/api');
-  var d; try{d=JSON.parse(txt);}catch(e){throw new Error('Recraft no-JSON: '+txt.substring(0,150));}
-  if(d.error){throw new Error('Recraft: '+(d.error.message||d.error.detail||JSON.stringify(d.error).substring(0,200)));}
+  console.log('Recraft response:', txt.substring(0,300));
+  var d; try{d=JSON.parse(txt);}catch(e){throw new Error('Recraft no-JSON: '+txt.substring(0,100));}
+  if(d.error) throw new Error('Recraft: '+(d.error.message||d.error.detail||JSON.stringify(d.error).substring(0,150)));
   var url=(d.data&&d.data[0]&&d.data[0].url)||(d.image&&d.image.url)||null;
   if(!url) throw new Error('Recraft sin URL: '+JSON.stringify(d).substring(0,200));
   return url;
 }
 
-// ══════════════════════════════════════════════
-// CLAUDE CALL
-// ══════════════════════════════════════════════
+async function recraftImageToImage(imageDataUrl, prompt, strength, keys) {
+  // Image-to-image: use product/person photo as base
+  // Convert dataUrl to blob
+  var arr=imageDataUrl.split(','), mime=arr[0].match(/:(.*?);/)[1];
+  var bstr=atob(arr[1]), n=bstr.length, u8=new Uint8Array(n);
+  while(n--){ u8[n]=bstr.charCodeAt(n); }
+  var blob=new Blob([u8],{type:mime});
+  var form=new FormData();
+  form.append('image', blob, 'image.png');
+  form.append('prompt', prompt);
+  form.append('strength', String(strength||0.5));
+  form.append('model', 'recraftv3');
+  form.append('style', 'realistic_image');
+  var r=await fetch('/api/recraft-i2i',{method:'POST',headers:{'Authorization':'Bearer '+keys.rec},body:form});
+  var txt=await r.text();
+  console.log('Recraft i2i response:', txt.substring(0,300));
+  var d; try{d=JSON.parse(txt);}catch(e){throw new Error('Recraft i2i no-JSON: '+txt.substring(0,100));}
+  if(d.error) throw new Error('Recraft i2i: '+(d.error.message||JSON.stringify(d.error).substring(0,150)));
+  var url=(d.data&&d.data[0]&&d.data[0].url)||null;
+  if(!url) throw new Error('Recraft i2i sin URL');
+  return url;
+}
+
+
 async function claudeCall(sys, user, keys, maxT) {
   var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':keys.ant,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:maxT||1000,system:sys,messages:[{role:'user',content:user}]})});
   var d=await r.json(); if(d.error) throw new Error(d.error.message);
@@ -1243,48 +1279,71 @@ function loadImg(url){return new Promise(function(res,rej){var img=new Image();i
 // FAB GENERATORS
 // ══════════════════════════════════════════════
 async function fabGenImagen(plan, keys, extra) {
-  var hasMockup = fabOverlay.mockup.dataUrl;
-  var hasLogo   = fabOverlay.logo.dataUrl;
-  var b = active && active.branding || {};
+  var hasLogo    = fabOverlay.logo.dataUrl;
+  var hasMockup  = fabOverlay.mockup.dataUrl;
+  var hasPerson  = fabOverlay.person && fabOverlay.person.dataUrl;
+  var b = active&&active.branding||{};
   var selProds = getSelectedProds();
   var prodStr = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : (b.products&&b.products[0]||'');
   var brandColors = (b.colors&&b.colors.slice(0,3).join(', '))||'';
-  var logoAssets = (b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;});
-  var sys = 'Expert art director creating Meta Ads for '+active.name+'. '+brandCtx(extra);
-  var mockupNote = hasMockup
-    ? 'CRITICAL: Product mockup will be composited ON TOP. Generate ONLY the background/scene — NO product in image.'
-    : (prodStr ? 'Feature this product prominently: '+prodStr+'.' : '');
-  if(!hasMockup&&!hasLogo&&logoAssets.length) mockupNote += ' Include brand logo: '+logoAssets[0].analysis+'.';
-  var promptReq = 'Create a Meta Ads visual for:\n'+
-    'BRAND: '+active.name+'\nPRODUCT: '+(prodStr||'brand product')+'\n'+
-    'AD TITLE: '+plan.titulo+'\nSALES ANGLE: '+plan.enfoque+'\nFORMAT: '+plan.fmt+'\n'+
-    (brandColors?'BRAND PALETTE: '+brandColors+'\n':'')+
-    (b.tone?'BRAND TONE: '+b.tone.substring(0,100)+'\n':'')+
-    '\n'+mockupNote+
-    '\n\nRespond ONLY with these lines (no extra text):\nRECRAFT_PROMPT: [detailed English Recraft prompt — commercial ad photography, specific scene with '+active.name+' brand aesthetic, '+brandColors+' palette, professional lighting, high-end finish. '+mockupNote+']\nHEADLINE: ['+getLang()+' — compelling hook]\nSUBHEAD: ['+getLang()+' — benefit statement]\nCTA: ['+getLang()+' — action]';
-  var raw = await claudeCall(sys, promptReq, keys, 500);
-  var ideoPr = gf(raw,'RECRAFT_PROMPT') || gf(raw,'PROMPT') ||
-    'Professional Meta Ads photo for '+active.name+' brand, '+prodStr+', '+plan.titulo+
-    (brandColors?', color palette '+brandColors:'')+', clean commercial photography, high-end product advertisement';
   var fmt = plan.fmt||'1080x1080'; var sp = fmt.split('x');
-  var imgUrl = null;
-  if(keys.rec){
-    try{ imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys); }
-    catch(e){ showToast('Recraft: '+e.message.substring(0,60), true); console.error('Recraft:', e.message); }
+
+  // Build the ad prompt
+  var adPrompt = 'Professional Meta Ads photography for '+active.name+
+    (prodStr?', product: '+prodStr:'')+
+    ', '+plan.titulo+', '+plan.enfoque+
+    (brandColors?', brand palette: '+brandColors:'')+
+    ', commercial ad style, high-end photography, '+getLang()+' text in the ad';
+
+  // Claude generates the detailed prompt
+  var sys = 'Expert art director creating Meta Ads. '+brandCtx(extra);
+  try {
+    var baseImg = hasMockup ? fabOverlay.mockup.dataUrl : (hasPerson ? fabOverlay.person.dataUrl : null);
+    var raw = await claudeCall(sys,
+      'Create a Meta Ads prompt for Recraft.\nBRAND: '+active.name+'\nPRODUCT: '+(prodStr||'brand')+'\nANGLE: '+plan.enfoque+'\nFORMAT: '+plan.fmt+
+      (brandColors?'\nCOLORS: '+brandColors:'')+
+      (hasMockup?'\nNOTE: Product image will be used as base via image-to-image. Generate a prompt that transforms it into a professional ad background/scene.':
+       hasPerson?'\nNOTE: Person photo will be used as base. Generate a prompt to transform into a professional ad with the person.':
+       '\nNOTE: Generate background/scene only, product mockup composited on top.')+
+      '\n\nRespond ONLY:\nPROMPT: [English Recraft prompt, detailed, ad photography]\nHEADLINE: ['+getLang()+']\nSUBHEAD: ['+getLang()+']\nCTA: ['+getLang()+']',
+      keys, 400);
+    adPrompt = gf(raw,'PROMPT')||adPrompt;
+    var headline = gf(raw,'HEADLINE')||plan.titulo;
+    var subhead  = gf(raw,'SUBHEAD')||'';
+    var cta      = gf(raw,'CTA')||'Ver más';
+    var imgUrl = null;
+    if(keys.rec) {
+      // Use imageToImage if we have a product or person photo, else text-to-image
+      if(baseImg) {
+        try {
+          var strength = hasMockup ? 0.6 : 0.5; // mockup: keep product, person: more creative
+          imgUrl = await recraftImageToImage(baseImg, adPrompt, strength, keys);
+          showToast((hasMockup?'Imagen generada desde foto del producto ✓':'Imagen generada desde foto de persona ✓'));
+        } catch(e) {
+          console.warn('i2i failed, fallback to t2t:', e.message);
+          imgUrl = await recraftCall(adPrompt, sp[0], sp[1], keys);
+        }
+      } else {
+        imgUrl = await recraftCall(adPrompt, sp[0], sp[1], keys);
+      }
+    }
+    // Composite logo on top (always)
+    if(imgUrl && hasLogo) {
+      try { imgUrl = await compositeImage(imgUrl, fmt); }
+      catch(e) { console.warn('Logo composite failed:', e.message); }
+    }
+    return {
+      id:Date.now().toString()+'_'+Math.random().toString(36).slice(2),
+      type:'imagen',title:plan.titulo,format:fmt,
+      headline:headline,subhead:subhead,cta:cta,
+      recraftPrompt:adPrompt,imgUrl:imgUrl,brief:raw||'',
+      angulo:plan.enfoque,product:prodStr,createdAt:Date.now()
+    };
+  } catch(e) {
+    showToast('Error imagen: '+e.message.substring(0,60),true);
+    console.error('fabGenImagen error:',e);
+    return {id:Date.now().toString(),type:'imagen',title:plan.titulo,format:fmt,headline:plan.titulo,imgUrl:null,angulo:plan.enfoque,createdAt:Date.now()};
   }
-  if(imgUrl && (hasLogo || hasMockup)){
-    try{ imgUrl = await compositeImage(imgUrl, fmt); showToast('Logo/mockup superpuesto ✓'); }
-    catch(e){ console.warn('Composite failed:', e.message); }
-  }
-  return {
-    id: Date.now().toString()+'_'+Math.random().toString(36).slice(2),
-    type:'imagen', title:plan.titulo, format:fmt,
-    headline: gf(raw,'HEADLINE')||plan.titulo,
-    subhead:  gf(raw,'SUBHEAD')||'',
-    cta:      gf(raw,'CTA')||'Ver más',
-    recraftPrompt:ideoPr, imgUrl:imgUrl, brief:raw,
-    angulo:plan.enfoque, product:prodStr, createdAt:Date.now()
-  };
 }
 
 async function fabGenCarrusel(plan, keys, extra) {
