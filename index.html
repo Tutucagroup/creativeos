@@ -1185,7 +1185,8 @@ function renderFabResults(items) {
 // RECRAFT API
 // ══════════════════════════════════════════════
 async function recraftCall(prompt, width, height, keys) {
-  // Standard text-to-image generation
+  // Standard text-to-image generation — Recraft v3 max 1000 chars
+  prompt = prompt.substring(0, 950);
   var fmt=(width||'1080')+'x'+(height||'1080');
   var sizeMap={'1080x1080':'1024x1024','1080x1920':'1024x1820','1080x1350':'1024x1365','1920x1080':'1820x1024'};
   var size=sizeMap[fmt]||'1024x1024';
@@ -1431,7 +1432,9 @@ async function recraftI2I(imageDataUrl, prompt, width, height, keys, strength) {
   var fmt = (width||'1080')+'x'+(height||'1080');
   var sizeMap = {'1080x1080':'1024x1024','1080x1920':'1024x1820','1080x1350':'1024x1365','1920x1080':'1820x1024'};
   var size = sizeMap[fmt] || '1024x1024';
-  var str  = String(Math.min(0.95, Math.max(0.3, strength||0.70)));
+  var str  = String(Math.min(0.95, Math.max(0.05, strength||0.25)));
+  // Recraft v3 max prompt = 1000 chars
+  prompt = prompt.substring(0, 950);
 
   var parts  = imageDataUrl.split(',');
   var mime   = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
