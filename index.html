@@ -1434,119 +1434,142 @@ async function fabGenImagen(plan, keys, extra) {
   var palette    = (b.colors&&b.colors.slice(0,3).join(', '))||'';
   var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
 
-  // ── STEP 1: Claude writes two prompts ───────────────────────
-  // Prompt A: background scene (no person, no product — just environment)
-  // Prompt B: instructions for FLUX Kontext to add product/person into that scene
-  var sys = 'Expert Meta Ads photographer for '+active.name+'. '+brandCtx(extra);
-  var inspoNote = selectedInspos.length ? 'Match style of '+selectedInspos.length+' reference ad(s). ' : '';
+  var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
+  var inspoNote = selectedInspos.length ? 'Match visual style of '+selectedInspos.length+' reference ad(s). ' : '';
 
-  var sceneType = plan.enfoque ? plan.enfoque.substring(0,80) : singleProd;
-  var locationHint = hasPersona
-    ? 'Choose a lifestyle location that fits the ad angle: home, kitchen, bathroom, outdoors, wellness studio — NOT a car.'
-    : 'Product photography location that complements '+singleProd+'.';
-
-  var pr = 'Write TWO prompts for a Meta Ad photo shoot.\n'
+  // Claude writes ONE unified prompt for the complete scene
+  var pr = 'Write a single Recraft image generation prompt for a complete Meta Ad photo.\n'
     +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
-    +(palette?'PALETTE:'+palette+'\n':'')+(inspoNote?'STYLE:'+inspoNote:'')
-    +'LOCATION HINT:'+locationHint+'\n\n'
-    +'PROMPT_BG:[English max 500 chars. Describe ONLY the background/environment — no product, no person. '
-    +'Hyperrealistic interior or exterior scene. Brand palette '+(palette||'natural')+'. '
-    +'Cinematic lighting, 85mm lens, shallow DOF. High-end commercial photography location.]\n\n'
-    +'PROMPT_EDIT:[English max 300 chars. Instructions for editing that background scene. '
-    +(hasMockup?'Add the '+singleProd+' bottle naturally into the scene — on a surface, with correct shadows and reflections. Keep label exactly accurate. ':'' )
-    +(hasPersona?'Add a person ('+plan.enfoque+'-oriented) naturally using the product. Keep their exact face from the reference image. NOT in a car. ':'')
-    +(hasLogo?'Add the brand logo subtly in the corner. ':'')
-    +']\n\n'
+    +(palette?'PALETTE:'+palette+'\n':'')+(b.tone?'TONE:'+b.tone.substring(0,50)+'\n':'')
+    +(inspoNote?'STYLE:'+inspoNote+'\n':'')
+    +'ELEMENTS TO INCLUDE:\n'
+    +(hasMockup?'- The exact '+singleProd+' amber dropper bottle with its label, placed naturally in the scene\n':'')
+    +(hasPersona?'- A person naturally using or holding the product (lifestyle context, NOT in a car)\n':'')
+    +(hasLogo?'- Brand logo '+active.name+' visible in corner\n':'')
+    +'Reply ONLY:\n'
+    +'RECRAFT_PROMPT:[English, max 900 chars. Describe the COMPLETE scene including: '
+    +(hasMockup?'the '+singleProd+' amber glass dropper bottle with its cream/beige label clearly visible, ':'' )
+    +(hasPersona?'a person naturally interacting with the product (not in a car), ':'')
+    +'the environment/location, lighting, mood. '
+    +'Hyperrealistic commercial photography, 85mm lens, shallow DOF. '
+    +'Brand palette: '+(palette||'natural tones')+'. '+(inspoNote)
+    +(hasPersona?'Person should be in a lifestyle setting: home, nature, wellness space. ':'')
+    +']\n'
     +'HEADLINE:['+getLang()+' max 8 words]\n'
     +'SUBHEAD:['+getLang()+' max 12 words]\n'
     +'CTA:['+getLang()+' 2-4 words]';
 
-  var raw = await claudeCall(sys, pr, keys, 500);
-  var bgPrompt   = (gf(raw,'PROMPT_BG')  || ('Hyperrealistic '+plan.enfoque+' lifestyle scene, '+(palette||'natural tones')+', no product, 85mm lens, commercial photography')).substring(0,900);
-  var editPrompt = (gf(raw,'PROMPT_EDIT')|| ('Add '+singleProd+' bottle naturally in scene with correct lighting and shadows'+(hasPersona?', add person using the product':''))).substring(0,400);
+  var raw = await claudeCall(sys, pr, keys, 450);
+  var ideoPr = (gf(raw,'RECRAFT_PROMPT')||
+    ('Hyperrealistic commercial photo, '+singleProd+' amber dropper bottle with label visible, '
+    +(hasPersona?'person using the product in lifestyle setting, ':'')
+    +(palette?palette+', ':'')+'85mm lens, shallow DOF, commercial photography')).substring(0,950);
 
   var fmt = plan.fmt||'1080x1080', sp = fmt.split('x');
   var w = parseInt(sp[0])||1080, h = parseInt(sp[1])||1080;
   var imgUrl = null;
 
-  // ── STEP 2: Generate clean background with Recraft ──────────
-  if(keys.rec){
-    try{
-      imgUrl = await recraftCall(bgPrompt, sp[0], sp[1], keys);
-      showToast('Escena generada ✓');
-    }catch(e){ console.error('Recraft bg failed:', e.message); }
-  }
+  // ── STRATEGY: Use the reference image that matters most ────────
+  // FLUX Kontext: pass the reference as image_url, prompt describes the full scene
+  // This way FLUX respects the reference AND generates a new scene around it
 
-  // ── STEP 3: FLUX Kontext integrates product into scene ──────
-  if(imgUrl && hasMockup && keys.fal){
+  if(keys.fal){
     try{
-      var sceneB64  = await fetchAsDataUrl(imgUrl);
-      var sceneUploaded = await falUploadBlob(sceneB64);
-      var mockupB64 = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
-      var mockupUploaded = await falUploadBlob(mockupB64);
-      // Edit the scene: add product from reference
-      var productPr = editPrompt+' The product reference image shows the exact '+singleProd+' bottle with its label. Place it naturally in the scene with matching shadows and reflections. Keep the label design exactly accurate.';
-      imgUrl = await falKontextEdit(sceneUploaded, mockupUploaded, productPr.substring(0,450), w, h);
-      showToast('Producto integrado ✓');
+      var refB64, refPrompt;
+
+      if(hasPersona && hasMockup){
+        // Pass persona as reference (FLUX keeps the person's appearance)
+        // Prompt explicitly describes the product too
+        refB64 = await compressImage(fabOverlay.persona.dataUrl, 900, 0.90);
+        refPrompt = ideoPr + ' Transform this person into a professional Meta Ad. '
+          +'Keep their exact face and identity. Place them in a new lifestyle scene (NOT the original background). '
+          +'They should be holding/using the '+singleProd+' amber dropper bottle with its label clearly visible. '
+          +'Professional commercial photography lighting.';
+      } else if(hasMockup){
+        // Pass mockup as reference — FLUX keeps the product accurate
+        refB64 = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
+        refPrompt = ideoPr + ' Place this exact product bottle in the scene. '
+          +'Keep the label, colors and bottle shape exactly accurate. '
+          +'The product should be naturally integrated with correct shadows and reflections.';
+      } else if(hasPersona){
+        refB64 = await compressImage(fabOverlay.persona.dataUrl, 900, 0.90);
+        refPrompt = ideoPr + ' Use this person as the model. Keep their exact face. '
+          +'Place them in a new lifestyle scene appropriate for the ad.';
+      }
+
+      if(refB64){
+        var refUrl = await falUploadBlob(refB64);
+        var body = JSON.stringify({
+          prompt: refPrompt.substring(0,450),
+          image_url: refUrl,
+          num_inference_steps: 28,
+          guidance_scale: 2.0,
+          num_images: 1,
+          enable_safety_checker: false,
+          output_format: 'jpeg'
+        });
+        var r = await fetch('/api/fal', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
+          body:body
+        });
+        var txt = await r.text();
+        var d; try{ d=JSON.parse(txt); }catch(e){ throw new Error('FAL JSON: '+txt.substring(0,60)); }
+        if(d.error||d.detail) throw new Error('FAL: '+(d.error||d.detail||JSON.stringify(d).substring(0,60)));
+        console.log('FAL submit ok, request_id:', d.request_id);
+        if(d.request_id) imgUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
+        else if(d.images&&d.images[0]) imgUrl = d.images[0].url;
+        if(imgUrl) showToast('Imagen generada con FLUX ✓');
+      }
     }catch(e){
-      console.warn('FLUX product integration failed:', e.message);
-      // Keep the background without product
+      console.error('FLUX failed:', e.message);
+      showToast('FLUX: '+e.message.substring(0,50)+' — usando Recraft', true);
     }
   }
 
-  // ── STEP 4: FLUX Kontext integrates persona ──────────────────
-  if(imgUrl && hasPersona && keys.fal){
-    try{
-      var sceneB64b = await fetchAsDataUrl(imgUrl);
-      var sceneUploaded2 = await falUploadBlob(sceneB64b);
-      var personaB64 = await compressImage(fabOverlay.persona.dataUrl, 900, 0.90);
-      var personaUploaded = await falUploadBlob(personaB64);
-      // Edit: add person using the product, keep exact face
-      var personaPr = 'Add the exact person from the reference image into this scene. '
-        +'Preserve their face, skin tone and facial features exactly — do not change their appearance. '
-        +'Show them naturally '+plan.enfoque.substring(0,60)+', using or holding the product. '
-        +'Their clothing and pose should fit the environment naturally. '
-        +'Photorealistic, seamless integration.';
-      imgUrl = await falKontextEdit(sceneUploaded2, personaUploaded, personaPr.substring(0,450), w, h);
-      showToast('Persona integrada ✓');
-    }catch(e){
-      console.warn('FLUX persona integration failed:', e.message);
-    }
-  }
-
-  // ── STEP 5: FLUX Kontext adds logo ───────────────────────────
-  if(imgUrl && hasLogo && keys.fal){
-    try{
-      var sceneB64c = await fetchAsDataUrl(imgUrl);
-      var sceneUploaded3 = await falUploadBlob(sceneB64c);
-      var logoB64 = await compressImage(fabOverlay.logo.dataUrl, 600, 0.90);
-      var logoUploaded = await falUploadBlob(logoB64);
-      var logoPr = 'Add the brand logo from the reference image to the bottom-left corner of this scene. '
-        +'The logo should be clearly visible but not dominate the image. '
-        +'Blend naturally with the scene lighting. Keep the logo design exactly accurate.';
-      imgUrl = await falKontextEdit(sceneUploaded3, logoUploaded, logoPr.substring(0,350), w, h);
-      showToast('Logo integrado ✓');
-    }catch(e){
-      console.warn('FLUX logo integration failed:', e.message);
-      // Canvas fallback for logo only
-      try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e2){}
-    }
-  } else if(imgUrl && hasLogo){
-    // No Fal available: canvas for logo
-    try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e){}
-  }
-
-  // ── Recraft-only fallback (no Fal) ───────────────────────────
+  // ── Recraft fallback ───────────────────────────────────────────
   if(!imgUrl && keys.rec){
     try{
       if(hasPersona){
         var cp = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
-        imgUrl = await recraftI2I(cp, bgPrompt, sp[0], sp[1], keys, 0.55);
+        imgUrl = await recraftI2I(cp, ideoPr, sp[0], sp[1], keys, 0.55);
+      } else if(hasMockup){
+        var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
+        imgUrl = await recraftI2I(cm, ideoPr, sp[0], sp[1], keys, 0.30);
       } else {
-        imgUrl = await recraftCall(bgPrompt, sp[0], sp[1], keys);
+        imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys);
       }
-      if(imgUrl && hasLogo) { try{ imgUrl=await compositeLogoOnly(imgUrl,fmt); }catch(e){} }
-    }catch(e){ console.error('Recraft fallback failed:', e.message); }
+      showToast('Imagen generada con Recraft ✓');
+    }catch(e){ console.error('Recraft failed:', e.message); }
+  }
+
+  // ── Logo: FLUX Kontext pass ────────────────────────────────────
+  if(imgUrl && hasLogo && keys.fal){
+    try{
+      var logoB64 = await compressImage(fabOverlay.logo.dataUrl, 600, 0.90);
+      var logoUrl = await falUploadBlob(logoB64);
+      var sceneB64 = await fetchAsDataUrl(imgUrl);
+      var sceneUrl = await falUploadBlob(sceneB64);
+      var logoPr = 'Add the brand logo from the reference image to the bottom-left corner of this scene. Blend naturally.';
+      var bodyL = JSON.stringify({
+        prompt: logoPr, image_url: sceneUrl,
+        num_inference_steps:20, guidance_scale:1.5,
+        num_images:1, enable_safety_checker:false, output_format:'jpeg'
+      });
+      var rL = await fetch('/api/fal',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
+        body:bodyL});
+      var dL = await rL.json();
+      if(dL.request_id){
+        var logoResult = await falPollResult(dL.request_id, null, 'fal-ai/flux-pro/kontext');
+        if(logoResult) imgUrl = logoResult;
+      }
+    }catch(e){
+      // Canvas fallback for logo
+      try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e2){}
+    }
+  } else if(imgUrl && hasLogo){
+    try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e){}
   }
 
   return {
@@ -1555,7 +1578,7 @@ async function fabGenImagen(plan, keys, extra) {
     headline: gf(raw,'HEADLINE')||plan.titulo,
     subhead:  gf(raw,'SUBHEAD') ||'',
     cta:      gf(raw,'CTA')     ||'Ver más',
-    recraftPrompt:bgPrompt, imgUrl:imgUrl, brief:raw,
+    recraftPrompt:ideoPr, imgUrl:imgUrl, brief:raw,
     angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
   };
 }
