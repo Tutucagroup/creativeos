@@ -436,7 +436,12 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
 
       </div>
     </div>
-    <div style="display:flex;justify-content:center;margin-bottom:20px">
+        <div class="card" style="margin-bottom:14px">
+      <div class="sec-title" style="margin-bottom:6px"><div class="sec-dot"></div>✨ Referencias de estilo</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:8px">Seleccioná imágenes de tu Inspiración — FLUX/Recraft toma su estilo visual como referencia</div>
+      <div id="fabInspoSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
+    </div>
+<div style="display:flex;justify-content:center;margin-bottom:20px">
       <button class="btn acc" id="btnFabricar" style="padding:13px 32px;font-size:14px;font-family:var(--fh)">🏭 Fabricar tanda de creativos</button>
     </div>
     <!-- PROGRESS -->
@@ -1015,12 +1020,13 @@ function loadFabAngulos() {
   // Render selectors
   renderFabProdSelector();
   renderFabMockupSelector();
+  renderFabInspoSelector();
 }
 function renderFabMockupSelector() {
   var el=$('fabMockupSelector'); if(!el||!active) return;
   var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
   if(!mockups.length){
-    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá mockups en Branding Kit</div>';
+    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá mockups en Branding Kit para elegir cual usar</div>';
     return;
   }
   // Initialize: first mockup selected by default
@@ -1047,6 +1053,32 @@ function renderFabMockupSelector() {
       }
     };
   });
+}
+
+function renderFabInspoSelector() {
+  var el=$('fabInspoSelector'); if(!el||!active) return;
+  var inspos=(active.branding&&active.branding.inspiracion)||[];
+  if(!inspos.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Sin referencias — agregá imágenes en Inspiración</div>';
+    return;
+  }
+  if(!window._fabInspo) window._fabInspo={};
+  el.innerHTML=inspos.map(function(ins,i){
+    var on=window._fabInspo[i]===true;
+    return '<div data-ii="'+i+'" onclick="toggleFabInspo('+i+')" style="cursor:pointer;position:relative;border-radius:7px;overflow:hidden;border:2px solid '+(on?'var(--pur)':'var(--b2)')+';width:60px;height:60px;flex-shrink:0">'
+      +'<img src="'+ins.dataUrl+'" style="width:100%;height:100%;object-fit:cover">'
+      +(on?'<div style="position:absolute;top:2px;right:2px;background:var(--pur);border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:700">✓</div>':'')
+      +'</div>';
+  }).join('');
+}
+function toggleFabInspo(i) {
+  if(!window._fabInspo) window._fabInspo={};
+  window._fabInspo[i]=!window._fabInspo[i];
+  renderFabInspoSelector();
+}
+function getSelectedInspos() {
+  var inspos=(active&&active.branding&&active.branding.inspiracion)||[];
+  return inspos.filter(function(ins,i){ return window._fabInspo&&window._fabInspo[i]===true; });
 }
 
 function renderFabProdSelector() {
@@ -1080,17 +1112,21 @@ function getSelectedProds() {
 }
 function loadFabUIFromBranding() {
   if(!active) return;
+  // Auto-load logo from branding
   var logos=(active.branding.assets||[]).filter(function(a){return a.type==='logo';});
-  if(logos.length && logos[0].dataUrl && !fabOverlay.logo.dataUrl) {
+  if(logos.length && logos[0].dataUrl) {
     fabOverlay.logo.dataUrl=logos[0].dataUrl;
-    var li=$('fabLogoImg');    if(li){li.src=logos[0].dataUrl;}
+    var li=$('fabLogoImg');    if(li) li.src=logos[0].dataUrl;
     var lp=$('fabLogoPreview');if(lp) lp.style.display='block';
     var lz=$('fabLogoZone');   if(lz) lz.style.display='none';
   }
+  // Auto-load first mockup from branding (user can change via selector)
   var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
-  if(mockups.length && mockups[0].dataUrl && !fabOverlay.mockup.dataUrl) {
-    fabOverlay.mockup.dataUrl=mockups[0].dataUrl;
-    var mi=$('fabMockupImg');    if(mi){mi.src=mockups[0].dataUrl;}
+  var mockupIdx = window._fabMockupIdx||0;
+  var selectedMockup = mockups[mockupIdx] || mockups[0];
+  if(selectedMockup && selectedMockup.dataUrl) {
+    fabOverlay.mockup.dataUrl=selectedMockup.dataUrl;
+    var mi=$('fabMockupImg');    if(mi) mi.src=selectedMockup.dataUrl;
     var mp=$('fabMockupPreview');if(mp) mp.style.display='block';
     var mz=$('fabMockupZone');   if(mz) mz.style.display='none';
   }
@@ -1296,7 +1332,9 @@ async function fabGenImagen(plan, keys, extra) {
 
   // Build prompt via Claude
   var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
-  var pr  = 'Write a FLUX Kontext prompt for a Meta Ad.\nBRAND:'+active.name+'\nPRODUCT:'+prodStr+'\nANGLE:'+plan.enfoque+(palette?'\nPALETTE:'+palette:'')+(b.tone?'\nTONE:'+b.tone.substring(0,60):'')+'\nReply ONLY:\nFLUX_PROMPT:[English, max 400 chars. Describe the scene naturally. The reference image will be integrated. Specify lighting, mood, environment, brand colors '+(palette||'natural')+'.]\nHEADLINE:['+getLang()+' max 8 words]\nSUBHEAD:['+getLang()+' max 12 words]\nCTA:['+getLang()+' 2-4 words]';
+  var selectedInspos2=(typeof getSelectedInspos==='function')?getSelectedInspos():[];
+  var inspoCtx=selectedInspos2.length?'\nSTYLE REFS: '+selectedInspos2.length+' reference ads selected — match their visual style, composition and aesthetic':'';
+  var pr  = 'Write a FLUX Kontext prompt for a Meta Ad.\nBRAND:'+active.name+'\nPRODUCT:'+prodStr+'\nANGLE:'+plan.enfoque+inspoCtx+(palette?'\nPALETTE:'+palette:'')+(b.tone?'\nTONE:'+b.tone.substring(0,60):'')+'\nReply ONLY:\nFLUX_PROMPT:[English, max 400 chars. Describe the scene naturally. The reference image will be integrated. Specify lighting, mood, environment, brand colors '+(palette||'natural')+'.]\nHEADLINE:['+getLang()+' max 8 words]\nSUBHEAD:['+getLang()+' max 12 words]\nCTA:['+getLang()+' 2-4 words]';
 
   var raw    = await claudeCall(sys, pr, keys, 300);
   var ideoPr = (gf(raw,'FLUX_PROMPT')||gf(raw,'RECRAFT_PROMPT')||('Professional Meta Ads for '+active.name+', '+prodStr+', '+plan.enfoque+', '+(palette||'natural tones')+', commercial photography')).substring(0,400);
@@ -1309,7 +1347,8 @@ async function fabGenImagen(plan, keys, extra) {
   if(hasMockup || hasLogo || hasPersona){  // Fal.ai key in Vercel env
     // FLUX Kontext pipeline: each reference image gets integrated naturally
     try{
-      imgUrl = await falKontextPipeline(ideoPr, sp[0], sp[1], keys, hasMockup, hasLogo, hasPersona, prodStr, plan.enfoque);
+      var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
+      imgUrl = await falKontextPipeline(ideoPr, sp[0], sp[1], keys, hasMockup, hasLogo, hasPersona, prodStr, plan.enfoque, selectedInspos);
     } catch(e){
       console.error('Fal Kontext error:', e.message);
       showToast('Fal.ai: '+e.message.substring(0,80), true);
@@ -1345,7 +1384,7 @@ async function fabGenImagen(plan, keys, extra) {
 }
 
 // FLUX Kontext pipeline: integrates product, logo and persona naturally
-async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLogo, hasPersona, prodStr, angle) {
+async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLogo, hasPersona, prodStr, angle, inspoImages) {
   var w = parseInt(width)||1080, h = parseInt(height)||1080;
   var imgUrl = null;
 
@@ -1376,6 +1415,17 @@ async function falKontextPipeline(prompt, width, height, keys, hasMockup, hasLog
     var personaPrompt = prompt + '. Keep the exact person from the reference image — same face and identity. Adapt their pose and expression to match this ad: ' + angle + '.';
     imgUrl = await falKontext(baseForPersona, personaPrompt.substring(0,400), w, h);
     showToast('Persona integrada ✓');
+  }
+
+  // Step 4: Apply inspiracion style reference if selected
+  if(inspoImages && inspoImages.length && imgUrl){
+    // Use first selected inspo as style guide
+    var inspoB64 = inspoImages[0].dataUrl;
+    var inspoPrompt = prompt + '. Apply the visual style, composition and aesthetic from the reference image. Keep the same product and brand elements but match the style.';
+    try{
+      imgUrl = await falKontext(inspoB64, inspoPrompt.substring(0,400), width, height);
+      showToast('Estilo de inspiración aplicado ✓');
+    } catch(e){ console.warn('Inspo style pass failed:', e.message); }
   }
 
   if(!imgUrl) throw new Error('Fal.ai: no se generó imagen');
