@@ -1418,112 +1418,100 @@ function loadImg(url){return new Promise(function(res,rej){var img=new Image();i
 // FAB GENERATORS
 // ══════════════════════════════════════════════
 async function fabGenImagen(plan, keys, extra) {
+  // ── Get references ──────────────────────────────────────────
   var hasPersona = !!(fabOverlay.persona && fabOverlay.persona.dataUrl);
+  var hasLogo    = !!(fabOverlay.logo    && fabOverlay.logo.dataUrl);
   var selectedMockups = (typeof getSelectedMockups==='function') ? getSelectedMockups() : [];
-  var mockupForThis = selectedMockups.length ? selectedMockups[Math.floor(Math.random()*selectedMockups.length)] : null;
-  if(mockupForThis) fabOverlay.mockup.dataUrl = mockupForThis.dataUrl;
+  if(!selectedMockups.length){
+    var allMockups=(active&&active.branding&&active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+    selectedMockups=allMockups;
+  }
+  var mockupAsset = selectedMockups.length ? selectedMockups[Math.floor(Math.random()*selectedMockups.length)] : null;
+  if(mockupAsset) fabOverlay.mockup.dataUrl = mockupAsset.dataUrl;
   var hasMockup = !!(fabOverlay.mockup && fabOverlay.mockup.dataUrl);
-  var hasLogo   = !!(fabOverlay.logo   && fabOverlay.logo.dataUrl);
+
   var b = (active && active.branding) || {};
   var selProds  = getSelectedProds();
   var prodStr   = selProds.length ? selProds.join(' and ') : ((b.products&&b.products[0])||'');
   var singleProd= selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
-  var palette   = (b.colors && b.colors.slice(0,4).join(', ')) || '';
+  var palette   = (b.colors && b.colors.slice(0,3).join(', ')) || '';
   var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
 
-  // Build a DETAILED Claude prompt that puts product IN the scene
-  var sys = 'Expert Meta Ads photographer and art director for '+active.name+'. '+brandCtx(extra);
+  // ── Claude generates background prompt ──────────────────────
+  var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
+  var inspoNote  = selectedInspos.length ? 'Match style of '+selectedInspos.length+' reference ad(s): same scene mood, same quality.' : '';
+  var personaNote= hasPersona ? 'Scene should include a person interacting with the product. Style: '+plan.enfoque+'.' : '';
 
-  var inspoDesc = selectedInspos.length
-    ? 'STYLE REFERENCE: Match the visual style, composition, lighting and aesthetic of the '+selectedInspos.length+' reference ad(s) provided. Same type of scene, same mood, same quality level.'
-    : '';
+  var pr = 'Write a Recraft/FLUX background prompt for a Meta Ad.\n'
+    +'BRAND:'+active.name+' PRODUCT:'+prodStr+' ANGLE:'+plan.enfoque
+    +(palette?' PALETTE:'+palette:'')+(b.tone?' TONE:'+b.tone.substring(0,50):'')
+    +(inspoNote?' STYLE:'+inspoNote:'')+(personaNote?' PERSON:'+personaNote:'')+'\n'
+    +'IMPORTANT: Generate ONLY the background/environment scene. '
+    +(hasMockup?'The product bottle will be placed on top — NO bottle or product in the background. ':'')
+    +'Reply ONLY:\n'
+    +'RECRAFT_PROMPT:[English max 700 chars. Hyperrealistic commercial photography. '
+    +(hasMockup?'Background only, no product. ':'Feature the product. ')
+    +(hasPersona?'Include a person naturally. ':'')
+    +'Brand colors: '+(palette||'natural')+'. 85mm lens, shallow DOF.]\n'
+    +'HEADLINE:['+getLang()+' max 8 words]\n'
+    +'SUBHEAD:['+getLang()+' max 12 words]\n'
+    +'CTA:['+getLang()+' 2-4 words]';
 
-  var mockupDesc = hasMockup
-    ? 'The reference image shows the EXACT product bottle ('+singleProd+'). The product must appear naturally INSIDE the scene — sitting on a surface, held by a hand, or integrated in the environment. Same label, same colors, same shape. NOT floating, NOT on a white background, NOT pasted on top.'
-    : '';
+  var raw = await claudeCall(sys, pr, keys, 400);
+  var ideoPr = (gf(raw,'RECRAFT_PROMPT')||
+    ('Hyperrealistic '+active.name+' Meta Ad, '+(palette||'natural tones')
+    +', '+plan.enfoque+(hasMockup?', background scene only, no bottle':'')
+    +', commercial photography, 85mm, shallow DOF')).substring(0,900);
 
-  var logoDesc = hasLogo
-    ? 'The brand logo reference image must be included subtly in the composition — bottom corner or as part of the scene.'
-    : '';
-
-  var personaDesc = hasPersona
-    ? 'The reference image shows the exact person to feature. Keep their face and identity. Adapt their pose, expression and clothing to match the ad context.'
-    : '';
-
-  var pr = 'Write a photorealistic Recraft/FLUX image generation prompt for a Meta Ad.\n'
-    +'BRAND: '+active.name+'\n'
-    +'PRODUCT TO FEATURE: '+prodStr+'\n'
-    +'AD ANGLE: '+plan.enfoque+'\n'
-    +(palette?'BRAND PALETTE: '+palette+'\n':'')
-    +(b.tone?'TONE: '+b.tone.substring(0,60)+'\n':'')
-    +(inspoDesc?inspoDesc+'\n':'')
-    +(mockupDesc?mockupDesc+'\n':'')
-    +(logoDesc?logoDesc+'\n':'')
-    +(personaDesc?personaDesc+'\n':'')
-    +'\nCRITICAL: Generate a HYPERREALISTIC commercial photography scene. The product bottle must be INSIDE the scene with correct lighting, shadows and reflections — as if photographed by a professional photographer. NOT a flat composite.\n'
-    +'\nReply ONLY:\n'
-    +'RECRAFT_PROMPT: [English. Max 900 chars. Describe the full scene: environment, product placement, lighting, shadows, mood. Use words like: photorealistic, hyperrealistic, commercial photography, 85mm lens, shallow depth of field, professional studio lighting OR natural window light. Brand palette: '+(palette||'natural tones')+'. '+(inspoDesc?'Match reference style. ':'')+']\n'
-    +'HEADLINE: ['+getLang()+' max 8 words]\n'
-    +'SUBHEAD: ['+getLang()+' max 12 words]\n'
-    +'CTA: ['+getLang()+' 2-4 words]';
-
-  var raw = await claudeCall(sys, pr, keys, 500);
-  var ideoPr = (gf(raw,'RECRAFT_PROMPT')||gf(raw,'FLUX_PROMPT')||
-    ('Hyperrealistic commercial photography, '+active.name+' '+singleProd+' bottle sitting naturally in scene, '+
-    (palette||'natural tones')+', '+plan.enfoque+', professional product photography, 85mm lens, shallow DOF')).substring(0,950);
-
-  var fmt = plan.fmt || '1080x1080';
-  var sp  = fmt.split('x');
+  var fmt = plan.fmt||'1080x1080', sp=fmt.split('x');
   var imgUrl = null;
 
-  // Try FLUX Kontext pipeline first (if any references loaded)
-  if(hasMockup || hasLogo || hasPersona){
+  // ── STEP 1: Generate base scene ─────────────────────────────
+  if(keys.fal){
+    // FLUX t2i via fal (better quality than Recraft for scenes)
     try{
-      imgUrl = await falKontextPipeline(ideoPr, sp[0], sp[1], keys, hasMockup, hasLogo, hasPersona, prodStr, plan.enfoque, selectedInspos);
-      if(imgUrl) console.log('FLUX Kontext succeeded');
-    } catch(e){
-      console.warn('FLUX Kontext unavailable:', e.message.substring(0,60));
-      // Fall through to Recraft
-    }
+      imgUrl = await falText2Image(ideoPr, sp[0], sp[1]);
+      showToast('Escena generada ✓');
+    }catch(e){ console.warn('FAL t2i failed:', e.message); }
   }
-
-  // Recraft pipeline (primary when Fal unavailable)
   if(!imgUrl && keys.rec){
     try{
-      if(hasPersona && hasMockup){
-        // Two-pass: first persona, then build scene around mockup
-        var personaUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.50);
-        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl,
-          ideoPr.substring(0,900)+' Person from previous generation.', sp[0], sp[1], keys, 0.30);
-        if(!imgUrl) imgUrl = personaUrl;
-      } else if(hasPersona){
-        imgUrl = await recraftI2I(fabOverlay.persona.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.55);
-      } else if(hasMockup){
-        imgUrl = await recraftI2I(fabOverlay.mockup.dataUrl, ideoPr.substring(0,950), sp[0], sp[1], keys, 0.30);
+      if(hasPersona){
+        var cp = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
+        imgUrl = await recraftI2I(cp, ideoPr, sp[0], sp[1], keys, 0.60);
       } else {
-        imgUrl = await recraftCall(ideoPr.substring(0,950), sp[0], sp[1], keys);
+        imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys);
       }
-      // Logo: Recraft i2i pass if loaded
-      if(imgUrl && hasLogo){
-        try{
-          var logoPr = ideoPr.substring(0,850)+' Brand logo visible in corner.';
-          imgUrl = await recraftI2I(fabOverlay.logo.dataUrl, logoPr.substring(0,950), sp[0], sp[1], keys, 0.25);
-        } catch(eL){ console.warn('Logo pass failed:', eL.message); }
-      }
-    } catch(e2){
-      console.error('Recraft FAILED:', e2.message);
-      showToast('Error generando imagen: '+e2.message.substring(0,60), true);
-    }
+    }catch(e){ console.error('Recraft failed:', e.message); }
+  }
+
+  // ── STEP 2: Persona via FLUX Kontext (if Fal available) ──────
+  if(imgUrl && hasPersona && keys.fal){
+    try{
+      var cp2 = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
+      var pUrl = await falUploadBlob(cp2);
+      var pPrompt = ideoPr+'. The reference image shows the exact person to feature in this ad. Keep their face and identity. Adapt their pose and expression to fit: '+plan.enfoque+'.';
+      imgUrl = await falKontext(pUrl, pPrompt.substring(0,400), parseInt(sp[0])||1080, parseInt(sp[1])||1080);
+      showToast('Persona integrada ✓');
+    }catch(e){ console.warn('Persona FLUX failed:', e.message); }
+  }
+
+  // ── STEP 3: Composite product + logo EXACTLY ─────────────────
+  if(imgUrl && (hasMockup || hasLogo)){
+    try{
+      imgUrl = await compositeExact(imgUrl, fmt, hasMockup, hasLogo);
+      if(hasMockup) showToast('Producto integrado exacto ✓');
+    }catch(e){ console.warn('Composite failed:', e.message); }
   }
 
   return {
     id: Date.now().toString()+'_'+Math.random().toString(36).slice(2),
     type:'imagen', title:plan.titulo, format:fmt,
-    headline: gf(raw,'HEADLINE') || plan.titulo,
-    subhead:  gf(raw,'SUBHEAD')  || '',
-    cta:      gf(raw,'CTA')      || 'Ver más',
-    recraftPrompt: ideoPr, imgUrl: imgUrl, brief: raw,
-    angulo: plan.enfoque, product: singleProd, createdAt: Date.now()
+    headline: gf(raw,'HEADLINE')||plan.titulo,
+    subhead:  gf(raw,'SUBHEAD') ||'',
+    cta:      gf(raw,'CTA')     ||'Ver más',
+    recraftPrompt:ideoPr, imgUrl:imgUrl, brief:raw,
+    angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
   };
 }
 
@@ -1630,6 +1618,46 @@ async function falKontext(imageRef, prompt, width, height, falKey) {
   throw new Error('Fal kontext: '+JSON.stringify(d).substring(0,150));
 }
 
+// FAL text-to-image (FLUX Schnell for fast backgrounds)
+async function falText2Image(prompt, width, height) {
+  var w = parseInt(width)||1080, h = parseInt(height)||1080;
+  // Use aspect ratio format for FLUX
+  var ar = (w===h)?'square_hd':(h>w?'portrait_4_3':'landscape_4_3');
+  var body = JSON.stringify({
+    prompt: prompt.substring(0,900),
+    image_size: ar,
+    num_inference_steps: 4,
+    num_images: 1,
+    enable_safety_checker: false,
+    sync_mode: false
+  });
+  var r = await fetch('/api/fal', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},
+    body:body
+  });
+  var d = await r.json();
+  if(d.request_id) return await falPollResult(d.request_id, null, 'fal-ai/flux/schnell');
+  if(d.images&&d.images[0]&&d.images[0].url) return d.images[0].url;
+  throw new Error('FAL t2i: '+JSON.stringify(d).substring(0,100));
+}
+
+// Upload blob to fal storage, return public URL
+async function falUploadBlob(dataUrl) {
+  var parts=dataUrl.split(',');
+  var mime=(parts[0].match(/:(.*?);/)||[])[1]||'image/jpeg';
+  var binary=atob(parts[1]);
+  var bytes=new Uint8Array(binary.length);
+  for(var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  var blob=new Blob([bytes],{type:mime});
+  var form=new FormData(); form.append('file',blob,'ref.jpg');
+  var r=await fetch('/api/fal',{method:'POST',headers:{'X-Fal-Action':'upload'},body:form});
+  var d=await r.json();
+  if(d.url) return d.url;
+  // Fallback: return base64 directly (fal accepts it)
+  return dataUrl;
+}
+
 // Poll fal.ai queue for result
 async function falPollResult(requestId, falKey, model) {
   var statusUrl = 'https://queue.fal.run/'+model+'/requests/'+requestId;
@@ -1664,59 +1692,49 @@ async function falPollResult(requestId, falKey, model) {
 
 
 async function compositeExact(bgUrl, fmt, includeMockup, includeLogo) {
-  var parts = (fmt||'1080x1080').split('x');
-  var cw = parseInt(parts[0])||1080, ch = parseInt(parts[1])||1080;
-  var canvas = document.createElement('canvas');
-  canvas.width = cw; canvas.height = ch;
-  var ctx = canvas.getContext('2d');
+  var parts=(fmt||'1080x1080').split('x'), cw=parseInt(parts[0])||1080, ch=parseInt(parts[1])||1080;
+  var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+  var ctx=cv.getContext('2d');
 
-  // Fetch Recraft background as blob to avoid CORS taint on canvas
-  var bgObjectUrl = bgUrl;
-  if(bgUrl.startsWith('http')){
-    try{
-      var resp = await fetch(bgUrl);
-      var blob = await resp.blob();
-      bgObjectUrl = URL.createObjectURL(blob);
-    } catch(e){ console.warn('fetch bg failed, using direct url:', e.message); }
-  }
+  // Load background (fetch as blob to avoid CORS taint)
+  var bgSrc = bgUrl;
+  try{
+    if(bgUrl.startsWith('http')){
+      var r=await fetch(bgUrl); var bl=await r.blob();
+      bgSrc=URL.createObjectURL(bl);
+    }
+  }catch(e){ bgSrc=bgUrl; }
 
   await new Promise(function(res,rej){
-    var img = new Image();
-    img.onload = function(){ ctx.drawImage(img, 0, 0, cw, ch); res(); };
-    img.onerror = rej;
-    img.src = bgObjectUrl;
+    var img=new Image(); img.onload=function(){ctx.drawImage(img,0,0,cw,ch);res();};
+    img.onerror=function(){rej(new Error('bg load failed'));};
+    img.src=bgSrc;
   });
 
-  // Layer 1: product mockup — centered bottom area, 45% width
+  // Layer mockup: centered, 48% width, vertically centered
   if(includeMockup && fabOverlay.mockup && fabOverlay.mockup.dataUrl){
-    var mImg = await loadImg(fabOverlay.mockup.dataUrl);
-    var mW = Math.round(cw * 0.45);
-    var mAr = mImg.naturalHeight / mImg.naturalWidth;
-    var mH = Math.round(mW * mAr);
-    if(mH > ch * 0.75){ mH = Math.round(ch*0.75); mW = Math.round(mH/mAr); }
-    var mx = Math.round((cw - mW) / 2);       // horizontally centered
-    var my = Math.round(ch * 0.22);           // upper third — product prominent
-    ctx.drawImage(mImg, mx, my, mW, mH);
+    var mImg=await loadImg(fabOverlay.mockup.dataUrl);
+    var mW=Math.round(cw*0.48), mAr=mImg.naturalHeight/mImg.naturalWidth, mH=Math.round(mW*mAr);
+    if(mH>ch*0.78){mH=Math.round(ch*0.78);mW=Math.round(mH/mAr);}
+    var mx=Math.round((cw-mW)/2), my=Math.round((ch-mH)*0.55);
+    ctx.drawImage(mImg,mx,my,mW,mH);
   }
 
-  // Layer 2: logo — bottom-left, 18% width
+  // Layer logo: bottom-left, 18% width
   if(includeLogo && fabOverlay.logo && fabOverlay.logo.dataUrl){
-    var lImg = await loadImg(fabOverlay.logo.dataUrl);
-    var lW = Math.round(cw * 0.18);
-    var lAr = lImg.naturalHeight / lImg.naturalWidth;
-    var lH = Math.round(lW * lAr);
-    var lx = Math.round(cw * 0.04);
-    var ly = ch - lH - Math.round(ch * 0.04);
-    ctx.drawImage(lImg, lx, ly, lW, lH);
+    var lImg=await loadImg(fabOverlay.logo.dataUrl);
+    var lW=Math.round(cw*0.18), lAr=lImg.naturalHeight/lImg.naturalWidth, lH=Math.round(lW*lAr);
+    ctx.drawImage(lImg, Math.round(cw*0.04), ch-lH-Math.round(ch*0.04), lW, lH);
   }
 
-  return new Promise(function(res, rej){
-    canvas.toBlob(function(blob){
-      if(blob){ res(URL.createObjectURL(blob)); }
-      else { rej(new Error('canvas.toBlob returned null')); }
-    }, 'image/png');
+  return new Promise(function(res,rej){
+    cv.toBlob(function(b){
+      if(b) res(URL.createObjectURL(b));
+      else rej(new Error('toBlob null'));
+    },'image/jpeg',0.92);
   });
 }
+
 
 
 async function recraftI2I(imageDataUrl, prompt, width, height, keys, strength) {
@@ -2015,4 +2033,11 @@ function renderDashboard() {
 init();
 </script>
 </body>
-</html>
+</h
+      <!-- MOCKUP SELECTOR -->
+      <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">📦 Mockups a usar en esta tanda</div>
+        <div style="font-size:10px;color:var(--mut);margin-bottom:7px">Los creativos rotan entre los mockups seleccionados (✓)</div>
+        <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px"></div>
+      </div>
+    </div>
