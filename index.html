@@ -862,13 +862,24 @@ function removeBrandTag(key,idx) {
 function renderAssetGal(assetType) {
   var galId = assetType==='logo'?'logoGal':'mockupGal';
   var zoneId = assetType==='logo'?'logoZone':'mockupZone';
+  var inputId = assetType==='logo'?'logoInput':'mockupInput';
   var el=$(galId); if(!el||!active) return;
   var assets=(active.branding.assets||[]).filter(function(a){return a.type===assetType;});
-  if(!assets.length){el.innerHTML='';$(zoneId).style.display='';return;}
-  $(zoneId).style.display='none';
+  // Always keep upload zone visible so user can add more
+  var zone=$(zoneId);
+  if(zone) zone.style.display='';
+  if(!assets.length){ el.innerHTML=''; return; }
+  // Show all assets as cards + a small add button
   el.innerHTML=assets.map(function(a){
-    return '<div class="acard"><img src="'+(a.dataUrl||'')+'" alt="'+a.name+'"><div class="abadge">'+(assetType==='logo'?'Logo':'Mockup')+'</div><div class="adel" onclick="delAsset(\''+a.id+'\',\''+assetType+'\')">×</div></div>';
+    return '<div class="acard" style="position:relative">'
+      +(a.dataUrl?'<img src="'+a.dataUrl+'" alt="'+a.name+'" style="width:100%;height:100%;object-fit:contain">':'')
+      +'<div class="abadge">'+(assetType==='logo'?'Logo':'Mockup')+'</div>'
+      +'<div class="adel" data-aid="'+a.id+'" data-atype="'+assetType+'">×</div>'
+      +'</div>';
   }).join('');
+  el.querySelectorAll('.adel').forEach(function(btn){
+    btn.onclick=function(){ delAsset(this.dataset.aid, this.dataset.atype); };
+  });
 }
 function delAsset(id, assetType) {
   if(!active) return;
