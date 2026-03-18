@@ -645,7 +645,8 @@ function load() {
 }
 function saveKeys() {
   var falEl=$('kFal'); var falVal=falEl?falEl.value.trim():'';
-  var k = { ant:$('kAnt').value.trim(), rec:$('kRec').value.trim(), hey:$('kHey').value.trim(), canId:$('kCanId').value.trim(), fal:falVal };
+  var claidEl=$('kClaid'); var claidVal=claidEl?claidEl.value.trim():'';
+  var k = { ant:$('kAnt').value.trim(), rec:$('kRec').value.trim(), hey:$('kHey').value.trim(), canId:$('kCanId').value.trim(), fal:falVal, claid:claidVal };
   window._ck = k;
   try { localStorage.setItem('ceos_k3', JSON.stringify(k)); } catch(e) {}
   closeM('mAPI'); updateAPIStatus();
@@ -858,6 +859,7 @@ function openAPIConfig() {
   if(k.hey) $('kHey').value=k.hey;
   if(k.canId) $('kCanId').value=k.canId;
   var falEl=$('kFal'); if(falEl&&k.fal) falEl.value=k.fal;
+  var claidEl2=$('kClaid'); if(claidEl2&&k.claid) claidEl2.value=k.claid;
   openM('mAPI');
 }
 
@@ -1341,6 +1343,81 @@ function renderFabResults(items) {
 // ══════════════════════════════════════════════
 // RECRAFT API
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// CLAID AI — Product photography (preserves label/product exactly)
+// ══════════════════════════════════════════════
+
+async function claidPhotoshoot(productDataUrl, prompt, inspoDataUrl, mode) {
+  // mode: 'precise' (preserves product exactly) | 'creative' (product in use)
+  // Convert product image to base64
+  var parts = productDataUrl.split(',');
+  var b64 = parts[1];
+  var mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+
+  // Build Claid request
+  var body = {
+    input: { url: productDataUrl },
+    operations: {
+      ai_photoshoot: {
+        mode: mode || 'precise',
+        prompt: prompt.substring(0, 1000),
+        output_size: '1024x1024',
+        creativity: mode === 'creative' ? 'high' : 'medium'
+      }
+    },
+    output: { format: { type: 'jpeg', quality: 95 } }
+  };
+
+  // If inspiration image provided, use as style template
+  if(inspoDataUrl) {
+    body.operations.ai_photoshoot.style_reference = inspoDataUrl;
+  }
+
+  var r = await fetch('/api/claid', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Claid-Action': 'photoshoot' },
+    body: JSON.stringify(body)
+  });
+  var txt = await r.text();
+  var d; try{ d = JSON.parse(txt); } catch(e) { throw new Error('Claid JSON: ' + txt.substring(0,80)); }
+  if(d.error) throw new Error('Claid: ' + (d.error.message || JSON.stringify(d.error).substring(0,80)));
+
+  // Async job — poll for result
+  if(d.job_id || (d.data && d.data.job_id)) {
+    var jobId = d.job_id || d.data.job_id;
+    return await claidPoll(jobId);
+  }
+
+  // Sync result
+  var url = (d.data && d.data.output && d.data.output.tmp_url)
+    || (d.output && d.output.tmp_url)
+    || (d.data && d.data.url);
+  if(url) return url;
+  throw new Error('Claid no URL: ' + JSON.stringify(d).substring(0,150));
+}
+
+async function claidPoll(jobId) {
+  for(var i = 0; i < 30; i++) {
+    await new Promise(function(r){ setTimeout(r, 2000); });
+    var r = await fetch('/api/claid', {
+      headers: { 'X-Claid-Action': 'poll', 'X-Claid-Job-Id': jobId }
+    });
+    var d = await r.json();
+    var status = (d.data && d.data.status) || d.status;
+    console.log('Claid poll:', status);
+    if(status === 'succeeded' || status === 'done') {
+      var url = (d.data && d.data.output && d.data.output.tmp_url)
+        || (d.data && d.data.url) || d.url;
+      if(url) return url;
+      throw new Error('Claid succeeded but no URL');
+    }
+    if(status === 'failed' || status === 'error') {
+      throw new Error('Claid job failed: ' + JSON.stringify(d).substring(0,100));
+    }
+  }
+  throw new Error('Claid timeout after 60s');
+}
+
 async function recraftCall(prompt, width, height, keys) {
   // Standard text-to-image generation — Recraft v3 max 1000 chars
   prompt = prompt.substring(0, 950);
@@ -1421,6 +1498,7 @@ async function fabGenImagen(plan, keys, extra) {
   var hasPersona = !!(fabOverlay.persona && fabOverlay.persona.dataUrl);
   var hasLogo    = !!(fabOverlay.logo    && fabOverlay.logo.dataUrl);
 
+  // Get mockup (rotate between selected)
   var selectedMockups = (typeof getSelectedMockups==='function') ? getSelectedMockups() : [];
   if(!selectedMockups.length)
     selectedMockups=(active&&active.branding&&active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
@@ -1433,77 +1511,67 @@ async function fabGenImagen(plan, keys, extra) {
   var singleProd = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
   var palette    = (b.colors&&b.colors.slice(0,3).join(', '))||'';
   var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
+  var inspoImg   = selectedInspos.length ? selectedInspos[0].dataUrl : null;
 
-  var sys = 'Expert Meta Ads art director for '+active.name+'. '+brandCtx(extra);
-  var inspoNote = selectedInspos.length ? 'Match visual style of '+selectedInspos.length+' reference ad(s). ' : '';
+  // ── Claude writes the scene prompt ──────────────────────────
+  var sys = 'Expert Meta Ads photographer for '+active.name+'. '+brandCtx(extra);
+  var inspoNote = selectedInspos.length ? 'Match the visual style, composition and mood of '+selectedInspos.length+' reference ad(s). ' : '';
 
-  // Claude writes ONE unified prompt for the complete scene
-  var pr = 'Write a single Recraft image generation prompt for a complete Meta Ad photo.\n'
+  var pr = 'Write a product photography scene prompt for a Meta Ad.\n'
     +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
     +(palette?'PALETTE:'+palette+'\n':'')+(b.tone?'TONE:'+b.tone.substring(0,50)+'\n':'')
     +(inspoNote?'STYLE:'+inspoNote+'\n':'')
-    +'ELEMENTS TO INCLUDE:\n'
-    +(hasMockup?'- The exact '+singleProd+' amber dropper bottle with its label, placed naturally in the scene\n':'')
-    +(hasPersona?'- A person naturally using or holding the product (lifestyle context, NOT in a car)\n':'')
-    +(hasLogo?'- Brand logo '+active.name+' visible in corner\n':'')
+    +(hasPersona?'PERSON: Include a person naturally using the product in a lifestyle setting (not in a car).\n':'')
     +'Reply ONLY:\n'
-    +'RECRAFT_PROMPT:[English, max 900 chars. Describe the COMPLETE scene including: '
-    +(hasMockup?'the '+singleProd+' amber glass dropper bottle with its cream/beige label clearly visible, ':'' )
-    +(hasPersona?'a person naturally interacting with the product (not in a car), ':'')
-    +'the environment/location, lighting, mood. '
-    +'Hyperrealistic commercial photography, 85mm lens, shallow DOF. '
-    +'Brand palette: '+(palette||'natural tones')+'. '+(inspoNote)
-    +(hasPersona?'Person should be in a lifestyle setting: home, nature, wellness space. ':'')
-    +']\n'
+    +'SCENE_PROMPT:[English, max 500 chars. Describe the scene for the product: location, surfaces, lighting, mood, props. '
+    +(hasPersona?'Include a person (young adult) holding/using the product naturally. ':'')
+    +'Brand palette: '+(palette||'natural tones')+'. Hyperrealistic, 85mm lens, shallow DOF. '+inspoNote+']\n'
     +'HEADLINE:['+getLang()+' max 8 words]\n'
     +'SUBHEAD:['+getLang()+' max 12 words]\n'
     +'CTA:['+getLang()+' 2-4 words]';
 
-  var raw = await claudeCall(sys, pr, keys, 450);
-  var ideoPr = (gf(raw,'RECRAFT_PROMPT')||
-    ('Hyperrealistic commercial photo, '+singleProd+' amber dropper bottle with label visible, '
-    +(hasPersona?'person using the product in lifestyle setting, ':'')
-    +(palette?palette+', ':'')+'85mm lens, shallow DOF, commercial photography')).substring(0,950);
+  var raw = await claudeCall(sys, pr, keys, 400);
+  var scenePrompt = (gf(raw,'SCENE_PROMPT') ||
+    ((hasPersona?'Person holding ':'')+singleProd+' in a premium lifestyle setting, '
+    +(palette||'natural tones')+', '+plan.enfoque+', 85mm lens, shallow DOF')).substring(0,500);
 
   var fmt = plan.fmt||'1080x1080', sp = fmt.split('x');
-  var w = parseInt(sp[0])||1080, h = parseInt(sp[1])||1080;
   var imgUrl = null;
 
-  // ── STRATEGY: Use the reference image that matters most ────────
-  // FLUX Kontext: pass the reference as image_url, prompt describes the full scene
-  // This way FLUX respects the reference AND generates a new scene around it
+  // ── PIPELINE PRIORITY ────────────────────────────────────────
+  // 1. Claid AI Photoshoot (best for product scenes — preserves label exactly)
+  // 2. FLUX Kontext (if Fal available)
+  // 3. Recraft (fallback)
 
-  if(keys.fal){
+  if(hasMockup && keys.claid) {
     try{
-      var refB64, refPrompt;
+      var claidMode = hasPersona ? 'creative' : 'precise';
+      imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, scenePrompt, inspoImg, claidMode);
+      showToast(hasPersona ? 'Escena con persona generada ✓' : 'Producto en escena ✓');
+    }catch(e){
+      console.error('Claid failed:', e.message);
+      showToast('Claid: '+e.message.substring(0,50), true);
+    }
+  }
 
-      if(hasPersona && hasMockup){
-        // Pass persona as reference (FLUX keeps the person's appearance)
-        // Prompt explicitly describes the product too
-        refB64 = await compressImage(fabOverlay.persona.dataUrl, 900, 0.90);
-        refPrompt = ideoPr + ' Transform this person into a professional Meta Ad. '
-          +'Keep their exact face and identity. Place them in a new lifestyle scene (NOT the original background). '
-          +'They should be holding/using the '+singleProd+' amber dropper bottle with its label clearly visible. '
-          +'Professional commercial photography lighting.';
-      } else if(hasMockup){
-        // Pass mockup as reference — FLUX keeps the product accurate
-        refB64 = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
-        refPrompt = ideoPr + ' Place this exact product bottle in the scene. '
-          +'Keep the label, colors and bottle shape exactly accurate. '
-          +'The product should be naturally integrated with correct shadows and reflections.';
-      } else if(hasPersona){
-        refB64 = await compressImage(fabOverlay.persona.dataUrl, 900, 0.90);
-        refPrompt = ideoPr + ' Use this person as the model. Keep their exact face. '
-          +'Place them in a new lifestyle scene appropriate for the ad.';
-      }
+  // FLUX Kontext fallback (if Claid not available or no mockup)
+  if(!imgUrl && keys.fal) {
+    try{
+      var refB64 = hasMockup
+        ? await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90)
+        : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null);
 
       if(refB64){
         var refUrl = await falUploadBlob(refB64);
+        var fluxPrompt = (hasMockup
+          ? 'Place this exact product naturally in scene: '+scenePrompt+'. Keep label exactly accurate. '
+          : scenePrompt
+        ).substring(0,400);
         var body = JSON.stringify({
-          prompt: refPrompt.substring(0,450),
+          prompt: fluxPrompt,
           image_url: refUrl,
           num_inference_steps: 28,
-          guidance_scale: 2.0,
+          guidance_scale: 2.5,
           num_images: 1,
           enable_safety_checker: false,
           output_format: 'jpeg'
@@ -1515,60 +1583,37 @@ async function fabGenImagen(plan, keys, extra) {
         });
         var txt = await r.text();
         var d; try{ d=JSON.parse(txt); }catch(e){ throw new Error('FAL JSON: '+txt.substring(0,60)); }
-        if(d.error||d.detail) throw new Error('FAL: '+(d.error||d.detail||JSON.stringify(d).substring(0,60)));
-        console.log('FAL submit ok, request_id:', d.request_id);
+        if(d.error||d.detail) throw new Error('FAL: '+(d.error||d.detail||'').substring(0,60));
         if(d.request_id) imgUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
         else if(d.images&&d.images[0]) imgUrl = d.images[0].url;
         if(imgUrl) showToast('Imagen generada con FLUX ✓');
       }
     }catch(e){
-      console.error('FLUX failed:', e.message);
-      showToast('FLUX: '+e.message.substring(0,50)+' — usando Recraft', true);
+      console.warn('FLUX failed:', e.message.substring(0,60));
     }
   }
 
-  // ── Recraft fallback ───────────────────────────────────────────
-  if(!imgUrl && keys.rec){
+  // Recraft fallback
+  if(!imgUrl && keys.rec) {
     try{
-      if(hasPersona){
-        var cp = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
-        imgUrl = await recraftI2I(cp, ideoPr, sp[0], sp[1], keys, 0.55);
-      } else if(hasMockup){
+      var recPrompt = (hasMockup
+        ? singleProd+' product bottle in scene: '+scenePrompt
+        : scenePrompt).substring(0,900);
+      if(hasMockup){
         var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
-        imgUrl = await recraftI2I(cm, ideoPr, sp[0], sp[1], keys, 0.30);
+        imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.28);
+      } else if(hasPersona){
+        var cp = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
+        imgUrl = await recraftI2I(cp, recPrompt, sp[0], sp[1], keys, 0.55);
       } else {
-        imgUrl = await recraftCall(ideoPr, sp[0], sp[1], keys);
+        imgUrl = await recraftCall(recPrompt, sp[0], sp[1], keys);
       }
-      showToast('Imagen generada con Recraft ✓');
+      if(imgUrl) showToast('Imagen generada con Recraft ✓');
     }catch(e){ console.error('Recraft failed:', e.message); }
   }
 
-  // ── Logo: FLUX Kontext pass ────────────────────────────────────
-  if(imgUrl && hasLogo && keys.fal){
-    try{
-      var logoB64 = await compressImage(fabOverlay.logo.dataUrl, 600, 0.90);
-      var logoUrl = await falUploadBlob(logoB64);
-      var sceneB64 = await fetchAsDataUrl(imgUrl);
-      var sceneUrl = await falUploadBlob(sceneB64);
-      var logoPr = 'Add the brand logo from the reference image to the bottom-left corner of this scene. Blend naturally.';
-      var bodyL = JSON.stringify({
-        prompt: logoPr, image_url: sceneUrl,
-        num_inference_steps:20, guidance_scale:1.5,
-        num_images:1, enable_safety_checker:false, output_format:'jpeg'
-      });
-      var rL = await fetch('/api/fal',{method:'POST',
-        headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
-        body:bodyL});
-      var dL = await rL.json();
-      if(dL.request_id){
-        var logoResult = await falPollResult(dL.request_id, null, 'fal-ai/flux-pro/kontext');
-        if(logoResult) imgUrl = logoResult;
-      }
-    }catch(e){
-      // Canvas fallback for logo
-      try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e2){}
-    }
-  } else if(imgUrl && hasLogo){
+  // Logo: canvas composite (always exact)
+  if(imgUrl && hasLogo){
     try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e){}
   }
 
@@ -1578,7 +1623,7 @@ async function fabGenImagen(plan, keys, extra) {
     headline: gf(raw,'HEADLINE')||plan.titulo,
     subhead:  gf(raw,'SUBHEAD') ||'',
     cta:      gf(raw,'CTA')     ||'Ver más',
-    recraftPrompt:ideoPr, imgUrl:imgUrl, brief:raw,
+    recraftPrompt:scenePrompt, imgUrl:imgUrl, brief:raw,
     angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
   };
 }
