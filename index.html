@@ -1600,7 +1600,10 @@ async function fabGenImagen(plan, keys, extra) {
   var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
   var inspoImg   = selectedInspos.length ? selectedInspos[0].dataUrl : null;
 
-  // ── Claude writes the scene prompt ──────────────────────────
+  // Get the user's raw instruction from the Fábrica input
+  var userInstruction = ($('fabExtra')&&$('fabExtra').value.trim()) || '';
+
+  // ── Claude writes the scene prompt (user instruction is #1 priority) ──
   var sys = 'Expert Meta Ads photographer for '+active.name+'. '+brandCtx(extra);
   var inspoNote = selectedInspos.length ? 'Match the visual style, composition and mood of '+selectedInspos.length+' reference ad(s). ' : '';
 
@@ -1608,17 +1611,20 @@ async function fabGenImagen(plan, keys, extra) {
     +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
     +(palette?'PALETTE:'+palette+'\n':'')+(b.tone?'TONE:'+b.tone.substring(0,50)+'\n':'')
     +(inspoNote?'STYLE:'+inspoNote+'\n':'')
+    +(userInstruction?'*** USER INSTRUCTION (THIS IS THE #1 PRIORITY — FOLLOW IT EXACTLY): '+userInstruction+' ***\n':'')
     +(hasPersona?'PERSON: Include a person naturally using the product in a lifestyle setting.\n':'')
     +'Reply ONLY:\n'
-    +'SCENE_PROMPT:[English, max 500 chars. Describe a scene where the product is naturally integrated: '
-    +'location, surfaces, lighting, mood, props. The product should be IN the scene — on a table, held by a person, '
-    +'on a shelf, etc. Hyperrealistic commercial photography, 85mm lens, shallow DOF. '
-    +'Brand palette: '+(palette||'natural tones')+'. '+inspoNote+']\n'
+    +'SCENE_PROMPT:[English, max 500 chars. '
+    +(userInstruction?'The user instruction above is the PRIMARY direction — translate it faithfully into the scene description. ':'')
+    +'Describe the COMPLETE scene: what is happening, who is there, what they are doing WITH the product, '
+    +'the environment, surfaces, lighting, mood, camera angle. The product must be part of the action — '
+    +'held, poured, opened, displayed, etc. Hyperrealistic, 85mm lens, shallow DOF. '
+    +'Palette: '+(palette||'natural tones')+'. '+inspoNote+']\n'
     +'HEADLINE:['+getLang()+' max 8 words]\n'
     +'SUBHEAD:['+getLang()+' max 12 words]\n'
     +'CTA:['+getLang()+' 2-4 words]';
 
-  var raw = await claudeCall(sys, pr, keys, 400);
+  var raw = await claudeCall(sys, pr, keys, 500);
   var scenePrompt = (gf(raw,'SCENE_PROMPT') ||
     (singleProd+' product on a premium surface, '
     +(palette||'natural tones')+', '+plan.enfoque+', 85mm lens, shallow DOF')).substring(0,500);
@@ -1646,12 +1652,17 @@ async function fabGenImagen(plan, keys, extra) {
   if(hasMockup && keys.claid) {
     try{
       var claidAR = (fmt==='1080x1920') ? '4:7' : (fmt==='1920x1080') ? '16:9' : '1:1';
-      imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, scenePrompt, inspoImg, null, claidAR);
+      var claidPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
+      imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, claidPrompt, inspoImg, null, claidAR);
       showToast('Claid: Producto integrado en escena ✓');
     }catch(e){
       console.error('Claid failed:', e.message);
     }
   }
+
+  // Aspect ratio helpers
+  var isPortrait = (fmt==='1080x1920');
+  var isLandscape = (fmt==='1920x1080');
 
   // ── 2. FLUX Kontext (integrates mockup naturally with context) ──
   if(!imgUrl && hasMockup && keys.fal) {
@@ -1659,38 +1670,43 @@ async function fabGenImagen(plan, keys, extra) {
       var mockupCompressed = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
       var mockupUrl = await falUploadBlob(mockupCompressed);
 
-      // Prompt emphasizes: keep label EXACTLY, integrate into scene naturally
-      var kontextPrompt = (
-        'Place this exact product bottle/package naturally into this scene: '+scenePrompt+'. '
-        +'CRITICAL: Keep the product label, text, logo, and design EXACTLY as shown — do not change, '
-        +'blur, or reimagine any text or graphics on the product. The label must be perfectly readable. '
-        +'Adapt the lighting and shadows to match the scene. '
-        +(hasPersona?'A person is naturally holding or using the product. ':'')
-        +'The product should have correct perspective and scale relative to the environment.'
-      ).substring(0,450);
+      // Build prompt: USER INSTRUCTION first, then scene, then preservation rules
+      var kontextParts = [];
+      if(userInstruction) kontextParts.push(userInstruction);
+      kontextParts.push('Scene: '+scenePrompt);
+      kontextParts.push('This image shows the exact product to feature. Place it naturally in the scene.');
+      kontextParts.push('CRITICAL: Keep product label, text, and design EXACTLY as shown. Perfectly readable.');
+      kontextParts.push('Match lighting, perspective, and shadows to environment.');
+      if(isPortrait) kontextParts.push('Vertical portrait composition.');
+      var kontextPrompt = kontextParts.join('. ').substring(0,480);
 
-      var fluxBody = JSON.stringify({
+      var fluxPayload = {
         prompt: kontextPrompt,
         image_url: mockupUrl,
         num_inference_steps: 28,
-        guidance_scale: 3.0,
+        guidance_scale: 3.5,
         num_images: 1,
         enable_safety_checker: false,
         output_format: 'jpeg'
-      });
+      };
+      // Set correct output size for aspect ratio
+      if(isPortrait) fluxPayload.image_size = {width:768,height:1344};
+      else if(isLandscape) fluxPayload.image_size = {width:1344,height:768};
+      else fluxPayload.image_size = {width:1024,height:1024};
+
       var r = await fetch('/api/fal', {
         method:'POST',
         headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
-        body:fluxBody
+        body:JSON.stringify(fluxPayload)
       });
       var txt = await r.text();
       var d; try{ d=JSON.parse(txt); }catch(e){ throw new Error('FAL JSON: '+txt.substring(0,60)); }
-      if(d.error||d.detail) throw new Error('FAL: '+(d.error||d.detail||'').substring(0,60));
+      if(d.error||d.detail) throw new Error('FAL: '+JSON.stringify(d.error||d.detail||d).substring(0,120));
       if(d.request_id) imgUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
       else if(d.images&&d.images[0]) imgUrl = d.images[0].url;
       if(imgUrl) showToast('FLUX Kontext: Producto integrado en escena ✓');
     }catch(e){
-      console.warn('FLUX Kontext failed:', e.message.substring(0,80));
+      console.warn('FLUX Kontext failed:', e.message.substring(0,100));
     }
   }
 
@@ -1698,8 +1714,9 @@ async function fabGenImagen(plan, keys, extra) {
   if(!imgUrl && hasMockup) {
     try{
       // Generate background scene WITHOUT product
-      var bgPrompt = (scenePrompt.replace(/product|bottle|package/gi,'surface')
-        +'. Empty premium surface in center, no product, only environment and props.').substring(0,500);
+      var bgPromptRaw = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
+      var bgPrompt = (bgPromptRaw.replace(/product|bottle|package/gi,'surface')
+        +'. Premium background scene, no product visible, only environment.').substring(0,500);
       var bgUrl = null;
 
       // Try FLUX Schnell for fast background
@@ -1709,7 +1726,7 @@ async function fabGenImagen(plan, keys, extra) {
             prompt:bgPrompt.substring(0,400),
             num_inference_steps:4, num_images:1,
             enable_safety_checker:false, sync_mode:false,
-            image_size:(fmt==='1080x1920'?'portrait_4_3':(fmt==='1920x1080'?'landscape_4_3':'square_hd'))
+            image_size: isPortrait?{width:768,height:1344}:(isLandscape?{width:1344,height:768}:{width:1024,height:1024})
           });
           var br = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},body:bgBody});
           var bd = await br.json();
@@ -1732,6 +1749,7 @@ async function fabGenImagen(plan, keys, extra) {
 
   // ── No mockup: just generate the scene directly ──
   if(!imgUrl && !hasMockup) {
+    var scPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
     if(keys.fal) {
       try{
         var refB64 = inspoImg ? await compressImage(inspoImg, 900, 0.90)
@@ -1739,9 +1757,10 @@ async function fabGenImagen(plan, keys, extra) {
         var noMockBody;
         if(refB64){
           var refUrl = await falUploadBlob(refB64);
-          noMockBody = JSON.stringify({prompt:scenePrompt.substring(0,400),image_url:refUrl,num_inference_steps:28,guidance_scale:2.5,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
+          noMockBody = JSON.stringify({prompt:scPrompt.substring(0,400),image_url:refUrl,num_inference_steps:28,guidance_scale:2.5,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
         } else {
-          noMockBody = JSON.stringify({prompt:scenePrompt.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,image_size:(fmt==='1080x1920'?'portrait_4_3':'square_hd')});
+          noMockBody = JSON.stringify({prompt:scPrompt.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,
+            image_size:isPortrait?{width:768,height:1344}:{width:1024,height:1024}});
         }
         var nmModel = refB64 ? 'fal-ai/flux-pro/kontext' : 'fal-ai/flux/schnell';
         var nmr = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':nmModel,'X-Fal-Action':'submit'},body:noMockBody});
@@ -1754,9 +1773,9 @@ async function fabGenImagen(plan, keys, extra) {
       try{
         if(inspoImg){
           var ci = await compressImage(inspoImg, 800, 0.85);
-          imgUrl = await recraftI2I(ci, scenePrompt.substring(0,900), sp[0], sp[1], keys, 0.45);
+          imgUrl = await recraftI2I(ci, scPrompt.substring(0,900), sp[0], sp[1], keys, 0.45);
         } else {
-          imgUrl = await recraftCall(scenePrompt.substring(0,900), sp[0], sp[1], keys);
+          imgUrl = await recraftCall(scPrompt.substring(0,900), sp[0], sp[1], keys);
         }
       }catch(e){}
     }
