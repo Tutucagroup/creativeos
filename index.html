@@ -662,7 +662,7 @@ function getKeys() {
 }
 function updateAPIStatus() {
   var k = getKeys();
-  var ok = !!(k.ant && (k.fal || k.rec));
+  var ok = !!(k.ant && (hasFal() || k.rec));
   $('apiDot').style.background = ok ? 'var(--suc)' : 'var(--war)';
   $('apiTxt').textContent = ok ? 'APIs conectadas' : 'Configurar APIs';
 }
@@ -696,6 +696,9 @@ function dlBlob(url, name) {
   }).catch(function(){ window.open(url,'_blank'); });
 }
 function getLang(){ return (active&&active.branding&&active.branding.lang)||'es-AR'; }
+// FAL_KEY is configured as a Vercel server-side env var, not a browser key.
+// The /api/fal proxy always has the key — no need to check hasFal() in the client.
+function hasFal(){ return true; }
 
 // ══════════════════════════════════════════════
 // INIT
@@ -1665,7 +1668,7 @@ async function fabGenImagen(plan, keys, extra) {
   var isLandscape = (fmt==='1920x1080');
 
   // ── 2. FLUX Kontext (integrates mockup naturally with context) ──
-  if(!imgUrl && hasMockup && keys.fal) {
+  if(!imgUrl && hasMockup && hasFal()) {
     try{
       var mockupCompressed = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
       var mockupUrl = await falUploadBlob(mockupCompressed);
@@ -1720,7 +1723,7 @@ async function fabGenImagen(plan, keys, extra) {
       var bgUrl = null;
 
       // Try FLUX Schnell for fast background
-      if(keys.fal) {
+      if(hasFal()) {
         try{
           var bgBody = JSON.stringify({
             prompt:bgPrompt.substring(0,400),
@@ -1750,7 +1753,7 @@ async function fabGenImagen(plan, keys, extra) {
   // ── No mockup: just generate the scene directly ──
   if(!imgUrl && !hasMockup) {
     var scPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
-    if(keys.fal) {
+    if(hasFal()) {
       try{
         var refB64 = inspoImg ? await compressImage(inspoImg, 900, 0.90)
           : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null);
@@ -1844,7 +1847,7 @@ async function fabGenCarrusel(plan, keys, extra) {
         try{ slideUrl = await claidPhotoshoot(mockup.dataUrl, sceneP, null, null, '1:1'); }catch(e){ console.warn('Claid slide '+i+':', e.message); }
       }
       // 2. FLUX Kontext (integrates mockup into scene naturally)
-      if(!slideUrl && mockup && keys.fal) {
+      if(!slideUrl && mockup && hasFal()) {
         try{
           var sMockUrl = await falUploadBlob(await compressImage(mockup.dataUrl, 900, 0.90));
           var sPrompt = ('Place this exact product in scene: '+sceneP+'. Keep label and text EXACTLY as shown. Correct perspective and lighting.').substring(0,400);
@@ -1860,7 +1863,7 @@ async function fabGenCarrusel(plan, keys, extra) {
         try{
           var bgP = sceneP.replace(/product|bottle|package/gi,'surface')+'. Empty surface, no product.';
           var bgSlide = null;
-          if(keys.fal){
+          if(hasFal()){
             try{
               var bgB=JSON.stringify({prompt:bgP.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,image_size:'square_hd'});
               var bgR=await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},body:bgB});
@@ -2230,8 +2233,9 @@ async function falUploadBlob(dataUrl) {
 
 // Poll fal.ai queue for result
 async function falPollResult(requestId, falKey, model) {
-  var statusUrl = 'https://queue.fal.run/'+model+'/requests/'+requestId;
-  for(var i=0;i<30;i++){
+  // Kontext Pro needs more time (up to ~90s), Schnell is fast (~10s)
+  var maxPolls = model.indexOf('kontext')>=0 ? 45 : 30;
+  for(var i=0;i<maxPolls;i++){
     await new Promise(function(r){setTimeout(r,2000);});
     var r = await fetch('/api/fal', {
       headers: {
@@ -2258,7 +2262,7 @@ async function falPollResult(requestId, falKey, model) {
     }
     if(s.status === 'FAILED') throw new Error('Fal job failed: '+JSON.stringify(s).substring(0,100));
   }
-  throw new Error('Fal timeout after 60s');
+  throw new Error('Fal timeout after '+(maxPolls*2)+'s');
 }
 
 
