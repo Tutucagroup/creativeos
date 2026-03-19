@@ -434,6 +434,12 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         </div>
 
       </div>
+      <!-- MOCKUP SELECTOR -->
+      <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">📦 Mockups a usar en esta tanda</div>
+        <div style="font-size:10px;color:var(--mut);margin-bottom:7px">Los creativos rotan entre los mockups seleccionados (✓)</div>
+        <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px"></div>
+      </div>
     </div>
         <div class="card" style="margin-bottom:14px">
       <div class="sec-title" style="margin-bottom:6px"><div class="sec-dot"></div>✨ Referencias de estilo</div>
@@ -812,12 +818,16 @@ function renderSidebar() {
 }
 function selectProjById(id) {
   if(!id) return;
+  var prevId = active ? active.id : null;
   active = projects.find(function(p){return p.id===id;});
   if(!active) return;
   ensureBranding();
-  window._fabProds = {};
-  window._fabMockups = {};
-  window._fabInspo = {};
+  // Only reset selections when switching to a different project
+  if(prevId !== id) {
+    window._fabProds = {};
+    window._fabMockups = {};
+    window._fabInspo = {};
+  }
   $('projSel').value = id;
   $('dashTitle').textContent = active.name;
   $('dashSub').textContent = (active.client||active.rubro||'Proyecto');
@@ -1078,23 +1088,39 @@ function usarAngulo(i) {
 // ══════════════════════════════════════════════
 function loadFabAngulos() {
   if(!active){ setTimeout(loadFabAngulos, 300); return; }
-  // Force-sync active project from localStorage (in case data was added after load)
-  try{
-    var stored = localStorage.getItem(SKEY);
-    if(stored){
+  // Force-sync active project from ALL localStorage keys (in case data was added after load)
+  ['creativeos_v3','creativeos_v5','creativeos_v4','creativeos_v2','creativeos'].forEach(function(key){
+    try{
+      var stored = localStorage.getItem(key);
+      if(!stored) return;
       var arr = JSON.parse(stored);
-      var fresh = arr.find(function(p){return p.id===active.id;});
+      if(!Array.isArray(arr)) return;
+      var fresh = arr.find(function(p){return p.id===active.id || p.name===active.name;});
       if(fresh && fresh.branding){
-        // Merge fresh branding data
+        if(!active.branding) active.branding = {};
         if((fresh.branding.assets||[]).length > (active.branding.assets||[]).length)
           active.branding.assets = fresh.branding.assets;
         if((fresh.branding.products||[]).length > (active.branding.products||[]).length)
           active.branding.products = fresh.branding.products;
         if((fresh.branding.angulos||[]).length > (active.branding.angulos||[]).length)
           active.branding.angulos = fresh.branding.angulos;
+        if((fresh.branding.inspiracion||[]).length > (active.branding.inspiracion||[]).length)
+          active.branding.inspiracion = fresh.branding.inspiracion;
+        if((fresh.branding.colors||[]).length > (active.branding.colors||[]).length)
+          active.branding.colors = fresh.branding.colors;
+        if(fresh.branding.desc && !active.branding.desc)
+          active.branding.desc = fresh.branding.desc;
+        if(fresh.branding.tone && !active.branding.tone)
+          active.branding.tone = fresh.branding.tone;
+        if(fresh.branding.audience && !active.branding.audience)
+          active.branding.audience = fresh.branding.audience;
       }
-    }
-  } catch(e){}
+    } catch(e){}
+  });
+  // Initialize selection maps only if they don't exist (don't reset on page revisit)
+  if(!window._fabMockups) window._fabMockups = {};
+  if(!window._fabProds) window._fabProds = {};
+  if(!window._fabInspo) window._fabInspo = {};
   var angs=(active.branding&&active.branding.angulos)||[];
   var sel=$('fabAngulo');
   sel.innerHTML='<option value="">Sin ángulo (prompt libre)</option>';
@@ -1256,10 +1282,13 @@ async function fabricar() {
   var ctx=brandCtx(anguloCtx+prodNote+(extra?'\n'+extra:''));
 
   // Build plan directly without asking Claude for JSON
-  // Distribute types evenly across total
+  // Multi-format: when both Feed 1:1 and Story 9:16 are checked, each imagen plan gets both formats
+  var bothImgFormats = chkImg && chkStory;
+  // Remove duplicate imagen types if both formats checked (we'll duplicate per-plan instead)
+  var tiposUniq = bothImgFormats ? tipos.filter(function(t){ return !(t.type==='imagen' && t.fmt==='1080x1920'); }) : tipos;
   var planArr=[];
   var tiposCopy=[];
-  while(tiposCopy.length<total){ tipos.forEach(function(t){if(tiposCopy.length<total)tiposCopy.push(t);}); if(!tipos.length)break; }
+  while(tiposCopy.length<total){ tiposUniq.forEach(function(t){if(tiposCopy.length<total)tiposCopy.push(t);}); if(!tiposUniq.length)break; }
   // Get titles/hooks from Claude in one call
   updateFabProgress(0,total,'Planificando creativos con Claude...');
   try{
@@ -1316,6 +1345,15 @@ async function fabricar() {
       else if(planType==='video') cr=await fabGenVideo(plan,keys,anguloCtx+'\n'+(extra||''));
       else cr=await fabGenImagen(plan,keys,anguloCtx+'\n'+(extra||'')); // default to imagen
       if(cr){results.push(cr);tanda.items.push(cr.id);active.creatives.unshift(cr);}
+      // Multi-format: generate 9:16 version of each imagen when both formats selected
+      if(cr && bothImgFormats && planType==='imagen' && plan.fmt==='1080x1080') {
+        try{
+          updateFabProgress(i,planArr.length,'Generando versión 9:16...');
+          var plan916 = Object.assign({}, plan, {fmt:'1080x1920'});
+          var cr916 = await fabGenImagen(plan916, keys, anguloCtx+'\n'+(extra||''));
+          if(cr916){cr916.title=cr.title+' (Story)';results.push(cr916);tanda.items.push(cr916.id);active.creatives.unshift(cr916);}
+        }catch(e2){ console.warn('9:16 variant failed:', e2.message); }
+      }
     }catch(e){
       console.error('Error en item '+i+':',e.message, e);
       showToast('Error creativo '+(i+1)+': '+e.message.substring(0,60),true);
@@ -1350,30 +1388,48 @@ function renderFabResults(items) {
 // CLAID AI — Product photography (preserves label/product exactly)
 // ══════════════════════════════════════════════
 
-async function claidPhotoshoot(productDataUrl, prompt, inspoDataUrl, mode) {
-  // mode: 'precise' (preserves product exactly) | 'creative' (product in use)
-  // Convert product image to base64
-  var parts = productDataUrl.split(',');
-  var b64 = parts[1];
-  var mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+async function claidPhotoshoot(productDataUrl, prompt, inspoDataUrl, mode, aspectRatio) {
+  // Claid /v1/scene/create requires a public URL — upload to Fal storage first
+  var imageUrl = productDataUrl;
+  if(productDataUrl.startsWith('data:')) {
+    try {
+      imageUrl = await falUploadBlob(productDataUrl);
+      console.log('Claid: uploaded mockup to Fal storage:', imageUrl.substring(0,80));
+    } catch(e) {
+      console.warn('Claid: Fal upload failed, trying base64 URI:', e.message);
+    }
+  }
 
-  // Build Claid request
+  // Upload inspiration image if provided
+  var templateUrl = null;
+  if(inspoDataUrl && inspoDataUrl.startsWith('data:')) {
+    try { templateUrl = await falUploadBlob(inspoDataUrl); } catch(e) {}
+  } else if(inspoDataUrl) {
+    templateUrl = inspoDataUrl;
+  }
+
+  // Build Claid /v1/scene/create request body
   var body = {
-    input: { url: productDataUrl },
-    operations: {
-      ai_photoshoot: {
-        mode: mode || 'precise',
-        prompt: prompt.substring(0, 1000),
-        output_size: '1024x1024',
-        creativity: mode === 'creative' ? 'high' : 'medium'
-      }
+    object: {
+      image_url: imageUrl
     },
-    output: { format: { type: 'jpeg', quality: 95 } }
+    scene: {
+      model: 'v2',
+      prompt: prompt.substring(0, 1000),
+      negative_prompt: 'text, watermark, cartoon, low quality, blurry, distorted label',
+      aspect_ratio: aspectRatio || '1:1',
+      preference: 'best'
+    },
+    output: {
+      number_of_images: 1,
+      format: 'jpeg'
+    }
   };
 
-  // If inspiration image provided, use as style template
-  if(inspoDataUrl) {
-    body.operations.ai_photoshoot.style_reference = inspoDataUrl;
+  // Use inspiration as template if available
+  if(templateUrl) {
+    body.scene.template_url = templateUrl;
+    body.scene.template_mode = 'transform';
   }
 
   var r = await fetch('/api/claid', {
@@ -1382,43 +1438,54 @@ async function claidPhotoshoot(productDataUrl, prompt, inspoDataUrl, mode) {
     body: JSON.stringify(body)
   });
   var txt = await r.text();
+  console.log('Claid response:', txt.substring(0,300));
   var d; try{ d = JSON.parse(txt); } catch(e) { throw new Error('Claid JSON: ' + txt.substring(0,80)); }
   if(d.error) throw new Error('Claid: ' + (d.error.message || JSON.stringify(d.error).substring(0,80)));
 
   // Async job — poll for result
-  if(d.job_id || (d.data && d.data.job_id)) {
-    var jobId = d.job_id || d.data.job_id;
+  var jobId = d.id || d.job_id || (d.data && (d.data.id || d.data.job_id));
+  if(jobId) {
     return await claidPoll(jobId);
   }
 
-  // Sync result
-  var url = (d.data && d.data.output && d.data.output.tmp_url)
-    || (d.output && d.output.tmp_url)
-    || (d.data && d.data.url);
+  // Sync result — extract image URL
+  var url = claidExtractUrl(d);
   if(url) return url;
   throw new Error('Claid no URL: ' + JSON.stringify(d).substring(0,150));
 }
 
+function claidExtractUrl(d) {
+  if(!d) return null;
+  if(d.image && d.image.url) return d.image.url;
+  if(d.images && d.images[0] && d.images[0].url) return d.images[0].url;
+  if(d.data && d.data.output && d.data.output.tmp_url) return d.data.output.tmp_url;
+  if(d.data && d.data.url) return d.data.url;
+  if(d.output && d.output.tmp_url) return d.output.tmp_url;
+  if(d.url) return d.url;
+  return null;
+}
+
 async function claidPoll(jobId) {
-  for(var i = 0; i < 30; i++) {
+  for(var i = 0; i < 40; i++) {
     await new Promise(function(r){ setTimeout(r, 2000); });
     var r = await fetch('/api/claid', {
+      method: 'GET',
       headers: { 'X-Claid-Action': 'poll', 'X-Claid-Job-Id': jobId }
     });
-    var d = await r.json();
-    var status = (d.data && d.data.status) || d.status;
+    var txt = await r.text();
+    var d; try{ d = JSON.parse(txt); } catch(e) { console.warn('Claid poll parse error:', txt.substring(0,50)); continue; }
+    var status = d.status || (d.data && d.data.status) || '';
     console.log('Claid poll:', status);
-    if(status === 'succeeded' || status === 'done') {
-      var url = (d.data && d.data.output && d.data.output.tmp_url)
-        || (d.data && d.data.url) || d.url;
+    if(status === 'succeeded' || status === 'done' || status === 'completed') {
+      var url = claidExtractUrl(d);
       if(url) return url;
-      throw new Error('Claid succeeded but no URL');
+      throw new Error('Claid succeeded but no URL: ' + JSON.stringify(d).substring(0,150));
     }
     if(status === 'failed' || status === 'error') {
       throw new Error('Claid job failed: ' + JSON.stringify(d).substring(0,100));
     }
   }
-  throw new Error('Claid timeout after 60s');
+  throw new Error('Claid timeout after 80s');
 }
 
 async function recraftCall(prompt, width, height, keys) {
@@ -1548,9 +1615,9 @@ async function fabGenImagen(plan, keys, extra) {
 
   if(hasMockup && keys.claid) {
     try{
-      var claidMode = hasPersona ? 'creative' : 'precise';
-      imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, scenePrompt, inspoImg, claidMode);
-      showToast(hasPersona ? 'Escena con persona generada ✓' : 'Producto en escena ✓');
+      var claidAR = (fmt==='1080x1920') ? '4:7' : (fmt==='1920x1080') ? '16:9' : '1:1';
+      imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, scenePrompt, inspoImg, null, claidAR);
+      showToast('Claid: Producto en escena ✓');
     }catch(e){
       console.error('Claid failed:', e.message);
       showToast('Claid: '+e.message.substring(0,50), true);
@@ -1560,17 +1627,21 @@ async function fabGenImagen(plan, keys, extra) {
   // FLUX Kontext fallback (if Claid not available or no mockup)
   if(!imgUrl && keys.fal) {
     try{
+      // Priority: mockup > inspiration > persona as reference image
       var refB64 = hasMockup
         ? await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90)
-        : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null);
+        : (inspoImg ? await compressImage(inspoImg, 900, 0.90)
+        : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null));
 
       if(refB64){
         var refUrl = await falUploadBlob(refB64);
         var fluxPrompt = (hasMockup
           ? 'Place this exact product naturally in scene: '+scenePrompt+'. Keep label exactly accurate. '
-          : scenePrompt
+          : (inspoImg
+            ? 'Use this reference image as style/composition guide. Create a new ad scene: '+scenePrompt+'. Match the mood, lighting and layout of the reference. '
+            : scenePrompt)
         ).substring(0,400);
-        var body = JSON.stringify({
+        var fluxBody = JSON.stringify({
           prompt: fluxPrompt,
           image_url: refUrl,
           num_inference_steps: 28,
@@ -1582,7 +1653,7 @@ async function fabGenImagen(plan, keys, extra) {
         var r = await fetch('/api/fal', {
           method:'POST',
           headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
-          body:body
+          body:fluxBody
         });
         var txt = await r.text();
         var d; try{ d=JSON.parse(txt); }catch(e){ throw new Error('FAL JSON: '+txt.substring(0,60)); }
@@ -1602,7 +1673,11 @@ async function fabGenImagen(plan, keys, extra) {
       var recPrompt = (hasMockup
         ? singleProd+' product bottle in scene: '+scenePrompt
         : scenePrompt).substring(0,900);
-      if(hasMockup){
+      // Use inspiration as i2i reference if available (visual style transfer)
+      if(inspoImg && !hasMockup && !hasPersona){
+        var ci = await compressImage(inspoImg, 800, 0.85);
+        imgUrl = await recraftI2I(ci, recPrompt, sp[0], sp[1], keys, 0.45);
+      } else if(hasMockup){
         var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
         imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.28);
       } else if(hasPersona){
@@ -1627,6 +1702,207 @@ async function fabGenImagen(plan, keys, extra) {
     subhead:  gf(raw,'SUBHEAD') ||'',
     cta:      gf(raw,'CTA')     ||'Ver más',
     recraftPrompt:scenePrompt, imgUrl:imgUrl, brief:raw,
+    angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
+  };
+}
+
+
+// ══════════════════════════════════════════════
+// FAB: CARRUSEL (4 slides with images and copy)
+// ══════════════════════════════════════════════
+async function fabGenCarrusel(plan, keys, extra) {
+  var b = (active&&active.branding)||{};
+  var selProds = getSelectedProds();
+  var singleProd = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
+  var palette = (b.colors&&b.colors.slice(0,3).join(', '))||'';
+  var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
+  var inspoNote = selectedInspos.length ? 'Match the visual style of '+selectedInspos.length+' reference ad(s). ' : '';
+
+  // Claude generates 4 slides
+  var sys = 'Expert Meta Ads copywriter and art director for '+active.name+'. '+brandCtx(extra);
+  var pr = 'Create a 4-slide carousel ad for Meta/Instagram.\n'
+    +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
+    +(palette?'PALETTE:'+palette+'\n':'')
+    +'Reply ONLY with this JSON array (4 items, no markdown):\n'
+    +'[{"headline":"'+getLang()+' max 6 words","body":"'+getLang()+' max 15 words","scene_prompt":"English, max 300 chars, product photography scene description","color":"hex bg color from brand palette"}]';
+
+  var raw = await claudeCall(sys, pr, keys, 1200);
+  var slides = [];
+  try{ var jm=raw.match(/\[[\s\S]*\]/); if(jm) slides=JSON.parse(jm[0]); }catch(e){}
+  if(!slides.length) {
+    slides = [
+      {headline:plan.titulo||'Slide 1',body:'',scene_prompt:singleProd+' on premium surface',color:'#1a1a2e'},
+      {headline:'Slide 2',body:'',scene_prompt:singleProd+' lifestyle setting',color:'#16213e'},
+      {headline:'Slide 3',body:'',scene_prompt:singleProd+' close-up detail',color:'#0f3460'},
+      {headline:'Slide 4',body:'Ver más →',scene_prompt:singleProd+' brand showcase',color:'#533483'}
+    ];
+  }
+
+  // Generate images for each slide
+  var hasLogo = !!(fabOverlay.logo && fabOverlay.logo.dataUrl);
+  var selectedMockups = (typeof getSelectedMockups==='function') ? getSelectedMockups() : [];
+  for(var i=0;i<slides.length;i++){
+    var sl = slides[i];
+    try{
+      var mockup = selectedMockups.length ? selectedMockups[i % selectedMockups.length] : null;
+      var sceneP = (sl.scene_prompt || singleProd+' product scene').substring(0,500);
+      var slideUrl = null;
+
+      // Try Claid first
+      if(mockup && keys.claid) {
+        try{ slideUrl = await claidPhotoshoot(mockup.dataUrl, sceneP, null, null, '1:1'); }catch(e){ console.warn('Claid slide '+i+' failed:', e.message); }
+      }
+      // FLUX fallback
+      if(!slideUrl && keys.fal && mockup) {
+        try{
+          var refUrl = await falUploadBlob(await compressImage(mockup.dataUrl, 900, 0.90));
+          var body = JSON.stringify({prompt:'Place this exact product naturally in scene: '+sceneP,image_url:refUrl,num_inference_steps:28,guidance_scale:2.5,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
+          var r = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},body:body});
+          var d = await r.json();
+          if(d.request_id) slideUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
+          else if(d.images&&d.images[0]) slideUrl = d.images[0].url;
+        }catch(e){ console.warn('FLUX slide '+i+' failed:', e.message); }
+      }
+      // Recraft fallback
+      if(!slideUrl && keys.rec) {
+        try{ slideUrl = await recraftCall(sceneP, 1080, 1080, keys); }catch(e){}
+      }
+      // Logo composite
+      if(slideUrl && hasLogo) {
+        try{ slideUrl = await compositeLogoOnly(slideUrl, '1080x1080'); }catch(e){}
+      }
+      sl.imgUrl = slideUrl;
+    }catch(e){ console.warn('Slide '+i+' gen error:', e.message); }
+    showToast('Slide '+(i+1)+'/'+slides.length+' generado');
+  }
+
+  return {
+    id: Date.now().toString()+'_'+Math.random().toString(36).slice(2),
+    type:'carrusel', title:plan.titulo, format:'1080x1080',
+    headline:slides[0].headline||plan.titulo,
+    subhead:'', cta:slides[slides.length-1].headline||'Ver más',
+    slides:slides, brief:raw,
+    angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
+  };
+}
+
+// ══════════════════════════════════════════════
+// FAB: COPY (Meta Ads text variants)
+// ══════════════════════════════════════════════
+async function fabGenCopy(plan, keys, extra) {
+  var b = (active&&active.branding)||{};
+  var selProds = getSelectedProds();
+  var singleProd = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
+
+  var sys = 'Expert Meta Ads copywriter for '+active.name+'. '+brandCtx(extra);
+  var pr = 'Write 3 ad copy variants for Meta/Instagram Ads.\n'
+    +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
+    +'Language: '+getLang()+'\n'
+    +'Reply ONLY with this JSON array (3 items, no markdown):\n'
+    +'[{"headline":"max 8 words","texto":"body copy 2-4 sentences, compelling, with emoji if brand tone allows","cta":"2-4 words call to action"}]';
+
+  var raw = await claudeCall(sys, pr, keys, 1000);
+  var variants = [];
+  try{ var jm=raw.match(/\[[\s\S]*\]/); if(jm) variants=JSON.parse(jm[0]); }catch(e){}
+  if(!variants.length) {
+    variants = [{headline:plan.titulo,texto:'Copy generado para '+singleProd,cta:'Ver más →'}];
+  }
+
+  return {
+    id: Date.now().toString()+'_'+Math.random().toString(36).slice(2),
+    type:'copy', title:plan.titulo, format:'',
+    headline:variants[0].headline||plan.titulo,
+    subhead:'', cta:variants[0].cta||'Ver más',
+    variants:variants, brief:raw,
+    angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
+  };
+}
+
+// ══════════════════════════════════════════════
+// FAB: VIDEO (HeyGen integration)
+// ══════════════════════════════════════════════
+async function fabGenVideo(plan, keys, extra) {
+  var b = (active&&active.branding)||{};
+  var selProds = getSelectedProds();
+  var singleProd = selProds.length ? selProds[Math.floor(Math.random()*selProds.length)] : ((b.products&&b.products[0])||'');
+  var duracion = plan.fmt || '30s';
+  var segs = parseInt(duracion) || 30;
+
+  // Claude generates the script
+  var sys = 'Expert UGC video scriptwriter for '+active.name+'. '+brandCtx(extra);
+  var pr = 'Write a '+segs+'-second video ad script for TikTok/Reels.\n'
+    +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
+    +'Language: '+getLang()+'\n'
+    +'The script is for a talking-head avatar video. Include:\n'
+    +'- Hook (first 3 seconds, attention-grabbing)\n'
+    +'- Problem/Pain point\n'
+    +'- Solution (the product)\n'
+    +'- Social proof or benefit\n'
+    +'- CTA\n\n'
+    +'Reply with ONLY:\n'
+    +'GUION:[the full script as spoken text, natural conversational tone]\n'
+    +'HEADLINE:[short title for this video]';
+
+  var raw = await claudeCall(sys, pr, keys, 800);
+  var guion = gf(raw,'GUION') || raw;
+  var headline = gf(raw,'HEADLINE') || plan.titulo;
+
+  // Try to generate video via HeyGen API if key available
+  var videoUrl = null;
+  var videoId = null;
+  if(keys.hey) {
+    try{
+      // Submit video generation
+      var videoBody = {
+        video_inputs: [{
+          character: { type: 'avatar', avatar_id: 'Daisy-inskirt-20220818' },
+          voice: { type: 'text', input_text: guion, voice_id: 'es_female_vicki' }
+        }],
+        dimension: { width: 1080, height: 1080 },
+        test: false
+      };
+      var r = await fetch('/api/heygen?path=/v2/video/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Api-Key': keys.hey },
+        body: JSON.stringify(videoBody)
+      });
+      var d = await r.json();
+      console.log('HeyGen submit:', JSON.stringify(d).substring(0,200));
+      videoId = (d.data && d.data.video_id) || d.video_id;
+
+      // Poll for completion
+      if(videoId) {
+        for(var i=0;i<60;i++){
+          await new Promise(function(resolve){ setTimeout(resolve, 5000); });
+          var sr = await fetch('/api/heygen?path=/v1/video_status.get&video_id='+videoId, {
+            headers: { 'X-Api-Key': keys.hey }
+          });
+          var sd = await sr.json();
+          var st = (sd.data && sd.data.status) || sd.status || '';
+          console.log('HeyGen poll:', st);
+          if(st === 'completed') {
+            videoUrl = (sd.data && sd.data.video_url) || sd.video_url;
+            showToast('Video HeyGen generado ✓');
+            break;
+          }
+          if(st === 'failed' || st === 'error') {
+            showToast('HeyGen video failed', true);
+            break;
+          }
+        }
+      }
+    }catch(e){
+      console.error('HeyGen error:', e.message);
+      showToast('HeyGen: '+e.message.substring(0,40), true);
+    }
+  }
+
+  return {
+    id: Date.now().toString()+'_'+Math.random().toString(36).slice(2),
+    type:'video', title:headline, format:duracion,
+    headline:headline, subhead:'', cta:'',
+    guionCompleto:guion, videoUrl:videoUrl, videoId:videoId,
+    brief:raw,
     angulo:plan.enfoque, product:singleProd, createdAt:Date.now()
   };
 }
@@ -1793,8 +2069,10 @@ async function compositeLogoOnly(bgUrl, fmt) {
   }catch(e){}
   await new Promise(function(res,rej){var img=new Image();img.onload=function(){ctx.drawImage(img,0,0,cw,ch);res();};img.onerror=rej;img.src=bgSrc;});
   var lImg=await loadImg(fabOverlay.logo.dataUrl);
-  var lW=Math.round(cw*0.18), lH=Math.round(lW*lImg.naturalHeight/lImg.naturalWidth);
+  var lW=Math.round(cw*0.15), lH=Math.round(lW*lImg.naturalHeight/lImg.naturalWidth);
+  ctx.globalAlpha=0.85;
   ctx.drawImage(lImg, Math.round(cw*0.04), ch-lH-Math.round(ch*0.04), lW, lH);
+  ctx.globalAlpha=1.0;
   return new Promise(function(res,rej){cv.toBlob(function(b){if(b)res(URL.createObjectURL(b));else rej(new Error('toBlob null'));},'image/jpeg',0.92);});
 }
 
@@ -2033,10 +2311,14 @@ function openCr(id) {
       (c.cta?'<div><div style="font-size:9px;font-weight:700;color:var(--acc);text-transform:uppercase;margin-bottom:3px">CTA</div><div style="font-size:12px">'+c.cta+'</div></div>':'')+
       '</div>';
     if(c.imgUrl) setTimeout(function(){
-      if(c.headline) addBlk(edId,c.headline,50,14,28,'700','#ffffff','');
-      if(c.subhead)  addBlk(edId,c.subhead,50,26,16,'400','#ffffffcc','');
-      if(c.cta)      addBlk(edId,c.cta,50,83,14,'700','#000','#c8ff00');
-      deselAll();
+      if(c.textBlocks && c.textBlocks.length) {
+        restoreTextBlocks(edId, c.textBlocks);
+      } else {
+        if(c.headline) addBlk(edId,c.headline,50,14,28,'700','#ffffff','');
+        if(c.subhead)  addBlk(edId,c.subhead,50,26,16,'400','#ffffffcc','');
+        if(c.cta)      addBlk(edId,c.cta,50,83,14,'700','#000','#c8ff00');
+        deselAll();
+      }
     },600);
   } else if(c.type==='carrusel'){
     var slHtml=(c.slides||[]).map(function(s,i){return '<div onclick="openSlideM(\''+c.id+'\','+i+')" style="cursor:pointer;background:'+s.color+';'+(s.imgUrl?'background-image:url('+s.imgUrl+');background-size:cover;background-position:center;':'')+'border-radius:8px;aspect-ratio:1;position:relative;overflow:hidden;transition:transform .15s" onmouseover="this.style.transform=\'scale(1.04)\'" onmouseout="this.style.transform=\'\'"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8) 50%,transparent)"></div><div style="position:absolute;top:4px;left:4px;background:var(--acc);color:#000;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px">Slide '+(i+1)+'</div><div style="position:absolute;bottom:0;left:0;right:0;padding:7px;z-index:1"><div style="font-size:10px;font-weight:700;color:#fff">'+s.headline+'</div><div style="font-size:8px;color:rgba(255,255,255,.7)">'+s.body+'</div></div></div>';}).join('');
@@ -2125,6 +2407,7 @@ function addBlk(edId,encText,xPct,yPct,fs,fw,col,bg){
   document.addEventListener('mouseup',function(){drag=false;});
   span.addEventListener('focus',function(){selBlk(edId,blk);});
   span.addEventListener('click',function(){selBlk(edId,blk);});
+  span.addEventListener('blur',function(){saveTextBlocks(edId);});
   selBlk(edId,blk);
   if(text==='Texto') setTimeout(function(){span.focus();document.execCommand('selectAll',false,null);},50);
 }
@@ -2140,7 +2423,49 @@ function selBlk(edId,blk){
   if(fc){var c=span.style.color||'#ffffff';if(c.startsWith('rgb')){var m=c.match(/\d+/g);if(m&&m.length>=3)c='#'+[0,1,2].map(function(i){return('0'+parseInt(m[i]).toString(16)).slice(-2);}).join('');}if(c.startsWith('#'))fc.value=c;}
 }
 function deselAll(){document.querySelectorAll('.blk').forEach(function(b){b.style.borderColor='transparent';b.classList.remove('sel');var bx=b.querySelector('.blk-x');if(bx)bx.style.display='none';});_selBlk=null;}
-function updBlk(edId,prop,val){if(!_selBlk||_selBlk.edId!==edId)return;var span=_selBlk.el.querySelector('span');if(!span)return;if(prop==='size')span.style.fontSize=val+'px';if(prop==='color')span.style.color=val;if(prop==='weight')span.style.fontWeight=val;}
+function updBlk(edId,prop,val){if(!_selBlk||_selBlk.edId!==edId)return;var span=_selBlk.el.querySelector('span');if(!span)return;if(prop==='size')span.style.fontSize=val+'px';if(prop==='color')span.style.color=val;if(prop==='weight')span.style.fontWeight=val;saveTextBlocks(edId);}
+function saveTextBlocks(edId) {
+  var wrap=$(edId); if(!wrap) return;
+  var cid=edId.replace(/^(mced_|slEd_)/,'');
+  var c=(active&&active.creatives||[]).find(function(x){return x.id===cid;}); if(!c) return;
+  var blocks=[];
+  wrap.querySelectorAll('.blk').forEach(function(blk){
+    var span=blk.querySelector('span'); if(!span) return;
+    blocks.push({
+      text:span.textContent,
+      left:blk.style.left, top:blk.style.top,
+      fontSize:parseInt(span.style.fontSize)||20,
+      fontWeight:span.style.fontWeight||'700',
+      color:span.style.color||'#ffffff',
+      bg:blk.style.background||''
+    });
+  });
+  c.textBlocks=blocks; save();
+}
+function restoreTextBlocks(edId, blocks) {
+  if(!blocks||!blocks.length) return;
+  blocks.forEach(function(b){
+    var wrap=$(edId); if(!wrap) return;
+    var layer=wrap.querySelector('.ed-layer'); if(!layer) return;
+    var blk=document.createElement('div'); blk.className='blk';
+    blk.style.left=b.left; blk.style.top=b.top; blk.style.transform='translate(-50%,-50%)';
+    if(b.bg){blk.style.background=b.bg;blk.style.padding='5px 12px';blk.style.borderRadius='5px';}
+    var span=document.createElement('span'); span.contentEditable='true';
+    span.style.cssText='font-size:'+b.fontSize+'px;font-weight:'+b.fontWeight+';color:'+b.color+";font-family:'Syne',sans-serif;text-shadow:0 1px 5px rgba(0,0,0,.9)";
+    span.textContent=b.text;
+    var x=document.createElement('div'); x.className='blk-x'; x.textContent='×';
+    x.onclick=function(e){e.stopPropagation();blk.remove();_selBlk=null;saveTextBlocks(edId);};
+    blk.appendChild(span); blk.appendChild(x); layer.appendChild(blk);
+    var drag=false,sx,sy,sl,st;
+    blk.addEventListener('mousedown',function(e){if(e.target===span||e.target===x)return;drag=true;e.preventDefault();sx=e.clientX;sy=e.clientY;var wr=wrap.getBoundingClientRect(),br=blk.getBoundingClientRect();sl=(br.left+br.width/2-wr.left)/wr.width*100;st=(br.top+br.height/2-wr.top)/wr.height*100;selBlk(edId,blk);});
+    document.addEventListener('mousemove',function(e){if(!drag)return;var wr=wrap.getBoundingClientRect();blk.style.left=Math.min(96,Math.max(4,sl+(e.clientX-sx)/wr.width*100))+'%';blk.style.top=Math.min(96,Math.max(4,st+(e.clientY-sy)/wr.height*100))+'%';});
+    document.addEventListener('mouseup',function(){if(drag){drag=false;saveTextBlocks(edId);}});
+    span.addEventListener('focus',function(){selBlk(edId,blk);});
+    span.addEventListener('click',function(){selBlk(edId,blk);});
+    span.addEventListener('blur',function(){saveTextBlocks(edId);});
+  });
+  deselAll();
+}
 async function exportEditor(edId){
   var wrap=$(edId); if(!wrap){showToast('Editor no encontrado',true);return;}
   var img=wrap.querySelector('img'); if(!img){showToast('Sin imagen',true);return;}
@@ -2216,11 +2541,4 @@ function renderDashboard() {
 init();
 </script>
 </body>
-</h
-      <!-- MOCKUP SELECTOR -->
-      <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px">
-        <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">📦 Mockups a usar en esta tanda</div>
-        <div style="font-size:10px;color:var(--mut);margin-bottom:7px">Los creativos rotan entre los mockups seleccionados (✓)</div>
-        <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px"></div>
-      </div>
-    </div>
+</html>

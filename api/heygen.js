@@ -21,7 +21,13 @@ export default async function handler(req) {
  
     const url = new URL(req.url);
     const path = url.searchParams.get('path') || '/v2/avatars';
-    const heygenUrl = 'https://api.heygen.com' + path;
+    // Forward all query params except 'path' to HeyGen
+    const fwd = new URLSearchParams();
+    for (const [k, v] of url.searchParams) {
+      if (k !== 'path') fwd.set(k, v);
+    }
+    const qs = fwd.toString();
+    const heygenUrl = 'https://api.heygen.com' + path + (qs ? '?' + qs : '');
  
     let fetchOptions = {
       method: req.method,
