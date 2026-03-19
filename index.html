@@ -1600,141 +1600,169 @@ async function fabGenImagen(plan, keys, extra) {
   var selectedInspos = (typeof getSelectedInspos==='function') ? getSelectedInspos() : [];
   var inspoImg   = selectedInspos.length ? selectedInspos[0].dataUrl : null;
 
-  // ── Claude writes the BACKGROUND scene prompt (NO product in scene) ──
+  // ── Claude writes the scene prompt ──────────────────────────
   var sys = 'Expert Meta Ads photographer for '+active.name+'. '+brandCtx(extra);
   var inspoNote = selectedInspos.length ? 'Match the visual style, composition and mood of '+selectedInspos.length+' reference ad(s). ' : '';
-
-  // IMPORTANT: When mockup exists, prompt is for BACKGROUND ONLY.
-  // The exact mockup will be composited on top via canvas — pixel-perfect, no AI distortion.
-  var mockupNote = hasMockup
-    ? 'IMPORTANT: Do NOT include the product in the scene. Generate ONLY the background/environment. '
-      +'The product will be composited on top later. Leave a natural empty space in the center for the product. '
-    : '';
 
   var pr = 'Write a product photography scene prompt for a Meta Ad.\n'
     +'BRAND:'+active.name+' PRODUCT:'+singleProd+' ANGLE:'+plan.enfoque+'\n'
     +(palette?'PALETTE:'+palette+'\n':'')+(b.tone?'TONE:'+b.tone.substring(0,50)+'\n':'')
     +(inspoNote?'STYLE:'+inspoNote+'\n':'')
-    +(hasPersona?'PERSON: Include a person naturally in a lifestyle setting, leaving space for the product.\n':'')
-    +mockupNote
+    +(hasPersona?'PERSON: Include a person naturally using the product in a lifestyle setting.\n':'')
     +'Reply ONLY:\n'
-    +'SCENE_PROMPT:[English, max 500 chars. Describe the scene: location, surfaces, lighting, mood, props. '
-    +(hasMockup?'NO product in scene — only environment/background with empty space in center for product overlay. ':'')
-    +(hasPersona?'Include a person (young adult) in the scene. ':'')
-    +'Brand palette: '+(palette||'natural tones')+'. Hyperrealistic commercial photography, 85mm lens, shallow DOF, studio lighting. '+inspoNote+']\n'
+    +'SCENE_PROMPT:[English, max 500 chars. Describe a scene where the product is naturally integrated: '
+    +'location, surfaces, lighting, mood, props. The product should be IN the scene — on a table, held by a person, '
+    +'on a shelf, etc. Hyperrealistic commercial photography, 85mm lens, shallow DOF. '
+    +'Brand palette: '+(palette||'natural tones')+'. '+inspoNote+']\n'
     +'HEADLINE:['+getLang()+' max 8 words]\n'
     +'SUBHEAD:['+getLang()+' max 12 words]\n'
     +'CTA:['+getLang()+' 2-4 words]';
 
   var raw = await claudeCall(sys, pr, keys, 400);
   var scenePrompt = (gf(raw,'SCENE_PROMPT') ||
-    ((hasPersona?'Person in ':'')+' premium lifestyle setting, '
-    +(hasMockup?'empty space in center for product, ':'')
-    +(palette||'natural tones')+', '+plan.enfoque+', 85mm lens, shallow DOF, studio lighting')).substring(0,500);
+    (singleProd+' product on a premium surface, '
+    +(palette||'natural tones')+', '+plan.enfoque+', 85mm lens, shallow DOF')).substring(0,500);
 
   var fmt = plan.fmt||'1080x1080', sp = fmt.split('x');
-  var bgUrl = null;
+  var imgUrl = null;
 
   // ══════════════════════════════════════════════════════════════
-  // PIPELINE: Generate BACKGROUND scene (NO mockup passed to AI)
-  // Then composite exact mockup on top via canvas (pixel-perfect)
+  // PIPELINE — 3 strategies, in priority order:
+  //
+  // 1. CLAID AI: Best for product photography, designed to preserve
+  //    the exact product label in a new scene.
+  //
+  // 2. FLUX KONTEXT: Takes the mockup image as reference and integrates
+  //    it into the scene naturally (correct perspective, lighting, hands
+  //    holding it, etc.). Prompt emphasizes preserving the label text.
+  //    This is the best option for "product in use" scenarios.
+  //
+  // 3. CANVAS COMPOSITE (fallback): Generates background without product,
+  //    then overlays the exact mockup pixel-perfect via canvas. Label is
+  //    100% preserved but looks less natural (no perspective/lighting match).
   // ══════════════════════════════════════════════════════════════
 
-  // 1. Try Claid AI (designed for product photography — preserves label)
+  // ── 1. Claid AI (product photography, preserves label) ──
   if(hasMockup && keys.claid) {
     try{
       var claidAR = (fmt==='1080x1920') ? '4:7' : (fmt==='1920x1080') ? '16:9' : '1:1';
-      bgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, scenePrompt, inspoImg, null, claidAR);
-      showToast('Claid: Escena generada ✓');
+      imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, scenePrompt, inspoImg, null, claidAR);
+      showToast('Claid: Producto integrado en escena ✓');
     }catch(e){
       console.error('Claid failed:', e.message);
     }
   }
 
-  // 2. FLUX Kontext — generate background scene
-  if(!bgUrl && keys.fal) {
+  // ── 2. FLUX Kontext (integrates mockup naturally with context) ──
+  if(!imgUrl && hasMockup && keys.fal) {
     try{
-      // If inspiration available, use it as visual reference for the scene style
-      var refB64 = inspoImg ? await compressImage(inspoImg, 900, 0.90)
-        : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null);
+      var mockupCompressed = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
+      var mockupUrl = await falUploadBlob(mockupCompressed);
 
-      var fluxPrompt = scenePrompt.substring(0,400);
-      var fluxBody;
+      // Prompt emphasizes: keep label EXACTLY, integrate into scene naturally
+      var kontextPrompt = (
+        'Place this exact product bottle/package naturally into this scene: '+scenePrompt+'. '
+        +'CRITICAL: Keep the product label, text, logo, and design EXACTLY as shown — do not change, '
+        +'blur, or reimagine any text or graphics on the product. The label must be perfectly readable. '
+        +'Adapt the lighting and shadows to match the scene. '
+        +(hasPersona?'A person is naturally holding or using the product. ':'')
+        +'The product should have correct perspective and scale relative to the environment.'
+      ).substring(0,450);
 
-      if(refB64){
-        var refUrl = await falUploadBlob(refB64);
-        fluxBody = JSON.stringify({
-          prompt: (inspoImg
-            ? 'Use this reference image as style guide. Create: '+fluxPrompt
-            : fluxPrompt),
-          image_url: refUrl,
-          num_inference_steps: 28,
-          guidance_scale: 2.5,
-          num_images: 1,
-          enable_safety_checker: false,
-          output_format: 'jpeg'
-        });
-      } else {
-        fluxBody = JSON.stringify({
-          prompt: fluxPrompt,
-          num_inference_steps: 28,
-          guidance_scale: 3.5,
-          num_images: 1,
-          enable_safety_checker: false,
-          output_format: 'jpeg',
-          image_size: (fmt==='1080x1920'?'portrait_4_3':(fmt==='1920x1080'?'landscape_4_3':'square_hd'))
-        });
-      }
-
+      var fluxBody = JSON.stringify({
+        prompt: kontextPrompt,
+        image_url: mockupUrl,
+        num_inference_steps: 28,
+        guidance_scale: 3.0,
+        num_images: 1,
+        enable_safety_checker: false,
+        output_format: 'jpeg'
+      });
       var r = await fetch('/api/fal', {
         method:'POST',
-        headers:{'Content-Type':'application/json','X-Fal-Model': refB64 ? 'fal-ai/flux-pro/kontext' : 'fal-ai/flux/schnell','X-Fal-Action':'submit'},
+        headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
         body:fluxBody
       });
       var txt = await r.text();
       var d; try{ d=JSON.parse(txt); }catch(e){ throw new Error('FAL JSON: '+txt.substring(0,60)); }
       if(d.error||d.detail) throw new Error('FAL: '+(d.error||d.detail||'').substring(0,60));
-      var fluxModel = refB64 ? 'fal-ai/flux-pro/kontext' : 'fal-ai/flux/schnell';
-      if(d.request_id) bgUrl = await falPollResult(d.request_id, null, fluxModel);
-      else if(d.images&&d.images[0]) bgUrl = d.images[0].url;
-      if(bgUrl) showToast('Fondo generado con FLUX ✓');
+      if(d.request_id) imgUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
+      else if(d.images&&d.images[0]) imgUrl = d.images[0].url;
+      if(imgUrl) showToast('FLUX Kontext: Producto integrado en escena ✓');
     }catch(e){
-      console.warn('FLUX failed:', e.message.substring(0,80));
+      console.warn('FLUX Kontext failed:', e.message.substring(0,80));
     }
   }
 
-  // 3. Recraft text-to-image — background only
-  if(!bgUrl && keys.rec) {
+  // ── 3. Fallback: Background-only + Canvas composite (pixel-perfect label) ──
+  if(!imgUrl && hasMockup) {
     try{
-      // Use inspiration as i2i reference for style if available
-      if(inspoImg){
-        var ci = await compressImage(inspoImg, 800, 0.85);
-        bgUrl = await recraftI2I(ci, scenePrompt.substring(0,900), sp[0], sp[1], keys, 0.45);
-      } else if(hasPersona){
-        var cp = await compressImage(fabOverlay.persona.dataUrl, 800, 0.85);
-        bgUrl = await recraftI2I(cp, scenePrompt.substring(0,900), sp[0], sp[1], keys, 0.55);
-      } else {
-        bgUrl = await recraftCall(scenePrompt.substring(0,900), sp[0], sp[1], keys);
+      // Generate background scene WITHOUT product
+      var bgPrompt = (scenePrompt.replace(/product|bottle|package/gi,'surface')
+        +'. Empty premium surface in center, no product, only environment and props.').substring(0,500);
+      var bgUrl = null;
+
+      // Try FLUX Schnell for fast background
+      if(keys.fal) {
+        try{
+          var bgBody = JSON.stringify({
+            prompt:bgPrompt.substring(0,400),
+            num_inference_steps:4, num_images:1,
+            enable_safety_checker:false, sync_mode:false,
+            image_size:(fmt==='1080x1920'?'portrait_4_3':(fmt==='1920x1080'?'landscape_4_3':'square_hd'))
+          });
+          var br = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},body:bgBody});
+          var bd = await br.json();
+          if(bd.request_id) bgUrl = await falPollResult(bd.request_id, null, 'fal-ai/flux/schnell');
+          else if(bd.images&&bd.images[0]) bgUrl = bd.images[0].url;
+        }catch(e){ console.warn('FLUX bg failed:', e.message); }
       }
-      if(bgUrl) showToast('Fondo generado con Recraft ✓');
-    }catch(e){ console.error('Recraft failed:', e.message); }
+      // Try Recraft for background
+      if(!bgUrl && keys.rec) {
+        try{ bgUrl = await recraftCall(bgPrompt.substring(0,900), sp[0], sp[1], keys); }catch(e){}
+      }
+
+      // Composite exact mockup on top (pixel-perfect, label 100% preserved)
+      if(bgUrl) {
+        imgUrl = await compositeExact(bgUrl, fmt, true, false);
+        showToast('Mockup compuesto sobre fondo ✓');
+      }
+    }catch(e){ console.error('Composite fallback failed:', e.message); }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COMPOSITE: Overlay exact mockup + logo via canvas (pixel-perfect)
-  // The mockup is NEVER processed by AI — it's placed as-is on the background
-  // ══════════════════════════════════════════════════════════════
-  var imgUrl = bgUrl;
-
-  if(bgUrl && hasMockup) {
-    try{
-      imgUrl = await compositeExact(bgUrl, fmt, true, false);
-      showToast('Mockup exacto compuesto ✓');
-    }catch(e){
-      console.error('Composite mockup failed:', e.message);
+  // ── No mockup: just generate the scene directly ──
+  if(!imgUrl && !hasMockup) {
+    if(keys.fal) {
+      try{
+        var refB64 = inspoImg ? await compressImage(inspoImg, 900, 0.90)
+          : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null);
+        var noMockBody;
+        if(refB64){
+          var refUrl = await falUploadBlob(refB64);
+          noMockBody = JSON.stringify({prompt:scenePrompt.substring(0,400),image_url:refUrl,num_inference_steps:28,guidance_scale:2.5,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
+        } else {
+          noMockBody = JSON.stringify({prompt:scenePrompt.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,image_size:(fmt==='1080x1920'?'portrait_4_3':'square_hd')});
+        }
+        var nmModel = refB64 ? 'fal-ai/flux-pro/kontext' : 'fal-ai/flux/schnell';
+        var nmr = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':nmModel,'X-Fal-Action':'submit'},body:noMockBody});
+        var nmd = await nmr.json();
+        if(nmd.request_id) imgUrl = await falPollResult(nmd.request_id, null, nmModel);
+        else if(nmd.images&&nmd.images[0]) imgUrl = nmd.images[0].url;
+      }catch(e){ console.warn('FLUX no-mockup failed:', e.message); }
+    }
+    if(!imgUrl && keys.rec) {
+      try{
+        if(inspoImg){
+          var ci = await compressImage(inspoImg, 800, 0.85);
+          imgUrl = await recraftI2I(ci, scenePrompt.substring(0,900), sp[0], sp[1], keys, 0.45);
+        } else {
+          imgUrl = await recraftCall(scenePrompt.substring(0,900), sp[0], sp[1], keys);
+        }
+      }catch(e){}
     }
   }
 
+  // ── Logo overlay (always via canvas, pixel-perfect) ──
   if(imgUrl && hasLogo){
     try{ imgUrl = await compositeLogoOnly(imgUrl, fmt); }catch(e){}
   }
@@ -1789,34 +1817,46 @@ async function fabGenCarrusel(plan, keys, extra) {
     var sl = slides[i];
     try{
       var mockup = selectedMockups.length ? selectedMockups[i % selectedMockups.length] : null;
-      // Scene prompt WITHOUT product — product will be composited on top
-      var sceneP = (sl.scene_prompt || 'premium lifestyle background, empty center space for product').substring(0,500);
-      if(mockup) sceneP = sceneP.replace(/product|bottle|package/gi, 'surface') + '. NO product in scene, only background environment with empty space.';
+      var sceneP = (sl.scene_prompt || singleProd+' product in a premium setting').substring(0,500);
       var slideUrl = null;
 
-      // 1. Claid (preserves product)
+      // 1. Claid (preserves product label exactly)
       if(mockup && keys.claid) {
         try{ slideUrl = await claidPhotoshoot(mockup.dataUrl, sceneP, null, null, '1:1'); }catch(e){ console.warn('Claid slide '+i+':', e.message); }
       }
-      // 2. FLUX/Recraft background + canvas composite mockup
-      if(!slideUrl && keys.fal) {
+      // 2. FLUX Kontext (integrates mockup into scene naturally)
+      if(!slideUrl && mockup && keys.fal) {
         try{
-          var fluxBody = JSON.stringify({prompt:sceneP.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,sync_mode:false,image_size:'square_hd'});
-          var r = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},body:fluxBody});
+          var sMockUrl = await falUploadBlob(await compressImage(mockup.dataUrl, 900, 0.90));
+          var sPrompt = ('Place this exact product in scene: '+sceneP+'. Keep label and text EXACTLY as shown. Correct perspective and lighting.').substring(0,400);
+          var sBody = JSON.stringify({prompt:sPrompt,image_url:sMockUrl,num_inference_steps:28,guidance_scale:3.0,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
+          var r = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},body:sBody});
           var d = await r.json();
-          if(d.request_id) slideUrl = await falPollResult(d.request_id, null, 'fal-ai/flux/schnell');
+          if(d.request_id) slideUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
           else if(d.images&&d.images[0]) slideUrl = d.images[0].url;
         }catch(e){ console.warn('FLUX slide '+i+':', e.message); }
       }
+      // 3. Background + canvas composite (pixel-perfect fallback)
+      if(!slideUrl && mockup) {
+        try{
+          var bgP = sceneP.replace(/product|bottle|package/gi,'surface')+'. Empty surface, no product.';
+          var bgSlide = null;
+          if(keys.fal){
+            try{
+              var bgB=JSON.stringify({prompt:bgP.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,image_size:'square_hd'});
+              var bgR=await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},body:bgB});
+              var bgD=await bgR.json();
+              if(bgD.request_id) bgSlide=await falPollResult(bgD.request_id,null,'fal-ai/flux/schnell');
+              else if(bgD.images&&bgD.images[0]) bgSlide=bgD.images[0].url;
+            }catch(e){}
+          }
+          if(!bgSlide && keys.rec) try{ bgSlide=await recraftCall(bgP.substring(0,900),1080,1080,keys); }catch(e){}
+          if(bgSlide){ fabOverlay.mockup.dataUrl=mockup.dataUrl; slideUrl=await compositeExact(bgSlide,'1080x1080',true,false); }
+        }catch(e){ console.warn('Composite slide '+i+':', e.message); }
+      }
+      // 4. No mockup — just generate scene
       if(!slideUrl && keys.rec) {
         try{ slideUrl = await recraftCall(sceneP.substring(0,900), 1080, 1080, keys); }catch(e){}
-      }
-      // Composite exact mockup on top of background
-      if(slideUrl && mockup) {
-        try{
-          fabOverlay.mockup.dataUrl = mockup.dataUrl;
-          slideUrl = await compositeExact(slideUrl, '1080x1080', true, false);
-        }catch(e){ console.warn('Composite slide '+i+':', e.message); }
       }
       // Logo composite
       if(slideUrl && hasLogo) {
