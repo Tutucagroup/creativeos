@@ -1635,68 +1635,51 @@ async function fabGenImagen(plan, keys, extra) {
   var fmt = plan.fmt||'1080x1080', sp = fmt.split('x');
   var imgUrl = null;
 
-  // ══════════════════════════════════════════════════════════════
-  // PIPELINE — 3 strategies, in priority order:
-  //
-  // 1. CLAID AI: Best for product photography, designed to preserve
-  //    the exact product label in a new scene.
-  //
-  // 2. FLUX KONTEXT: Takes the mockup image as reference and integrates
-  //    it into the scene naturally (correct perspective, lighting, hands
-  //    holding it, etc.). Prompt emphasizes preserving the label text.
-  //    This is the best option for "product in use" scenarios.
-  //
-  // 3. CANVAS COMPOSITE (fallback): Generates background without product,
-  //    then overlays the exact mockup pixel-perfect via canvas. Label is
-  //    100% preserved but looks less natural (no perspective/lighting match).
-  // ══════════════════════════════════════════════════════════════
+  // Aspect ratio helpers
+  var isPortrait = (fmt==='1080x1920');
+  var isLandscape = (fmt==='1920x1080');
 
-  // ── 1. Claid AI (product photography, preserves label) ──
+  // PIPELINE: AI generates the full scene WITH the product integrated.
+  // NO canvas composite overlay — the AI adapts the product to the scene.
+  //
+  // 1. Claid AI (product photography, preserves label)
+  // 2. FLUX Kontext (mockup as reference, integrates into scene)
+  // 3. Recraft i2i (mockup as reference, user confirmed works great)
+  // 4. Recraft text-to-image / FLUX Schnell (no mockup reference)
+
+  // 1. Claid AI
   if(hasMockup && keys.claid) {
     try{
-      var claidAR = (fmt==='1080x1920') ? '4:7' : (fmt==='1920x1080') ? '16:9' : '1:1';
+      var claidAR = isPortrait ? '4:7' : (isLandscape ? '16:9' : '1:1');
       var claidPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
       imgUrl = await claidPhotoshoot(fabOverlay.mockup.dataUrl, claidPrompt, inspoImg, null, claidAR);
-      showToast('Claid: Producto integrado en escena ✓');
+      showToast('Claid: Producto integrado en escena');
     }catch(e){
       console.error('Claid failed:', e.message);
     }
   }
 
-  // Aspect ratio helpers
-  var isPortrait = (fmt==='1080x1920');
-  var isLandscape = (fmt==='1920x1080');
-
-  // ── 2. FLUX Kontext (integrates mockup naturally with context) ──
+  // 2. FLUX Kontext
   if(!imgUrl && hasMockup && hasFal()) {
     try{
       var mockupCompressed = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
       var mockupUrl = await falUploadBlob(mockupCompressed);
-
-      // Build prompt: USER INSTRUCTION first, then scene, then preservation rules
       var kontextParts = [];
       if(userInstruction) kontextParts.push(userInstruction);
       kontextParts.push('Scene: '+scenePrompt);
-      kontextParts.push('This image shows the exact product to feature. Place it naturally in the scene.');
-      kontextParts.push('CRITICAL: Keep product label, text, and design EXACTLY as shown. Perfectly readable.');
-      kontextParts.push('Match lighting, perspective, and shadows to environment.');
+      kontextParts.push('This image shows the exact product. Place it naturally in the described scene.');
+      kontextParts.push('CRITICAL: Keep product label text and design EXACTLY as shown. Perfectly readable.');
+      kontextParts.push('Correct perspective, scale, lighting, and shadows for the environment.');
       if(isPortrait) kontextParts.push('Vertical portrait composition.');
       var kontextPrompt = kontextParts.join('. ').substring(0,480);
-
       var fluxPayload = {
-        prompt: kontextPrompt,
-        image_url: mockupUrl,
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
-        num_images: 1,
-        enable_safety_checker: false,
-        output_format: 'jpeg'
+        prompt: kontextPrompt, image_url: mockupUrl,
+        num_inference_steps: 28, guidance_scale: 3.5,
+        num_images: 1, enable_safety_checker: false, output_format: 'jpeg'
       };
-      // Set correct output size for aspect ratio
       if(isPortrait) fluxPayload.image_size = {width:768,height:1344};
       else if(isLandscape) fluxPayload.image_size = {width:1344,height:768};
       else fluxPayload.image_size = {width:1024,height:1024};
-
       var r = await fetch('/api/fal', {
         method:'POST',
         headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux-pro/kontext','X-Fal-Action':'submit'},
@@ -1707,51 +1690,26 @@ async function fabGenImagen(plan, keys, extra) {
       if(d.error||d.detail) throw new Error('FAL: '+JSON.stringify(d.error||d.detail||d).substring(0,120));
       if(d.request_id) imgUrl = await falPollResult(d.request_id, null, 'fal-ai/flux-pro/kontext');
       else if(d.images&&d.images[0]) imgUrl = d.images[0].url;
-      if(imgUrl) showToast('FLUX Kontext: Producto integrado en escena ✓');
+      if(imgUrl) showToast('FLUX Kontext: Producto integrado en escena');
     }catch(e){
       console.warn('FLUX Kontext failed:', e.message.substring(0,100));
     }
   }
 
-  // ── 3. Fallback: Background-only + Canvas composite (pixel-perfect label) ──
-  if(!imgUrl && hasMockup) {
+  // 3. Recraft i2i (mockup as reference — adapts to scene, preserves label)
+  if(!imgUrl && hasMockup && keys.rec) {
     try{
-      // Generate background scene WITHOUT product
-      var bgPromptRaw = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
-      var bgPrompt = (bgPromptRaw.replace(/product|bottle|package/gi,'surface')
-        +'. Premium background scene, no product visible, only environment.').substring(0,500);
-      var bgUrl = null;
-
-      // Try FLUX Schnell for fast background
-      if(hasFal()) {
-        try{
-          var bgBody = JSON.stringify({
-            prompt:bgPrompt.substring(0,400),
-            num_inference_steps:4, num_images:1,
-            enable_safety_checker:false, sync_mode:false,
-            image_size: isPortrait?{width:768,height:1344}:(isLandscape?{width:1344,height:768}:{width:1024,height:1024})
-          });
-          var br = await fetch('/api/fal',{method:'POST',headers:{'Content-Type':'application/json','X-Fal-Model':'fal-ai/flux/schnell','X-Fal-Action':'submit'},body:bgBody});
-          var bd = await br.json();
-          if(bd.request_id) bgUrl = await falPollResult(bd.request_id, null, 'fal-ai/flux/schnell');
-          else if(bd.images&&bd.images[0]) bgUrl = bd.images[0].url;
-        }catch(e){ console.warn('FLUX bg failed:', e.message); }
-      }
-      // Try Recraft for background
-      if(!bgUrl && keys.rec) {
-        try{ bgUrl = await recraftCall(bgPrompt.substring(0,900), sp[0], sp[1], keys); }catch(e){}
-      }
-
-      // Composite exact mockup on top (pixel-perfect, label 100% preserved)
-      if(bgUrl) {
-        imgUrl = await compositeExact(bgUrl, fmt, true, false);
-        showToast('Mockup compuesto sobre fondo ✓');
-      }
-    }catch(e){ console.error('Composite fallback failed:', e.message); }
+      var recPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
+      recPrompt = (recPrompt+'. The product label, brand name, and design must be preserved exactly as shown. '
+        +'Hyperrealistic commercial photography. Integrate the product naturally into the scene.').substring(0,950);
+      var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
+      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.30);
+      if(imgUrl) showToast('Recraft: Producto integrado en escena');
+    }catch(e){ console.error('Recraft i2i failed:', e.message); }
   }
 
-  // ── No mockup: just generate the scene directly ──
-  if(!imgUrl && !hasMockup) {
+  // 4. No mockup or all failed: generate scene directly
+  if(!imgUrl) {
     var scPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
     if(hasFal()) {
       try{
@@ -1759,8 +1717,8 @@ async function fabGenImagen(plan, keys, extra) {
           : (hasPersona ? await compressImage(fabOverlay.persona.dataUrl, 900, 0.90) : null);
         var noMockBody;
         if(refB64){
-          var refUrl = await falUploadBlob(refB64);
-          noMockBody = JSON.stringify({prompt:scPrompt.substring(0,400),image_url:refUrl,num_inference_steps:28,guidance_scale:2.5,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
+          var refUrl2 = await falUploadBlob(refB64);
+          noMockBody = JSON.stringify({prompt:scPrompt.substring(0,400),image_url:refUrl2,num_inference_steps:28,guidance_scale:2.5,num_images:1,enable_safety_checker:false,output_format:'jpeg'});
         } else {
           noMockBody = JSON.stringify({prompt:scPrompt.substring(0,400),num_inference_steps:4,num_images:1,enable_safety_checker:false,
             image_size:isPortrait?{width:768,height:1344}:{width:1024,height:1024}});
@@ -1770,17 +1728,10 @@ async function fabGenImagen(plan, keys, extra) {
         var nmd = await nmr.json();
         if(nmd.request_id) imgUrl = await falPollResult(nmd.request_id, null, nmModel);
         else if(nmd.images&&nmd.images[0]) imgUrl = nmd.images[0].url;
-      }catch(e){ console.warn('FLUX no-mockup failed:', e.message); }
+      }catch(e){ console.warn('FLUX fallback failed:', e.message); }
     }
     if(!imgUrl && keys.rec) {
-      try{
-        if(inspoImg){
-          var ci = await compressImage(inspoImg, 800, 0.85);
-          imgUrl = await recraftI2I(ci, scPrompt.substring(0,900), sp[0], sp[1], keys, 0.45);
-        } else {
-          imgUrl = await recraftCall(scPrompt.substring(0,900), sp[0], sp[1], keys);
-        }
-      }catch(e){}
+      try{ imgUrl = await recraftCall(scPrompt.substring(0,900), sp[0], sp[1], keys); }catch(e){}
     }
   }
 
