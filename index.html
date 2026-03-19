@@ -1640,15 +1640,37 @@ async function fabGenImagen(plan, keys, extra) {
   var isLandscape = (fmt==='1920x1080');
 
   // PIPELINE: AI generates the full scene WITH the product integrated.
-  // NO canvas composite overlay — the AI adapts the product to the scene.
+  // NO canvas composite — the AI reimagines the product IN the scene.
   //
-  // 1. Claid AI (product photography, preserves label)
-  // 2. FLUX Kontext (mockup as reference, integrates into scene)
-  // 3. Recraft i2i (mockup as reference, user confirmed works great)
-  // 4. Recraft text-to-image / FLUX Schnell (no mockup reference)
+  // Priority order:
+  // 1. Recraft i2i — BEST for adapting product to scene (confirmed by user).
+  //    Uses mockup as reference, reimagines it with correct perspective,
+  //    size, lighting, and interaction. Low strength = more scene adaptation.
+  // 2. Claid AI — Product photography, preserves label.
+  // 3. FLUX Kontext — Takes mockup as reference (tends to be more rigid).
+  // 4. Recraft/FLUX text-to-image — No mockup reference at all.
 
-  // 1. Claid AI
-  if(hasMockup && keys.claid) {
+  // 1. Recraft i2i (PRIORITY — best at adapting product to scene action)
+  if(!imgUrl && hasMockup && keys.rec) {
+    try{
+      var recPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
+      recPrompt = (recPrompt
+        +'. IMPORTANT: The product shown in the reference image must appear naturally IN the scene — '
+        +'correct size relative to the environment, proper perspective, matching lighting and shadows. '
+        +'If the scene describes someone using the product, show the product being actively used '
+        +'(open, held, poured, etc). The product label and brand design should be preserved as closely as possible. '
+        +'Hyperrealistic commercial photography, 85mm lens, shallow depth of field.'
+      ).substring(0,950);
+      var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
+      // strength 0.22 = the scene prompt has MORE influence, the mockup is adapted to fit
+      // This lets Recraft reimagine the product: open the dropper, tilt it, put it in a hand, etc.
+      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.22);
+      if(imgUrl) showToast('Recraft: Producto adaptado a la escena');
+    }catch(e){ console.error('Recraft i2i failed:', e.message); }
+  }
+
+  // 2. Claid AI
+  if(!imgUrl && hasMockup && keys.claid) {
     try{
       var claidAR = isPortrait ? '4:7' : (isLandscape ? '16:9' : '1:1');
       var claidPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
@@ -1659,7 +1681,7 @@ async function fabGenImagen(plan, keys, extra) {
     }
   }
 
-  // 2. FLUX Kontext
+  // 3. FLUX Kontext (rigid reference — less scene adaptation)
   if(!imgUrl && hasMockup && hasFal()) {
     try{
       var mockupCompressed = await compressImage(fabOverlay.mockup.dataUrl, 900, 0.90);
@@ -1667,9 +1689,10 @@ async function fabGenImagen(plan, keys, extra) {
       var kontextParts = [];
       if(userInstruction) kontextParts.push(userInstruction);
       kontextParts.push('Scene: '+scenePrompt);
-      kontextParts.push('This image shows the exact product. Place it naturally in the described scene.');
-      kontextParts.push('CRITICAL: Keep product label text and design EXACTLY as shown. Perfectly readable.');
-      kontextParts.push('Correct perspective, scale, lighting, and shadows for the environment.');
+      kontextParts.push('This image shows the exact product. Reimagine it naturally in the described scene.');
+      kontextParts.push('Adapt the product to the action: open it, tilt it, show it being used if described.');
+      kontextParts.push('Keep product label and brand design as close to original as possible.');
+      kontextParts.push('Correct perspective, scale, lighting, and shadows.');
       if(isPortrait) kontextParts.push('Vertical portrait composition.');
       var kontextPrompt = kontextParts.join('. ').substring(0,480);
       var fluxPayload = {
@@ -1696,19 +1719,7 @@ async function fabGenImagen(plan, keys, extra) {
     }
   }
 
-  // 3. Recraft i2i (mockup as reference — adapts to scene, preserves label)
-  if(!imgUrl && hasMockup && keys.rec) {
-    try{
-      var recPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
-      recPrompt = (recPrompt+'. The product label, brand name, and design must be preserved exactly as shown. '
-        +'Hyperrealistic commercial photography. Integrate the product naturally into the scene.').substring(0,950);
-      var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
-      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.30);
-      if(imgUrl) showToast('Recraft: Producto integrado en escena');
-    }catch(e){ console.error('Recraft i2i failed:', e.message); }
-  }
-
-  // 4. No mockup or all failed: generate scene directly
+  // 4. All failed or no mockup: generate scene directly
   if(!imgUrl) {
     var scPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
     if(hasFal()) {
@@ -1731,7 +1742,7 @@ async function fabGenImagen(plan, keys, extra) {
       }catch(e){ console.warn('FLUX fallback failed:', e.message); }
     }
     if(!imgUrl && keys.rec) {
-      try{ imgUrl = await recraftCall(scPrompt.substring(0,900), sp[0], sp[1], keys); }catch(e){}
+      try{ imgUrl = await recraftCall((userInstruction?userInstruction+'. ':'')+scenePrompt.substring(0,900), sp[0], sp[1], keys); }catch(e){}
     }
   }
 
