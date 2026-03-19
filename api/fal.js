@@ -5,8 +5,8 @@ export default async function handler(req) {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Fal-Model, X-Fal-Action, X-Fal-Request-Id',
       }
     });
   }
@@ -62,10 +62,13 @@ export default async function handler(req) {
     const resp = await fetch(endpoint, fetchOpts);
     const data = await resp.text();
 
-    return new Response(data, {
-      status: resp.status,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
+    const corsHeaders = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Fal-Model, X-Fal-Action, X-Fal-Request-Id',
+    };
+
+    return new Response(data, { status: resp.status, headers: corsHeaders });
 
   } catch(err) {
     return new Response(JSON.stringify({ error: err.message }), {
