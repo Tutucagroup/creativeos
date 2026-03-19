@@ -1655,16 +1655,15 @@ async function fabGenImagen(plan, keys, extra) {
     try{
       var recPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
       recPrompt = (recPrompt
-        +'. IMPORTANT: The product shown in the reference image must appear naturally IN the scene — '
-        +'correct size relative to the environment, proper perspective, matching lighting and shadows. '
-        +'If the scene describes someone using the product, show the product being actively used '
-        +'(open, held, poured, etc). The product label and brand design should be preserved as closely as possible. '
+        +'. The amber glass dropper bottle from the reference must appear in this scene. '
+        +'DO NOT modify, replace, or paint over the product label — the label with brand name and artwork must stay intact and readable. '
+        +'Adapt only the bottle size, angle, and lighting to match the scene naturally. '
         +'Hyperrealistic commercial photography, 85mm lens, shallow depth of field.'
       ).substring(0,950);
       var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
-      // strength 0.22 = the scene prompt has MORE influence, the mockup is adapted to fit
-      // This lets Recraft reimagine the product: open the dropper, tilt it, put it in a hand, etc.
-      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.22);
+      // strength 0.35 = stronger reference preservation (label stays intact)
+      // while allowing enough scene influence for perspective and context
+      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.35);
       if(imgUrl) showToast('Recraft: Producto adaptado a la escena');
     }catch(e){ console.error('Recraft i2i failed:', e.message); }
   }
