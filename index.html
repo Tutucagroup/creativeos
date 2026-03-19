@@ -381,15 +381,35 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
         <textarea class="ta" id="fabExtra" style="min-height:56px" placeholder="Ej: Usar colores tierra, urgencia por lanzamiento, tono emocional..."></textarea>
       </div>
     </div>
-    <!-- LOGO/MOCKUP OVERLAY -->
+    <!-- MOCKUPS & REFERENCES -->
     <div class="card" style="margin-bottom:14px">
-      <div class="sec-title" style="margin-bottom:4px"><div class="sec-dot"></div>Referencias para Recraft</div>
-      <div style="font-size:11px;color:var(--mut);margin-bottom:12px">FLUX/Recraft usa estas imágenes como referencia visual — respeta la persona, producto y logo</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="sec-title" style="margin-bottom:4px"><div class="sec-dot"></div>Mockups del producto</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:12px">Seleccioná los mockups del Branding Kit que querés usar en esta tanda. Los creativos los integran en la escena respetando etiqueta, colores y forma al 100%.</div>
+
+      <!-- MOCKUP SELECTOR: thumbnails from Branding Kit -->
+      <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:8px;min-height:50px;margin-bottom:10px"></div>
+
+      <!-- Optional: upload extra mockup just for this session -->
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div class="uz" id="fabMockupZone" style="padding:8px 12px;text-align:center;font-size:10px;flex:1">
+          📦 Subir mockup extra (solo esta sesión)
+        </div>
+        <input type="file" id="fabMockupInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
+        <div id="fabMockupPreview" style="display:none;position:relative">
+          <img id="fabMockupImg" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:var(--bg3);border:2px solid var(--acc)">
+          <button onclick="clearFabEl('mockup')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:9px;cursor:pointer;font-weight:700">×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONA & LOGO -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="sec-title" style="margin-bottom:4px"><div class="sec-dot"></div>Persona y Logo</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:12px">Opcionales — se integran en la imagen final junto con el mockup</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
 
         <div>
           <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">👤 Persona / Avatar</div>
-          <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:7px">Recraft adapta la persona al contexto del ad manteniendo su identidad</div>
           <div id="fabPersonaPreview" style="display:none;position:relative;margin-bottom:7px">
             <img id="fabPersonaImg" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--acc)">
             <button onclick="clearFabEl('persona')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:11px;cursor:pointer;font-weight:700">×</button>
@@ -399,27 +419,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
             <div style="font-size:10px">Subir foto de persona</div>
           </div>
           <input type="file" id="fabPersonaInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
-          <div style="margin-top:5px;font-size:10px;color:var(--mut)">Recraft adapta la pose al ad</div>
-        </div>
-
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">📦 Producto / Mockup</div>
-          <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:7px">Recraft integra el producto en la escena respetando sus colores y forma</div>
-          <div id="fabMockupPreview" style="display:none;position:relative;margin-bottom:7px">
-            <img id="fabMockupImg" style="width:100%;height:90px;object-fit:contain;border-radius:8px;background:var(--bg3);border:2px solid var(--acc)">
-            <button onclick="clearFabEl('mockup')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:11px;cursor:pointer;font-weight:700">×</button>
-          </div>
-          <div class="uz" id="fabMockupZone" style="padding:10px;text-align:center">
-            <div style="font-size:22px;margin-bottom:3px">📦</div>
-            <div style="font-size:10px">Subir mockup del producto</div>
-          </div>
-          <input type="file" id="fabMockupInput" accept=".png,.jpg,.jpeg,.webp" style="display:none">
-          <div style="margin-top:5px;font-size:10px;color:var(--mut)">Producto respetado al máximo</div>
         </div>
 
         <div>
           <div style="font-size:10px;font-weight:700;color:var(--pur);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🎨 Logo / Isotipo</div>
-          <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:7px">Recraft incluye el logo en la composición como referencia de estilo de marca</div>
           <div id="fabLogoPreview" style="display:none;position:relative;margin-bottom:7px">
             <img id="fabLogoImg" style="width:100%;height:90px;object-fit:contain;border-radius:8px;background:var(--bg3);border:2px solid var(--pur)">
             <button onclick="clearFabEl('logo')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--dan);color:#fff;border:none;font-size:11px;cursor:pointer;font-weight:700">×</button>
@@ -430,15 +433,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
             <div style="font-size:9px;opacity:.6;margin-top:2px">PNG transparente ideal</div>
           </div>
           <input type="file" id="fabLogoInput" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none">
-          <div style="margin-top:5px;font-size:10px;color:var(--mut)">Logo respetado al máximo</div>
         </div>
 
-      </div>
-      <!-- MOCKUP SELECTOR -->
-      <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px">
-        <div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">📦 Mockups a usar en esta tanda</div>
-        <div style="font-size:10px;color:var(--mut);margin-bottom:7px">Los creativos rotan entre los mockups seleccionados (✓)</div>
-        <div id="fabMockupSelector" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px"></div>
       </div>
     </div>
         <div class="card" style="margin-bottom:14px">
@@ -1137,28 +1133,51 @@ function renderFabMockupSelector() {
   var bAssets=(active&&active.branding&&active.branding.assets)||[];
   var mockups=bAssets.filter(function(a){return a.type==='mockup';});
   if(!mockups.length){
-    el.innerHTML='<div style="font-size:11px;color:var(--mut2)">Cargá mockups en Branding Kit para elegir cuáles usar</div>';
+    el.innerHTML='<div style="font-size:11px;color:var(--mut2);padding:10px 0;text-align:center;width:100%">'
+      +'<div style="font-size:20px;margin-bottom:5px">📦</div>'
+      +'No hay mockups cargados — <span onclick="goPage(\'branding\')" style="color:var(--acc);cursor:pointer;text-decoration:underline">ir a Branding Kit</span>'
+      +'</div>';
     return;
   }
   // Multi-select: all selected by default
   if(!window._fabMockups) window._fabMockups={};
   mockups.forEach(function(m,i){ if(window._fabMockups[i]===undefined) window._fabMockups[i]=true; });
-  el.innerHTML='<div style="font-size:10px;color:var(--mut);margin-bottom:5px;width:100%">Los creativos rotan entre los mockups seleccionados</div>'+
+  var selCount=mockups.filter(function(m,i){return window._fabMockups[i]!==false;}).length;
+  el.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:8px">'
+      +'<div style="font-size:10px;color:var(--mut)">'+selCount+' de '+mockups.length+' seleccionados — los creativos rotan entre los marcados</div>'
+      +'<button class="tb-btn" style="font-size:9px;padding:2px 8px" onclick="toggleAllMockups()">'+( selCount===mockups.length?'Deseleccionar todos':'Seleccionar todos')+'</button>'
+    +'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%">'+
     mockups.map(function(m,i){
       var on=window._fabMockups[i]!==false;
-      return '<button class="fmt-btn'+(on?' on':'')+'" data-mi="'+i+'" style="font-size:10px;display:flex;align-items:center;gap:5px;padding:4px 8px">'+
-        (m.dataUrl?'<img src="'+m.dataUrl+'" style="width:28px;height:28px;object-fit:contain;border-radius:4px;background:var(--bg3)">':'')+
-        '<span>'+(m.name?m.name.replace(/\.[^.]+$/,'').substring(0,18):'Mockup '+(i+1))+'</span>'+
-        (on?'<span style="color:var(--acc);font-size:9px">✓</span>':'<span style="color:var(--mut2);font-size:9px">○</span>')+
-        '</button>';
-    }).join('');
+      return '<div data-mi="'+i+'" style="cursor:pointer;position:relative;width:80px;flex-shrink:0">'
+        +'<div style="width:80px;height:80px;border-radius:9px;overflow:hidden;border:2px solid '+(on?'var(--acc)':'var(--b2)')+';background:var(--bg3);display:flex;align-items:center;justify-content:center;transition:border-color .15s">'
+          +(m.dataUrl?'<img src="'+m.dataUrl+'" style="width:100%;height:100%;object-fit:contain;padding:4px">':'<span style="font-size:24px;opacity:.4">📦</span>')
+        +'</div>'
+        +(on?'<div style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:10px;color:#000;font-weight:700">✓</div>'
+            :'<div style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--bg3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut2)">○</div>')
+        +'<div style="font-size:9px;color:'+(on?'var(--acc)':'var(--mut2)')+';text-align:center;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+          +(m.name?m.name.replace(/\.[^.]+$/,'').substring(0,12):'Mockup '+(i+1))
+        +'</div>'
+        +'</div>';
+    }).join('')+'</div>';
   el.querySelectorAll('[data-mi]').forEach(function(b){
     b.onclick=function(){
       var i=parseInt(this.dataset.mi);
       window._fabMockups[i]=!(window._fabMockups[i]!==false);
       renderFabMockupSelector();
+      // Update fabOverlay.mockup with first selected mockup for preview
+      var sel=getSelectedMockups();
+      if(sel.length) fabOverlay.mockup.dataUrl=sel[0].dataUrl;
     };
   });
+}
+function toggleAllMockups() {
+  var mockups=(active&&active.branding&&active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
+  var allOn=mockups.every(function(m,i){return window._fabMockups[i]!==false;});
+  mockups.forEach(function(m,i){ window._fabMockups[i]=!allOn; });
+  renderFabMockupSelector();
 }
 function getSelectedMockups() {
   if(!active) return [];
@@ -1233,14 +1252,12 @@ function loadFabUIFromBranding() {
     var lp=$('fabLogoPreview');if(lp) lp.style.display='block';
     var lz=$('fabLogoZone');   if(lz) lz.style.display='none';
   }
-  // Auto-load first available mockup as preview
-  var mockups=(active.branding.assets||[]).filter(function(a){return a.type==='mockup';});
-  if(mockups.length && mockups[0].dataUrl) {
-    fabOverlay.mockup.dataUrl=mockups[0].dataUrl;
-    var mi=$('fabMockupImg');    if(mi) mi.src=mockups[0].dataUrl;
-    var mp=$('fabMockupPreview');if(mp) mp.style.display='block';
-    var mz=$('fabMockupZone');   if(mz) mz.style.display='none';
+  // Set fabOverlay.mockup to first selected mockup (from selector, not override)
+  var selMockups=getSelectedMockups();
+  if(selMockups.length) {
+    fabOverlay.mockup.dataUrl=selMockups[0].dataUrl;
   }
+  // Mockup selector handles all mockup display — no single preview needed from branding
 }
 async function loadFabOverlay(type, file) {
   if(!file) return;
