@@ -600,22 +600,34 @@ var SKEY = 'creativeos_v3';
 var MYKORA_CATALOG = {
   brand: 'Mykora',
   domain: 'mykora.com.ar',
-  desc: 'Mykora ofrece tinturas madre de adaptógenos y hongos funcionales. Extractos naturales en frascos gotero de vidrio ámbar, respaldados por ciencia, para acompañar el bienestar diario: descanso, energía, foco, calma y digestión.',
-  tone: 'Cercano y directo, con voz argentina ("bajar un cambio", "a mil", "sentirte con pilas"). Científico pero sin jerga. Empático, cálido, nunca vendedor agresivo. El producto acompaña, no promete milagros.',
+  desc: 'Mykora ofrece tinturas madre de adaptógenos y hongos funcionales. Extractos naturales en frascos gotero de vidrio ámbar, respaldados por ciencia, para acompañar el bienestar diario: descanso, energía, foco, calma y digestión. Fundada por Gabriel y Joaquín, emprendedores que descubrieron los adaptógenos por necesidad propia.',
+  tone: 'Cercano y directo, con voz argentina ("bajar un cambio", "a mil", "sentirte con pilas"). Científico pero sin jerga. Empático, cálido, nunca vendedor agresivo. El producto acompaña, no promete milagros. Equilibrio entre ciencia y naturaleza.',
   audience: 'Personas activas 28-50 interesadas en bienestar natural. Trabajan, entrenan, tienen días intensos. Buscan equilibrio cuerpo-mente sin químicos. Argentina, nivel socioeconómico medio-alto.',
-  colors: ['#2D4A3E Verde profundo', '#C8A96E Dorado cálido', '#1A1A1A Negro', '#F5F0E8 Crema', '#8B5E3C Ámbar'],
-  fonts: ['Syne Bold para títulos', 'DM Sans para cuerpo'],
+  colors: [
+    '#4F543E Verde Mykora (principal)',
+    '#FFFAE5 Crema Mykora',
+    '#1A1A18 Negro Orgánico',
+    '#EAE6D3 Crema Oscuro',
+    '#E49444 Cordyceps (naranja)',
+    '#6D8469 Ashwagandha (verde sage)',
+    '#6E2933 Reishi (borgoña)',
+    '#2A5B30 Orégano (verde bosque)',
+    '#B17E2F Ginseng (dorado)',
+    '#C4A55A Melena de León (mostaza)'
+  ],
+  fonts: ['Poppins (principal: Regular, Medium, Bold, Extrabold)', 'IBM Plex Mono (secundaria: Text, SemiBold)'],
   lang: 'es-AR',
+  artDirection: 'Formas orgánicas, luz suave y composiciones equilibradas. Estética serena y contemporánea. El producto es parte de un ritual cotidiano. Ingredientes, texturas y materiales naturales. Fotografía hiperrealista, colores cálidos y terrosos.',
   products: [
-    {name:'Tintura Melena de León — Claridad mental', price:'$28.990', desc:'El hongo del foco. Para encarar el día con la cabeza clara.', shopifyId:'7000003936385'},
-    {name:'Tintura Reishi — Descanso profundo', price:'$28.990', desc:'El hongo del descanso y la calma. Para cerrar bien el día.', shopifyId:'7000004427905'},
-    {name:'Tintura Ashwagandha — Calma y equilibrio', price:'$28.990', desc:'Para bajar un cambio sin perder el ritmo. La raíz de la calma.', shopifyId:'7000004821121'},
-    {name:'Tintura Cordyceps — Energía y rendimiento', price:'$28.990', desc:'El hongo de los que se mueven. Energía natural para entrenar y rendir.', shopifyId:'7000006361217'},
-    {name:'Tintura Ginseng — Enfoque y energía mental', price:'$28.990', desc:'La raíz de la energía de siempre. Para sentirte con pilas.', shopifyId:'7000008491137'},
-    {name:'Tintura Orégano — Bienestar digestivo', price:'$28.990', desc:'Para sentir bien la panza y acompañar tus defensas.', shopifyId:'7000009867393'},
+    {name:'Tintura Melena de León — Claridad mental', price:'$28.990', desc:'El hongo del foco. Para encarar el día con la cabeza clara.', shopifyId:'7000003936385', color:'#C4A55A'},
+    {name:'Tintura Reishi — Descanso profundo', price:'$28.990', desc:'El hongo del descanso y la calma. Para cerrar bien el día.', shopifyId:'7000004427905', color:'#6E2933'},
+    {name:'Tintura Ashwagandha — Calma y equilibrio', price:'$28.990', desc:'Para bajar un cambio sin perder el ritmo. La raíz de la calma.', shopifyId:'7000004821121', color:'#6D8469'},
+    {name:'Tintura Cordyceps — Energía y rendimiento', price:'$28.990', desc:'El hongo de los que se mueven. Energía natural para entrenar y rendir.', shopifyId:'7000006361217', color:'#E49444'},
+    {name:'Tintura Ginseng — Enfoque y energía mental', price:'$28.990', desc:'La raíz de la energía de siempre. Para sentirte con pilas.', shopifyId:'7000008491137', color:'#B17E2F'},
+    {name:'Tintura Orégano — Bienestar digestivo', price:'$28.990', desc:'Para sentir bien la panza y acompañar tus defensas.', shopifyId:'7000009867393', color:'#2A5B30'},
     {name:'Pack Calma & Descanso (Ashwagandha + Reishi)', price:'$49.990', desc:'El dúo para bajar un cambio de día y dormir tranquilo de noche.', shopifyId:'7000023236737'},
     {name:'Pack Enfoque & Claridad (Melena de León + Ginseng)', price:'$49.990', desc:'El dúo para tener la mente al 100.', shopifyId:'7000023662721'},
-    {name:'Pack Claridad y Calma (Melena de León + Reishi)', price:'$49.990', desc:'Cabeza clara de día, buen descanso de noche.', shopifyId:'7000028676225'},
+    {name:'Pack Claridad y Calma (Melena de León + Reishi)', price:'$49.990', desc:'Cabeza clara de día, buen descanso de noche.', shopifyId:'7028370571393'},
     {name:'Pack Energía & Rendimiento (Cordyceps + Ginseng + Ashwagandha)', price:'$76.990', desc:'El combo para rendir a full sin pagarla después.', shopifyId:'7000023498881'},
     {name:'Pack Defensas & Bienestar (Orégano + Reishi + Ginseng)', price:'$76.990', desc:'Tres hierbas y hongos para acompañar tus defensas.', shopifyId:'7000023826561'},
     {name:'Pack Bienestar Femenino', price:'$76.990', desc:'Para perimenopausia y menopausia. El cuerpo y la mente piden bajar un cambio.', shopifyId:'7000238588033'},
@@ -1060,10 +1072,11 @@ function brandCtx(extra) {
   if(b.colors&&b.colors.length) parts.push('Paleta: '+b.colors.join(', '));
   if(b.fonts&&b.fonts.length) parts.push('Tipografías: '+b.fonts.join(', '));
   if(b.products&&b.products.length) parts.push('Productos: '+b.products.join(', '));
+  if(b.artDirection) parts.push('DIRECCIÓN DE ARTE (del brandbook): '+b.artDirection);
   var logos=(b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;});
   if(logos.length) parts.push('LOGO DE MARCA: '+logos.map(function(a){return a.analysis;}).join(' | '));
   var mockups=(b.assets||[]).filter(function(a){return a.type==='mockup';});
-  if(mockups.length) parts.push('MOCKUP DEL PRODUCTO: imagen exacta que se superpondrá sobre el fondo generado — el prompt visual NO debe incluir el producto (será superpuesto)');
+  if(mockups.length) parts.push('MOCKUPS DISPONIBLES: '+mockups.length+' mockups de producto cargados. El AI los usa como referencia visual para integrar el producto naturalmente en la escena.');
   if(extra) parts.push(extra);
   // Selected products for this generation
   var selProds=(typeof getSelectedProds==='function')?getSelectedProds():[];
@@ -1097,6 +1110,7 @@ async function syncFromShopify() {
   if(!active.branding.tone) active.branding.tone = cat.tone;
   if(!active.branding.audience) active.branding.audience = cat.audience;
   if(!active.branding.lang) active.branding.lang = cat.lang;
+  if(cat.artDirection) active.branding.artDirection = cat.artDirection;
 
   // 3. Populate colors (merge, no duplicates)
   if(!active.branding.colors) active.branding.colors = [];
