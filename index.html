@@ -278,7 +278,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
       </div>
       <!-- PRODUCTOS Y AUDIENCIA -->
       <div class="card">
-        <div class="card-title">Productos / Servicios</div>
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+          Productos / Servicios
+          <button class="btn" style="font-size:10px;padding:4px 10px" id="btnSyncShopify">🔄 Importar desde Shopify (Mykora)</button>
+        </div>
         <div id="prodTags"></div>
         <input class="mini-in" id="prodIn" placeholder="Ej: Ashwagandha 60 cápsulas $29 · Enter">
         <div class="card-title" style="margin-top:12px;margin-bottom:6px">Audiencia objetivo</div>
@@ -591,6 +594,58 @@ var fabOverlay = { logo:{dataUrl:null,strength:0.15}, mockup:{dataUrl:null,stren
 var SKEY = 'creativeos_v3';
 
 // ══════════════════════════════════════════════
+// SHOPIFY PRODUCT CATALOG — MYKORA
+// Synced from Shopify Admin API (mykora.com.ar)
+// ══════════════════════════════════════════════
+var MYKORA_CATALOG = {
+  brand: 'Mykora',
+  domain: 'mykora.com.ar',
+  desc: 'Mykora ofrece tinturas madre de adaptógenos y hongos funcionales. Extractos naturales en frascos gotero de vidrio ámbar, respaldados por ciencia, para acompañar el bienestar diario: descanso, energía, foco, calma y digestión. Fundada por Gabriel y Joaquín, emprendedores que descubrieron los adaptógenos por necesidad propia.',
+  tone: 'Cercano y directo, con voz argentina ("bajar un cambio", "a mil", "sentirte con pilas"). Científico pero sin jerga. Empático, cálido, nunca vendedor agresivo. El producto acompaña, no promete milagros. Equilibrio entre ciencia y naturaleza.',
+  audience: 'Personas activas 28-50 interesadas en bienestar natural. Trabajan, entrenan, tienen días intensos. Buscan equilibrio cuerpo-mente sin químicos. Argentina, nivel socioeconómico medio-alto.',
+  colors: [
+    '#4F543E Verde Mykora (principal)',
+    '#FFFAE5 Crema Mykora',
+    '#1A1A18 Negro Orgánico',
+    '#EAE6D3 Crema Oscuro',
+    '#E49444 Cordyceps (naranja)',
+    '#6D8469 Ashwagandha (verde sage)',
+    '#6E2933 Reishi (borgoña)',
+    '#2A5B30 Orégano (verde bosque)',
+    '#B17E2F Ginseng (dorado)',
+    '#C4A55A Melena de León (mostaza)'
+  ],
+  fonts: ['Poppins (principal: Regular, Medium, Bold, Extrabold)', 'IBM Plex Mono (secundaria: Text, SemiBold)'],
+  lang: 'es-AR',
+  artDirection: 'Formas orgánicas, luz suave y composiciones equilibradas. Estética serena y contemporánea. El producto es parte de un ritual cotidiano. Ingredientes, texturas y materiales naturales. Fotografía hiperrealista, colores cálidos y terrosos.',
+  products: [
+    {name:'Tintura Melena de León — Claridad mental', price:'$28.990', desc:'El hongo del foco. Para encarar el día con la cabeza clara.', shopifyId:'7000003936385', color:'#C4A55A'},
+    {name:'Tintura Reishi — Descanso profundo', price:'$28.990', desc:'El hongo del descanso y la calma. Para cerrar bien el día.', shopifyId:'7000004427905', color:'#6E2933'},
+    {name:'Tintura Ashwagandha — Calma y equilibrio', price:'$28.990', desc:'Para bajar un cambio sin perder el ritmo. La raíz de la calma.', shopifyId:'7000004821121', color:'#6D8469'},
+    {name:'Tintura Cordyceps — Energía y rendimiento', price:'$28.990', desc:'El hongo de los que se mueven. Energía natural para entrenar y rendir.', shopifyId:'7000006361217', color:'#E49444'},
+    {name:'Tintura Ginseng — Enfoque y energía mental', price:'$28.990', desc:'La raíz de la energía de siempre. Para sentirte con pilas.', shopifyId:'7000008491137', color:'#B17E2F'},
+    {name:'Tintura Orégano — Bienestar digestivo', price:'$28.990', desc:'Para sentir bien la panza y acompañar tus defensas.', shopifyId:'7000009867393', color:'#2A5B30'},
+    {name:'Pack Calma & Descanso (Ashwagandha + Reishi)', price:'$49.990', desc:'El dúo para bajar un cambio de día y dormir tranquilo de noche.', shopifyId:'7000023236737'},
+    {name:'Pack Enfoque & Claridad (Melena de León + Ginseng)', price:'$49.990', desc:'El dúo para tener la mente al 100.', shopifyId:'7000023662721'},
+    {name:'Pack Claridad y Calma (Melena de León + Reishi)', price:'$49.990', desc:'Cabeza clara de día, buen descanso de noche.', shopifyId:'7028370571393'},
+    {name:'Pack Energía & Rendimiento (Cordyceps + Ginseng + Ashwagandha)', price:'$76.990', desc:'El combo para rendir a full sin pagarla después.', shopifyId:'7000023498881'},
+    {name:'Pack Defensas & Bienestar (Orégano + Reishi + Ginseng)', price:'$76.990', desc:'Tres hierbas y hongos para acompañar tus defensas.', shopifyId:'7000023826561'},
+    {name:'Pack Bienestar Femenino', price:'$76.990', desc:'Para perimenopausia y menopausia. El cuerpo y la mente piden bajar un cambio.', shopifyId:'7000238588033'},
+    {name:'Pack Bienestar Digestivo (Orégano + Reishi + Melena de León)', price:'$76.990', desc:'Para acompañar tu digestión y sentirte más liviano.', shopifyId:'7000239341697'},
+    {name:'Pack Equilibrio Total (4 extractos)', price:'$99.000', desc:'Ashwagandha, Reishi, Cordyceps y Melena de León para todo el día.', shopifyId:'7000028676225'},
+    {name:'Pack Completo Mykora (los 6 extractos)', price:'$149.990', desc:'La línea completa en un solo lugar. Los seis extractos juntos.', shopifyId:'7028375912577'}
+  ],
+  mockupUrls: [
+    'https://cdn.shopify.com/s/files/1/0603/6812/6081/files/Melena_de_Leon3x_09bb17cb-2304-40d5-b843-43ebdbc9039d.webp?v=1781190174',
+    'https://cdn.shopify.com/s/files/1/0603/6812/6081/files/Reishi23x_bc5ff3d7-f762-4cf2-811c-65578cd81ad3.webp?v=1781190175',
+    'https://cdn.shopify.com/s/files/1/0603/6812/6081/files/Ashwagandha3x_2e0b7213-2205-42fc-a431-f5535ad74a2a.webp?v=1781190174',
+    'https://cdn.shopify.com/s/files/1/0603/6812/6081/files/Cordyceps3x_88fa6dfb-678e-44b9-b0dc-b9d2c925bbd3.webp?v=1781190174',
+    'https://cdn.shopify.com/s/files/1/0603/6812/6081/files/Ginseng3x_c6e3da3d-6653-49a2-aa7a-640649e25b32.webp?v=1781190175',
+    'https://cdn.shopify.com/s/files/1/0603/6812/6081/files/Oregano3x_28076bae-e192-4049-8063-dd9d04c910a9.webp?v=1781190175'
+  ]
+};
+
+// ══════════════════════════════════════════════
 // PERSISTENCE
 // ══════════════════════════════════════════════
 function save() {
@@ -753,6 +808,8 @@ function bindAll() {
   setupDrop('logoZone', function(f){ handleAsset(f,'logo'); });
   setupDrop('mockupZone', function(f){ handleAsset(f,'mockup'); });
   setupDrop('brandInput', handleBrandBook);
+  // Shopify sync
+  if($('btnSyncShopify')) $('btnSyncShopify').onclick = syncFromShopify;
   // Branding inputs
   $('colorIn').onkeydown = function(e){ if(e.key==='Enter'&&this.value.trim()){ addBrandTag('colors',this.value.trim()); this.value=''; } };
   $('fontIn').onkeydown  = function(e){ if(e.key==='Enter'&&this.value.trim()){ addBrandTag('fonts',this.value.trim()); this.value=''; } };
@@ -1015,10 +1072,11 @@ function brandCtx(extra) {
   if(b.colors&&b.colors.length) parts.push('Paleta: '+b.colors.join(', '));
   if(b.fonts&&b.fonts.length) parts.push('Tipografías: '+b.fonts.join(', '));
   if(b.products&&b.products.length) parts.push('Productos: '+b.products.join(', '));
+  if(b.artDirection) parts.push('DIRECCIÓN DE ARTE (del brandbook): '+b.artDirection);
   var logos=(b.assets||[]).filter(function(a){return a.type==='logo'&&a.analysis;});
   if(logos.length) parts.push('LOGO DE MARCA: '+logos.map(function(a){return a.analysis;}).join(' | '));
   var mockups=(b.assets||[]).filter(function(a){return a.type==='mockup';});
-  if(mockups.length) parts.push('MOCKUP DEL PRODUCTO: imagen exacta que se superpondrá sobre el fondo generado — el prompt visual NO debe incluir el producto (será superpuesto)');
+  if(mockups.length) parts.push('MOCKUPS DISPONIBLES: '+mockups.length+' mockups de producto cargados. El AI los usa como referencia visual para integrar el producto naturalmente en la escena.');
   if(extra) parts.push(extra);
   // Selected products for this generation
   var selProds=(typeof getSelectedProds==='function')?getSelectedProds():[];
@@ -1026,6 +1084,81 @@ function brandCtx(extra) {
     parts.push('PRODUCTOS A USAR EN ESTA TANDA (usar SOLO estos): '+selProds.join(', '));
   }
   return parts.join('\n');
+}
+
+// ══════════════════════════════════════════════
+// SHOPIFY SYNC — Import Mykora catalog into active project
+// ══════════════════════════════════════════════
+async function syncFromShopify() {
+  if(!active){showToast('Seleccioná un proyecto primero',true);return;}
+  var cat = MYKORA_CATALOG;
+
+  // 1. Populate products
+  if(!active.branding.products) active.branding.products = [];
+  var existingNames = active.branding.products.map(function(p){ return (typeof p==='string'?p:p.name||'').toLowerCase(); });
+  var added = 0;
+  cat.products.forEach(function(p){
+    var label = p.name + ' ' + p.price;
+    if(existingNames.indexOf(label.toLowerCase()) < 0 && existingNames.indexOf(p.name.toLowerCase()) < 0){
+      active.branding.products.push(label);
+      added++;
+    }
+  });
+
+  // 2. Populate brand info (only if empty)
+  if(!active.branding.desc) active.branding.desc = cat.desc;
+  if(!active.branding.tone) active.branding.tone = cat.tone;
+  if(!active.branding.audience) active.branding.audience = cat.audience;
+  if(!active.branding.lang) active.branding.lang = cat.lang;
+  if(cat.artDirection) active.branding.artDirection = cat.artDirection;
+
+  // 3. Populate colors (merge, no duplicates)
+  if(!active.branding.colors) active.branding.colors = [];
+  cat.colors.forEach(function(c){
+    if(active.branding.colors.indexOf(c) < 0) active.branding.colors.push(c);
+  });
+
+  // 4. Populate fonts
+  if(!active.branding.fonts) active.branding.fonts = [];
+  cat.fonts.forEach(function(f){
+    if(active.branding.fonts.indexOf(f) < 0) active.branding.fonts.push(f);
+  });
+
+  // 5. Download mockup images from Shopify CDN as assets
+  if(!active.branding.assets) active.branding.assets = [];
+  var mockupNames = ['Melena de Leon','Reishi','Ashwagandha','Cordyceps','Ginseng','Oregano'];
+  var existingMockupNames = active.branding.assets.filter(function(a){return a.type==='mockup';}).map(function(a){return a.name;});
+  var downloaded = 0;
+
+  showToast('Importando productos y descargando mockups...');
+
+  for(var i = 0; i < cat.mockupUrls.length; i++){
+    var mName = mockupNames[i] || 'Producto '+(i+1);
+    if(existingMockupNames.indexOf(mName) >= 0) continue;
+    try{
+      var resp = await fetch(cat.mockupUrls[i]);
+      if(!resp.ok) continue;
+      var blob = await resp.blob();
+      var dataUrl = await new Promise(function(res,rej){
+        var rd = new FileReader();
+        rd.onload = function(){ res(rd.result); };
+        rd.onerror = rej;
+        rd.readAsDataURL(blob);
+      });
+      active.branding.assets.push({
+        id: Date.now().toString()+'_m'+i,
+        name: mName,
+        type: 'mockup',
+        dataUrl: dataUrl,
+        mimeType: blob.type || 'image/webp'
+      });
+      downloaded++;
+    }catch(e){ console.warn('Failed to download mockup '+mName+':', e.message); }
+  }
+
+  save();
+  loadBrandingUI();
+  showToast('Shopify sync: '+added+' productos + '+downloaded+' mockups importados');
 }
 
 // ══════════════════════════════════════════════
@@ -1655,16 +1788,15 @@ async function fabGenImagen(plan, keys, extra) {
     try{
       var recPrompt = userInstruction ? userInstruction+'. '+scenePrompt : scenePrompt;
       recPrompt = (recPrompt
-        +'. IMPORTANT: The product shown in the reference image must appear naturally IN the scene — '
-        +'correct size relative to the environment, proper perspective, matching lighting and shadows. '
-        +'If the scene describes someone using the product, show the product being actively used '
-        +'(open, held, poured, etc). The product label and brand design should be preserved as closely as possible. '
+        +'. The amber glass dropper bottle from the reference must appear in this scene. '
+        +'DO NOT modify, replace, or paint over the product label — the label with brand name and artwork must stay intact and readable. '
+        +'Adapt only the bottle size, angle, and lighting to match the scene naturally. '
         +'Hyperrealistic commercial photography, 85mm lens, shallow depth of field.'
       ).substring(0,950);
       var cm = await compressImage(fabOverlay.mockup.dataUrl, 800, 0.85);
-      // strength 0.22 = the scene prompt has MORE influence, the mockup is adapted to fit
-      // This lets Recraft reimagine the product: open the dropper, tilt it, put it in a hand, etc.
-      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.22);
+      // strength 0.35 = stronger reference preservation (label stays intact)
+      // while allowing enough scene influence for perspective and context
+      imgUrl = await recraftI2I(cm, recPrompt, sp[0], sp[1], keys, 0.35);
       if(imgUrl) showToast('Recraft: Producto adaptado a la escena');
     }catch(e){ console.error('Recraft i2i failed:', e.message); }
   }
