@@ -231,6 +231,15 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
     </div>
   </div>
   <div class="page-body">
+    <!-- SHOPIFY SYNC BANNER -->
+    <div id="shopifySyncBanner" style="background:linear-gradient(135deg,#1a2e1a,#2a3a2a);border:1px solid var(--acc);border-radius:var(--r);padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
+      <div style="font-size:28px">🔄</div>
+      <div style="flex:1">
+        <div style="font-family:var(--fh);font-size:13px;font-weight:700;color:var(--acc)">Importar catálogo de Mykora desde Shopify</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:2px">Carga automática: 15 productos, 6 mockups, paleta de colores, tipografías, tono de voz y dirección de arte del brandbook</div>
+      </div>
+      <button class="btn acc" style="font-size:12px;padding:9px 18px;white-space:nowrap" id="btnSyncShopify">🔄 Importar todo</button>
+    </div>
     <div class="grid2" style="margin-bottom:14px">
       <!-- LOGO -->
       <div class="card">
@@ -278,10 +287,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:14px;
       </div>
       <!-- PRODUCTOS Y AUDIENCIA -->
       <div class="card">
-        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-          Productos / Servicios
-          <button class="btn" style="font-size:10px;padding:4px 10px" id="btnSyncShopify">🔄 Importar desde Shopify (Mykora)</button>
-        </div>
+        <div class="card-title">Productos / Servicios</div>
         <div id="prodTags"></div>
         <input class="mini-in" id="prodIn" placeholder="Ej: Ashwagandha 60 cápsulas $29 · Enter">
         <div class="card-title" style="margin-top:12px;margin-bottom:6px">Audiencia objetivo</div>
@@ -1159,6 +1165,9 @@ async function syncFromShopify() {
   save();
   loadBrandingUI();
   showToast('Shopify sync: '+added+' productos + '+downloaded+' mockups importados');
+  // Hide the sync banner after successful import
+  var banner = $('shopifySyncBanner');
+  if(banner) banner.style.display = 'none';
 }
 
 // ══════════════════════════════════════════════
